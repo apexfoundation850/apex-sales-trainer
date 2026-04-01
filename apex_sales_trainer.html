@@ -812,10 +812,18 @@ async function loadAssignments(){
 // ---- GOOGLE SIGN-IN ----
 function googleSignIn(){
   const provider=new firebase.auth.GoogleAuthProvider();
-  // Use redirect instead of popup — works on mobile and avoids popup blockers
-  auth.signInWithRedirect(provider).catch(e=>{
-    console.error('Sign-in error:',e);
-    showToast('Sign-in failed. Try again.','toast-streak');
+  document.getElementById('authButtons').style.display='none';
+  document.getElementById('authLoading').style.display='block';
+  document.getElementById('authLoading').textContent='Signing in...';
+  // Try popup first, fall back to redirect if blocked
+  auth.signInWithPopup(provider).catch(e=>{
+    console.error('Popup sign-in failed, trying redirect:',e.code,e.message);
+    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
+      return auth.signInWithRedirect(provider);
+    }
+    document.getElementById('authLoading').style.display='none';
+    document.getElementById('authButtons').style.display='flex';
+    showToast('Sign-in failed: '+e.message,'toast-streak');
   });
 }
 
