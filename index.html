@@ -812,7 +812,8 @@ async function loadAssignments(){
 // ---- GOOGLE SIGN-IN ----
 function googleSignIn(){
   const provider=new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(e=>{
+  // Use redirect instead of popup — works on mobile and avoids popup blockers
+  auth.signInWithRedirect(provider).catch(e=>{
     console.error('Sign-in error:',e);
     showToast('Sign-in failed. Try again.','toast-streak');
   });

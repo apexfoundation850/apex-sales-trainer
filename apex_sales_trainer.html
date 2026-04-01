@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Apex Sales Trainer</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --red:#C0392B; --red-l:#E05040; --red-d:#8B1A1A; --dark:#0C0C0C; --dark2:#141414;
@@ -258,7 +261,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
 </head>
 <body>
 
-<!-- SPLASH / REP SELECT -->
+<!-- SPLASH / SIGN IN -->
 <div id="splash">
   <div class="sp-bar top"></div>
   <div class="sp-bar bot"></div>
@@ -266,10 +269,14 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
     <div class="sp-title">Apex<br>Sales Trainer</div>
     <div class="sp-sub">Foundation Specialists Training Platform</div>
     <div class="sp-div"></div>
-    <div class="sp-label">Select Your Name</div>
-    <select id="repSelect"><option value="">-- Choose Rep --</option></select>
-    <button class="sp-btn" onclick="enterApp()">Start Training</button>
-    <div class="sp-mgr" onclick="enterManager()">Manager Dashboard</div>
+    <div id="authLoading" style="font-size:13px;color:var(--gray);margin-top:12px;">Loading...</div>
+    <div id="authButtons" style="display:none;flex-direction:column;align-items:center;gap:12px;">
+      <button class="sp-btn" onclick="googleSignIn()" style="display:flex;align-items:center;gap:10px;padding:14px 32px;">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Sign in with Google
+      </button>
+      <div style="font-size:12px;color:var(--gray-d);">Sign in to sync your progress across devices</div>
+    </div>
   </div>
 </div>
 
@@ -287,7 +294,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
       <div class="topbar-streak" id="tbStreak"></div>
       <div class="topbar-pts" id="tbPts"></div>
       <div class="topbar-level" id="tbLevel"></div>
-      <div class="topbar-user" id="tbUser" onclick="switchRep()"></div>
+      <div class="topbar-user" id="tbUser" onclick="switchRep()" title="Sign Out"></div>
     </div>
   </div>
 
@@ -322,7 +329,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
     <button class="bnav-btn" data-tab="board" onclick="switchTab('board')">
       <svg viewBox="0 0 24 24"><path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zM22 11h-5.5v10H22V11z"/></svg>Board
     </button>
-    <button class="bnav-btn" data-tab="mgr" onclick="switchTab('mgr')">
+    <button class="bnav-btn" data-tab="mgr" onclick="switchTab('mgr')" style="display:none;">
       <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>Manage
     </button>
   </div>
@@ -716,98 +723,167 @@ const LEVELS = [
 
 // ---- APP STATE ----
 let currentRep = null;
+let currentUid = null;
 let reps = {};
 let assignments = {};
 let isManager = false;
 
-// ---- FIREBASE CONFIG (placeholder - replace with your project) ----
-// To enable cloud sync, create a Firebase project and replace this config
-const FIREBASE_ENABLED = false;
+// ---- FIREBASE CONFIG ----
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAlKfAAz1tVvFAN1Wi7z3K8HX2CCOKjMLk",
+  authDomain: "apex-sales-trainer.firebaseapp.com",
+  projectId: "apex-sales-trainer",
+  storageBucket: "apex-sales-trainer.firebasestorage.app",
+  messagingSenderId: "339612599726",
+  appId: "1:339612599726:web:69f502437d9e82120f743f"
 };
 
-// ---- LOCAL STORAGE PERSISTENCE ----
+// ---- FIREBASE INIT ----
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+
+// ---- DEBOUNCED SAVE ----
+let _saveTimer=null;
 function saveState(){
+  // Save to localStorage as fallback
   localStorage.setItem('apex_trainer_reps',JSON.stringify(reps));
   localStorage.setItem('apex_trainer_assignments',JSON.stringify(assignments));
-}
-function loadState(){
-  try{
-    reps=JSON.parse(localStorage.getItem('apex_trainer_reps'))||{};
-    assignments=JSON.parse(localStorage.getItem('apex_trainer_assignments'))||{};
-  }catch(e){reps={};assignments={};}
-  if(!Object.keys(reps).length){
-    // Default reps
-    ['Ross','Demo Rep'].forEach(n=>{
-      const id=n.toLowerCase().replace(/\s/g,'_');
-      reps[id]={name:n,points:0,streak:0,lastActive:null,completedModules:[],quizScores:{},fcReviews:0,drillsCompleted:0,drillsPerfect:0,badges:[],activityLog:[]};
+  // Debounced Firestore save
+  if(!currentUid)return;
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(()=>{
+    const r=reps[currentRep];
+    if(r){
+      db.collection('users').doc(currentUid).update({
+        points:r.points||0, streak:r.streak||0, lastActive:r.lastActive||null,
+        completedModules:r.completedModules||[], quizScores:r.quizScores||{},
+        fcReviews:r.fcReviews||0, drillsCompleted:r.drillsCompleted||0,
+        drillsPerfect:r.drillsPerfect||0, badges:r.badges||[],
+        activityLog:(r.activityLog||[]).slice(0,100)
+      }).catch(e=>console.warn('Save failed:',e));
+    }
+    // Save assignments
+    Object.entries(assignments).forEach(([aid,a])=>{
+      db.collection('assignments').doc(aid).set(a).catch(e=>console.warn('Assignment save failed:',e));
     });
-    saveState();
-  }
+  },2000);
 }
 
-// ---- INIT ----
-loadState();
-populateRepSelect();
+// ---- LOAD FROM FIRESTORE ----
+async function loadUserData(uid){
+  const doc=await db.collection('users').doc(uid).get();
+  if(doc.exists){
+    const d=doc.data();
+    reps[uid]={
+      name:d.name||'Unknown', points:d.points||0, streak:d.streak||0,
+      lastActive:d.lastActive||null, completedModules:d.completedModules||[],
+      quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
+      drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
+      badges:d.badges||[], activityLog:d.activityLog||[]
+    };
+    return d.role||'rep';
+  }
+  return null;
+}
 
-function populateRepSelect(){
-  const sel=document.getElementById('repSelect');
-  sel.innerHTML='<option value="">-- Choose Rep --</option>';
-  Object.entries(reps).forEach(([id,r])=>{
-    sel.innerHTML+=`<option value="${id}">${r.name}</option>`;
+async function loadAllUsers(){
+  const snap=await db.collection('users').get();
+  reps={};
+  snap.forEach(doc=>{
+    const d=doc.data();
+    reps[doc.id]={
+      name:d.name||'Unknown', points:d.points||0, streak:d.streak||0,
+      lastActive:d.lastActive||null, completedModules:d.completedModules||[],
+      quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
+      drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
+      badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep'
+    };
   });
 }
 
-function enterApp(){
-  const id=document.getElementById('repSelect').value;
-  if(!id)return showToast('Select your name first','toast-streak');
-  currentRep=id;
-  isManager=false;
-  updateStreak();
-  document.getElementById('splash').classList.add('out');
-  setTimeout(()=>{
-    document.getElementById('splash').style.display='none';
-    document.getElementById('app').classList.add('on');
-    updateTopBar();
-    renderHome();
-    renderTrain();
-    renderQuiz();
-    renderCards();
-    renderDrills();
-    renderBoard();
-    renderManager();
-  },500);
+async function loadAssignments(){
+  const snap=await db.collection('assignments').get();
+  assignments={};
+  snap.forEach(doc=>{assignments[doc.id]=doc.data();});
 }
 
-function enterManager(){
-  isManager=true;
-  currentRep=null;
-  document.getElementById('splash').classList.add('out');
-  setTimeout(()=>{
-    document.getElementById('splash').style.display='none';
-    document.getElementById('app').classList.add('on');
-    document.getElementById('tbStreak').textContent='';
-    document.getElementById('tbPts').textContent='';
-    document.getElementById('tbLevel').innerHTML='';
-    document.getElementById('tbUser').textContent='Manager';
-    switchTab('mgr');
-    renderManager();
-    renderBoard();
-  },500);
+// ---- GOOGLE SIGN-IN ----
+function googleSignIn(){
+  const provider=new firebase.auth.GoogleAuthProvider();
+  // Use redirect instead of popup — works on mobile and avoids popup blockers
+  auth.signInWithRedirect(provider).catch(e=>{
+    console.error('Sign-in error:',e);
+    showToast('Sign-in failed. Try again.','toast-streak');
+  });
 }
+
+// ---- AUTH STATE LISTENER ----
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    currentUid=user.uid;
+    // Check if user exists in Firestore
+    let role=await loadUserData(user.uid);
+    if(!role){
+      // First-time user — create profile
+      const isFirst=(await db.collection('users').limit(1).get()).empty;
+      role=isFirst?'manager':'rep';
+      await db.collection('users').doc(user.uid).set({
+        name:user.displayName||user.email, email:user.email,
+        photoURL:user.photoURL||'', role:role,
+        points:0, streak:0, lastActive:null, completedModules:[],
+        quizScores:{}, fcReviews:0, drillsCompleted:0, drillsPerfect:0,
+        badges:[], activityLog:[]
+      });
+      reps[user.uid]={
+        name:user.displayName||user.email, points:0, streak:0,
+        lastActive:null, completedModules:[], quizScores:{},
+        fcReviews:0, drillsCompleted:0, drillsPerfect:0, badges:[], activityLog:[]
+      };
+    }
+    // Load all users and assignments for leaderboard/manager
+    await loadAllUsers();
+    await loadAssignments();
+    // Enter app
+    currentRep=user.uid;
+    isManager=(role==='manager');
+    updateStreak();
+    document.getElementById('splash').classList.add('out');
+    setTimeout(()=>{
+      document.getElementById('splash').style.display='none';
+      document.getElementById('app').classList.add('on');
+      // Show/hide manager tab based on role
+      const mgrBtn=document.querySelector('.bnav-btn[data-tab="mgr"]');
+      if(mgrBtn)mgrBtn.style.display=isManager?'':'none';
+      updateTopBar();
+      renderHome();
+      renderTrain();
+      renderQuiz();
+      renderCards();
+      renderDrills();
+      renderBoard();
+      if(isManager)renderManager();
+    },500);
+  }else{
+    // Signed out — show splash
+    currentUid=null;
+    currentRep=null;
+    isManager=false;
+    document.getElementById('authLoading').style.display='none';
+    document.getElementById('authButtons').style.display='flex';
+  }
+});
 
 function switchRep(){
+  auth.signOut();
   document.getElementById('app').classList.remove('on');
   document.getElementById('splash').style.display='flex';
   document.getElementById('splash').classList.remove('out');
+  document.getElementById('authLoading').style.display='none';
+  document.getElementById('authButtons').style.display='flex';
   currentRep=null;
+  currentUid=null;
   isManager=false;
 }
 
@@ -1042,7 +1118,10 @@ function completeModule(id){
     r.completedModules.push(id);
     // Mark assignments completed
     Object.entries(assignments).forEach(([aid,a])=>{
-      if(a.repId===currentRep&&a.moduleId===id)a.status='completed';
+      if(a.repId===currentRep&&a.moduleId===id){
+        a.status='completed';
+        db.collection('assignments').doc(aid).update({status:'completed'}).catch(e=>console.warn(e));
+      }
     });
     saveState();
     addPoints(100,'Completed module');
@@ -1435,7 +1514,7 @@ function renderManager(){
         if(!rep||!mod)return;
         html+=`<div class="mgr-stat">
           <div><span style="font-weight:600;color:var(--white);">${rep.name}</span> <span style="color:var(--gray);">&rarr;</span> ${mod.title}</div>
-          <div>${a.dueDate?'Due: '+a.dueDate:''} <span style="cursor:pointer;color:var(--red);margin-left:8px;" onclick="delete assignments['${aid}'];saveState();renderManager();">&#10005;</span></div>
+          <div>${a.dueDate?'Due: '+a.dueDate:''} <span style="cursor:pointer;color:var(--red);margin-left:8px;" onclick="deleteAssignment('${aid}')">&#10005;</span></div>
         </div>`;
       });
     }
@@ -1484,27 +1563,28 @@ function renderManager(){
 
   if(mgrTab==='manage'){
     html+=`<div class="card">
-      <div class="card-title" style="margin-bottom:12px;">Add New Rep</div>
-      <div class="add-rep-row">
-        <input type="text" id="newRepName" placeholder="Rep name...">
-        <button class="add-rep-btn" onclick="addRep()">Add</button>
-      </div>
+      <div class="card-title" style="margin-bottom:8px;">Team Members</div>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:12px;">Reps are added automatically when they sign in with Google.</p>
     </div>
     <div class="sec-header">Current Reps</div>`;
     Object.entries(reps).forEach(([id,r])=>{
+      const role=r.role||'rep';
       html+=`<div class="mgr-stat">
-        <span style="font-weight:600;color:var(--white);">${r.name}</span>
         <div>
-          <span style="cursor:pointer;color:var(--orange);font-size:12px;margin-right:12px;" onclick="resetRep('${id}')">Reset</span>
-          <span style="cursor:pointer;color:var(--red);font-size:12px;" onclick="removeRep('${id}')">Remove</span>
+          <span style="font-weight:600;color:var(--white);">${r.name}</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:10px;margin-left:8px;background:${role==='manager'?'var(--purple)':'var(--dark4)'};color:${role==='manager'?'#fff':'var(--gray)'};">${role}</span>
+        </div>
+        <div>
+          ${role==='rep'?`<span style="cursor:pointer;color:var(--purple);font-size:12px;margin-right:12px;" onclick="promoteToManager('${id}')">Make Manager</span>`:`<span style="cursor:pointer;color:var(--gray);font-size:12px;margin-right:12px;" onclick="demoteToRep('${id}')">Remove Manager</span>`}
+          <span style="cursor:pointer;color:var(--orange);font-size:12px;" onclick="resetRep('${id}')">Reset</span>
         </div>
       </div>`;
     });
 
-    html+=`<div class="sec-header" style="margin-top:24px;">Firebase Sync</div>
+    html+=`<div class="sec-header" style="margin-top:24px;">Cloud Sync</div>
     <div class="card">
-      <p style="font-size:13px;color:var(--gray);margin-bottom:8px;">${FIREBASE_ENABLED?'<span style="color:var(--green);">Connected</span>':'<span style="color:var(--orange);">Using local storage only</span>'}</p>
-      <p style="font-size:12px;color:var(--gray-d);">To enable cloud sync across devices, create a Firebase project and update the config in the HTML file.</p>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:8px;"><span style="color:var(--green);">&#9679; Connected to Firebase</span></p>
+      <p style="font-size:12px;color:var(--gray-d);">All progress syncs automatically across devices. Reps sign in with Google to access their data anywhere.</p>
     </div>`;
   }
 
@@ -1521,40 +1601,48 @@ function submitAssignment(){
   targetReps.forEach(rid=>{
     checked.forEach(modId=>{
       const aid=rid+'_'+modId+'_'+Date.now();
-      assignments[aid]={repId:rid,moduleId:modId,dueDate:due||null,status:'pending',assigned:new Date().toISOString()};
+      assignments[aid]={repId:rid,moduleId:modId,dueDate:due||null,status:'pending',assigned:new Date().toISOString(),assignedBy:currentUid||null};
+      db.collection('assignments').doc(aid).set(assignments[aid]).catch(e=>console.warn(e));
     });
   });
-  saveState();
   showToast(`Assigned ${checked.length} module(s) to ${targetReps.length} rep(s)`,'toast-success');
   renderManager();
 }
 
-function addRep(){
-  const name=document.getElementById('newRepName').value.trim();
-  if(!name)return;
-  const id=name.toLowerCase().replace(/[^a-z0-9]/g,'_');
-  if(reps[id])return showToast('Rep already exists','toast-streak');
-  reps[id]={name,points:0,streak:0,lastActive:null,completedModules:[],quizScores:{},fcReviews:0,drillsCompleted:0,drillsPerfect:0,badges:[],activityLog:[]};
-  saveState();
-  populateRepSelect();
+function deleteAssignment(aid){
+  delete assignments[aid];
+  db.collection('assignments').doc(aid).delete().catch(e=>console.warn(e));
   renderManager();
-  showToast(`Added ${name}`,'toast-success');
 }
 
-function removeRep(id){
-  if(!confirm('Remove '+reps[id].name+'? This deletes all their data.'))return;
-  delete reps[id];
-  Object.keys(assignments).forEach(aid=>{if(assignments[aid].repId===id)delete assignments[aid];});
-  saveState();
-  populateRepSelect();
-  renderManager();
+function promoteToManager(uid){
+  if(!confirm('Make '+reps[uid].name+' a manager?'))return;
+  db.collection('users').doc(uid).update({role:'manager'}).then(()=>{
+    reps[uid].role='manager';
+    renderManager();
+    showToast(reps[uid].name+' is now a manager','toast-success');
+  });
+}
+
+function demoteToRep(uid){
+  if(uid===currentUid)return showToast('Cannot demote yourself','toast-streak');
+  if(!confirm('Remove manager role from '+reps[uid].name+'?'))return;
+  db.collection('users').doc(uid).update({role:'rep'}).then(()=>{
+    reps[uid].role='rep';
+    renderManager();
+    showToast(reps[uid].name+' is now a rep','toast-success');
+  });
 }
 
 function resetRep(id){
   if(!confirm('Reset all progress for '+reps[id].name+'?'))return;
   const name=reps[id].name;
-  reps[id]={name,points:0,streak:0,lastActive:null,completedModules:[],quizScores:{},fcReviews:0,drillsCompleted:0,drillsPerfect:0,badges:[],activityLog:[]};
-  saveState();
+  const role=reps[id].role||'rep';
+  reps[id]={name,points:0,streak:0,lastActive:null,completedModules:[],quizScores:{},fcReviews:0,drillsCompleted:0,drillsPerfect:0,badges:[],activityLog:[],role};
+  db.collection('users').doc(id).update({
+    points:0,streak:0,lastActive:null,completedModules:[],quizScores:{},
+    fcReviews:0,drillsCompleted:0,drillsPerfect:0,badges:[],activityLog:[]
+  }).catch(e=>console.warn(e));
   renderManager();
   showToast(`Reset ${name}`,'toast-success');
 }
