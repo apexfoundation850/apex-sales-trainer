@@ -1786,13 +1786,37 @@ function renderHome(){
   if(myAssignments.length){
     html+=`<div class="sec-header">Assigned Training</div>`;
     myAssignments.forEach(([aid,a])=>{
-      const mod=MODULES.find(m=>m.id===a.moduleId);
-      if(!mod)return;
       const overdue=a.dueDate&&new Date(a.dueDate)<new Date();
-      html+=`<div class="mod-item" onclick="openModule('${mod.id}')">
-        <div class="mod-icon" style="background:${mod.color}20;color:${mod.color}">${mod.icon}</div>
+      const type=a.type||'module';
+      const label=a.targetLabel||(MODULES.find(m=>m.id===a.moduleId)||{}).title||'Training';
+      const hasProg=a.targetCount>1;
+      const pct=hasProg?Math.round(((a.currentCount||0)/a.targetCount)*100):0;
+
+      // Determine icon and click action
+      let icon='&#128218;',color='var(--red)',onclick='';
+      if(type==='module'){
+        const mod=MODULES.find(m=>m.id===(a.targetId||a.moduleId));
+        if(mod){icon=mod.icon;color=mod.color;onclick=`openModule('${mod.id}')`;}
+      }else if(type==='quiz'){
+        icon='&#10068;';color='var(--blue)';
+        const parts=(a.targetId||'').split('_');
+        onclick=`showQuizTiers('${parts[0]}')`;
+      }else if(type==='drill'){
+        icon='&#9889;';color='var(--orange)';onclick="switchTab('drills')";
+      }else if(type==='roleplay'){
+        icon='&#127908;';color='var(--purple)';onclick="drillMode='roleplay';switchTab('drills');renderRolePlay()";
+      }else if(type==='assessment'){
+        icon='&#128202;';color='var(--teal)';onclick="switchTab('assess');renderAssessment()";
+      }
+
+      html+=`<div class="mod-item" onclick="${onclick}">
+        <div class="mod-icon" style="background:${color}20;color:${color}">${icon}</div>
         <div class="mod-info">
-          <div class="mod-name">${mod.title}</div>
+          <div class="mod-name">${label}</div>
+          ${hasProg?`<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <div class="pbar" style="flex:1;"><div class="pbar-fill" style="width:${pct}%;background:${color};"></div></div>
+            <span style="font-size:11px;color:var(--gray);">${a.currentCount||0}/${a.targetCount}</span>
+          </div>`:''}
           <div class="mod-desc">${a.dueDate?'Due: '+a.dueDate:''}</div>
         </div>
         ${overdue?'<span class="overdue-tag">Overdue</span>':'<span class="assigned-tag">Assigned</span>'}
@@ -2286,7 +2310,7 @@ function renderQuizResults(){
     else addPoints(15,'Quiz attempted: '+mod.title);
     checkBadges();
     // Check for certificates
-    if(passed)checkCertificates();
+    if(passed){checkCertificates();checkQuizAssignment(s.modId,tier,true);}
   }
 
   const nextTier=tier==='foundation'?'advanced':tier==='advanced'?'expert':null;
@@ -2465,6 +2489,7 @@ function answerDrill(idx,correct,explanation){
     saveState();
     addPoints(correct?30:10,correct?'Drill correct':'Drill attempted');
     checkBadges();
+    trackAssignmentProgress('drill',drillState.drill.cat);
   }
 
   setTimeout(()=>{
@@ -2570,6 +2595,7 @@ async function submitRolePlay(){
       r.drillsCompleted=(r.drillsCompleted||0)+1;
       if(score>=80)r.drillsPerfect=(r.drillsPerfect||0)+1;
       saveState();
+      trackAssignmentProgress('roleplay',rpState.scenario.cat);
       checkBadges();
     }
   }catch(e){
@@ -2936,6 +2962,7 @@ function calculateMotivatorScores() {
       db.collection('users').doc(currentUid).update({ motivatorsResult: result }).catch(function(e) { console.warn(e); });
     }
     addPoints(75, 'Completed Motivators Assessment');
+    checkAssessmentAssignment('motivators');
   }
 
   motivatorsState.result = result;
@@ -3280,6 +3307,7 @@ function calculateEqScores() {
       db.collection('users').doc(currentUid).update({ eqResult: result }).catch(function(e) { console.warn(e); });
     }
     addPoints(75, 'Completed EQ Assessment');
+    checkAssessmentAssignment('eq');
   }
 
   eqState.result = result;
@@ -3573,6 +3601,7 @@ function calculateDiscScores(){
       db.collection('users').doc(currentUid).update({discResult:result}).catch(e=>console.warn(e));
     }
     addPoints(75,'Completed DISC Assessment');
+    checkAssessmentAssignment('disc');
   }
 
   discState.result=result;
@@ -3807,33 +3836,48 @@ function renderManager(){
   }
 
   if(mgrTab==='assign'){
+    const selStyle='width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin-bottom:12px;';
+    const drillCats=[...new Set(DRILLS.map(d=>d.cat))];
+    const rpCats=[...new Set(ROLEPLAY_SCENARIOS.map(s=>s.cat))];
+
     html+=`<div class="card">
       <div class="card-title" style="margin-bottom:12px;">Assign Training</div>
+
       <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Select Rep</label>
-      <select id="assignRep" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin-bottom:12px;">
+      <select id="assignRep" style="${selStyle}">
         <option value="">-- Choose Rep --</option>
         <option value="__all__">All Reps</option>
         ${Object.entries(reps).map(([id,r])=>`<option value="${id}">${r.name}</option>`).join('')}
       </select>
-      <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Select Modules</label>
-      <div id="assignModules">
-        ${MODULES.map(m=>`<div class="chk-row"><input type="checkbox" id="am-${m.id}" value="${m.id}"><label for="am-${m.id}">${m.title}</label></div>`).join('')}
-      </div>
+
+      <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Assignment Type</label>
+      <select id="assignType" style="${selStyle}" onchange="updateAssignOptions()">
+        <option value="module">Training Module</option>
+        <option value="quiz">Quiz (by tier)</option>
+        <option value="drill">Objection Drills</option>
+        <option value="roleplay">Role-Play Sessions</option>
+        <option value="assessment">Assessment</option>
+      </select>
+
+      <div id="assignOptions"></div>
+
       <label style="font-size:12px;color:var(--gray);display:block;margin:12px 0 4px;">Due Date (optional)</label>
       <input type="date" id="assignDue">
-      <button class="modal-btn" onclick="submitAssignment()">Assign Training</button>
+      <button class="modal-btn" onclick="submitAssignment()">Assign</button>
     </div>`;
 
-    // Current Assignments
+    // Active Assignments
     const active=Object.entries(assignments).filter(([_,a])=>a.status!=='completed');
     if(active.length){
-      html+=`<div class="sec-header">Active Assignments</div>`;
+      html+=`<div class="sec-header">Active Assignments (${active.length})</div>`;
       active.forEach(([aid,a])=>{
         const rep=reps[a.repId];
-        const mod=MODULES.find(m=>m.id===a.moduleId);
-        if(!rep||!mod)return;
+        if(!rep)return;
+        const label=a.targetLabel||(MODULES.find(m=>m.id===a.moduleId)||{}).title||a.targetId||'Unknown';
+        const typeIcon=a.type==='quiz'?'&#10068;':a.type==='drill'?'&#9889;':a.type==='roleplay'?'&#127908;':a.type==='assessment'?'&#128202;':'&#128218;';
+        const progress=a.targetCount>1?` (${a.currentCount||0}/${a.targetCount})`:'';
         html+=`<div class="mgr-stat">
-          <div><span style="font-weight:600;color:var(--white);">${rep.name}</span> <span style="color:var(--gray);">&rarr;</span> ${mod.title}</div>
+          <div><span style="font-weight:600;color:var(--white);">${rep.name}</span> <span style="color:var(--gray);">&rarr;</span> ${typeIcon} ${label}${progress}</div>
           <div>${a.dueDate?'Due: '+a.dueDate:''} <span style="cursor:pointer;color:var(--red);margin-left:8px;" onclick="deleteAssignment('${aid}')">&#10005;</span></div>
         </div>`;
       });
@@ -3976,24 +4020,161 @@ function renderManager(){
   }
 
   document.getElementById('pg-mgr').innerHTML=html;
+  // Init assign options if on assign tab
+  if(mgrTab==='assign'&&document.getElementById('assignOptions')){updateAssignOptions();}
+}
+
+function updateAssignOptions(){
+  const type=document.getElementById('assignType').value;
+  const el=document.getElementById('assignOptions');
+  const drillCats=[...new Set(DRILLS.map(d=>d.cat))];
+  const rpCats=[...new Set(ROLEPLAY_SCENARIOS.map(s=>s.cat))];
+  let h='';
+
+  if(type==='module'){
+    h+=`<label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Select Modules</label>
+      <div id="assignModules">${MODULES.map(m=>`<div class="chk-row"><input type="checkbox" id="am-${m.id}" value="${m.id}"><label for="am-${m.id}">${m.title}</label></div>`).join('')}</div>`;
+  }else if(type==='quiz'){
+    h+=`<label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Module</label>
+      <select id="assignQuizMod" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin-bottom:8px;">
+        ${MODULES.map(m=>`<option value="${m.id}">${m.title}</option>`).join('')}
+      </select>
+      <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Tier</label>
+      <select id="assignQuizTier" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin-bottom:8px;">
+        <option value="foundation">Foundation</option><option value="advanced">Advanced</option><option value="expert">Expert</option>
+      </select>`;
+  }else if(type==='drill'){
+    h+=`<label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Category</label>
+      <select id="assignDrillCat" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin-bottom:8px;">
+        <option value="__any__">Any Category</option>
+        ${drillCats.map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select>
+      <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Number to Complete</label>
+      <input type="number" id="assignDrillCount" value="10" min="1" max="50" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;">`;
+  }else if(type==='roleplay'){
+    h+=`<label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Category</label>
+      <select id="assignRpCat" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin-bottom:8px;">
+        <option value="__any__">Any Category</option>
+        ${rpCats.map(c=>`<option value="${c}">${c}</option>`).join('')}
+      </select>
+      <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Number to Complete</label>
+      <input type="number" id="assignRpCount" value="5" min="1" max="50" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;">`;
+  }else if(type==='assessment'){
+    h+=`<label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Select Assessments</label>
+      <div><div class="chk-row"><input type="checkbox" id="am-disc" value="disc"><label for="am-disc">DISC Profile</label></div>
+      <div class="chk-row"><input type="checkbox" id="am-motivators" value="motivators"><label for="am-motivators">Motivators</label></div>
+      <div class="chk-row"><input type="checkbox" id="am-eq" value="eq"><label for="am-eq">EQ Assessment</label></div></div>`;
+  }
+  el.innerHTML=h;
 }
 
 function submitAssignment(){
   const repId=document.getElementById('assignRep').value;
   const due=document.getElementById('assignDue').value;
-  const checked=[...document.querySelectorAll('#assignModules input:checked')].map(c=>c.value);
-  if(!repId||!checked.length)return showToast('Select a rep and at least one module','toast-streak');
+  const type=document.getElementById('assignType').value;
+  if(!repId)return showToast('Select a rep','toast-streak');
 
   const targetReps=repId==='__all__'?Object.keys(reps):[repId];
-  targetReps.forEach(rid=>{
-    checked.forEach(modId=>{
+  let count=0;
+
+  if(type==='module'){
+    const checked=[...document.querySelectorAll('#assignModules input:checked')].map(c=>c.value);
+    if(!checked.length)return showToast('Select at least one module','toast-streak');
+    targetReps.forEach(rid=>{checked.forEach(modId=>{
+      const mod=MODULES.find(m=>m.id===modId);
       const aid=rid+'_'+modId+'_'+Date.now();
-      assignments[aid]={repId:rid,moduleId:modId,dueDate:due||null,status:'pending',assigned:new Date().toISOString(),assignedBy:currentUid||null};
+      assignments[aid]={repId:rid,type:'module',targetId:modId,moduleId:modId,targetLabel:mod?mod.title:modId,targetCount:1,currentCount:0,dueDate:due||null,status:'pending',assigned:new Date().toISOString(),assignedBy:currentUid||null};
       db.collection('assignments').doc(aid).set(assignments[aid]).catch(e=>console.warn(e));
+      count++;
+    });});
+  }else if(type==='quiz'){
+    const modId=document.getElementById('assignQuizMod').value;
+    const tier=document.getElementById('assignQuizTier').value;
+    const mod=MODULES.find(m=>m.id===modId);
+    const tierLabel=tier.charAt(0).toUpperCase()+tier.slice(1);
+    targetReps.forEach(rid=>{
+      const aid=rid+'_quiz_'+modId+'_'+tier+'_'+Date.now();
+      assignments[aid]={repId:rid,type:'quiz',targetId:modId+'_'+tier,targetLabel:(mod?mod.title:modId)+' ('+tierLabel+' Quiz)',targetCount:1,currentCount:0,dueDate:due||null,status:'pending',assigned:new Date().toISOString(),assignedBy:currentUid||null};
+      db.collection('assignments').doc(aid).set(assignments[aid]).catch(e=>console.warn(e));
+      count++;
     });
-  });
-  showToast(`Assigned ${checked.length} module(s) to ${targetReps.length} rep(s)`,'toast-success');
+  }else if(type==='drill'){
+    const cat=document.getElementById('assignDrillCat').value;
+    const num=parseInt(document.getElementById('assignDrillCount').value)||10;
+    const catLabel=cat==='__any__'?'Any Category':cat;
+    targetReps.forEach(rid=>{
+      const aid=rid+'_drill_'+Date.now();
+      assignments[aid]={repId:rid,type:'drill',targetId:cat,targetLabel:'Objection Drills ('+catLabel+')',targetCount:num,currentCount:0,dueDate:due||null,status:'pending',assigned:new Date().toISOString(),assignedBy:currentUid||null};
+      db.collection('assignments').doc(aid).set(assignments[aid]).catch(e=>console.warn(e));
+      count++;
+    });
+  }else if(type==='roleplay'){
+    const cat=document.getElementById('assignRpCat').value;
+    const num=parseInt(document.getElementById('assignRpCount').value)||5;
+    const catLabel=cat==='__any__'?'Any Category':cat;
+    targetReps.forEach(rid=>{
+      const aid=rid+'_rp_'+Date.now();
+      assignments[aid]={repId:rid,type:'roleplay',targetId:cat,targetLabel:'Role-Play ('+catLabel+')',targetCount:num,currentCount:0,dueDate:due||null,status:'pending',assigned:new Date().toISOString(),assignedBy:currentUid||null};
+      db.collection('assignments').doc(aid).set(assignments[aid]).catch(e=>console.warn(e));
+      count++;
+    });
+  }else if(type==='assessment'){
+    const checked=[...document.querySelectorAll('#assignOptions input:checked')].map(c=>c.value);
+    if(!checked.length)return showToast('Select at least one assessment','toast-streak');
+    const names={disc:'DISC Profile',motivators:'Motivators',eq:'EQ Assessment'};
+    targetReps.forEach(rid=>{checked.forEach(aId=>{
+      const aid=rid+'_assess_'+aId+'_'+Date.now();
+      assignments[aid]={repId:rid,type:'assessment',targetId:aId,targetLabel:names[aId]||aId,targetCount:1,currentCount:0,dueDate:due||null,status:'pending',assigned:new Date().toISOString(),assignedBy:currentUid||null};
+      db.collection('assignments').doc(aid).set(assignments[aid]).catch(e=>console.warn(e));
+      count++;
+    });});
+  }
+
+  showToast(`Created ${count} assignment(s) for ${targetReps.length} rep(s)`,'toast-success');
   renderManager();
+}
+
+// Track assignment progress for counted types (drills, role-play)
+function trackAssignmentProgress(type,category){
+  if(!currentRep)return;
+  Object.entries(assignments).forEach(([aid,a])=>{
+    if(a.repId!==currentRep||a.status==='completed'||a.type!==type)return;
+    // Check category match
+    if(a.targetId&&a.targetId!=='__any__'&&category&&a.targetId!==category)return;
+    a.currentCount=(a.currentCount||0)+1;
+    if(a.currentCount>=a.targetCount){
+      a.status='completed';
+      showToast('Assignment completed: '+a.targetLabel,'toast-success');
+    }
+    db.collection('assignments').doc(aid).update({currentCount:a.currentCount,status:a.status}).catch(e=>console.warn(e));
+  });
+}
+
+// Check quiz assignment completion
+function checkQuizAssignment(modId,tier,passed){
+  if(!currentRep||!passed)return;
+  const scoreKey=tier==='foundation'?modId:modId+'_'+tier;
+  Object.entries(assignments).forEach(([aid,a])=>{
+    if(a.repId!==currentRep||a.status==='completed'||a.type!=='quiz')return;
+    if(a.targetId===scoreKey){
+      a.status='completed';a.currentCount=1;
+      db.collection('assignments').doc(aid).update({status:'completed',currentCount:1}).catch(e=>console.warn(e));
+      showToast('Assignment completed: '+a.targetLabel,'toast-success');
+    }
+  });
+}
+
+// Check assessment assignment completion
+function checkAssessmentAssignment(assessId){
+  if(!currentRep)return;
+  Object.entries(assignments).forEach(([aid,a])=>{
+    if(a.repId!==currentRep||a.status==='completed'||a.type!=='assessment')return;
+    if(a.targetId===assessId){
+      a.status='completed';a.currentCount=1;
+      db.collection('assignments').doc(aid).update({status:'completed',currentCount:1}).catch(e=>console.warn(e));
+      showToast('Assignment completed: '+a.targetLabel,'toast-success');
+    }
+  });
 }
 
 function deleteAssignment(aid){
