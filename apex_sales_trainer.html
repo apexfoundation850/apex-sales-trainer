@@ -1488,7 +1488,8 @@ function saveState(){
         discResult:r.discResult||null,
         motivatorsResult:r.motivatorsResult||null,
         eqResult:r.eqResult||null,
-        certificates:r.certificates||[]
+        certificates:r.certificates||[],
+        roleplayHistory:(r.roleplayHistory||[]).slice(0,50)
       }).catch(e=>console.warn('Save failed:',e));
     }
     // Save assignments
@@ -1510,7 +1511,8 @@ async function loadUserData(uid){
       drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
       badges:d.badges||[], activityLog:d.activityLog||[],
       discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
-      eqResult:d.eqResult||null, certificates:d.certificates||[]
+      eqResult:d.eqResult||null, certificates:d.certificates||[],
+      roleplayHistory:d.roleplayHistory||[]
     };
     return d.role||'rep';
   }
@@ -1529,7 +1531,7 @@ async function loadAllUsers(){
       drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
       badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep',
       discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
-      eqResult:d.eqResult||null
+      eqResult:d.eqResult||null, roleplayHistory:d.roleplayHistory||[]
     };
   });
 }
@@ -2586,7 +2588,7 @@ async function submitRolePlay(){
     rpState.feedback=await res.json();
     rpState.loading=false;
 
-    // Award points
+    // Award points and store result
     if(currentRep){
       const score=rpState.feedback.overall_score||0;
       const pts=score>=80?50:score>=60?30:15;
@@ -2594,6 +2596,18 @@ async function submitRolePlay(){
       const r=reps[currentRep];
       r.drillsCompleted=(r.drillsCompleted||0)+1;
       if(score>=80)r.drillsPerfect=(r.drillsPerfect||0)+1;
+      // Store role-play result history
+      r.roleplayHistory=r.roleplayHistory||[];
+      r.roleplayHistory.unshift({
+        cat:rpState.scenario.cat,
+        scenario:rpState.scenario.scenario.substring(0,100),
+        score:score,
+        scores:rpState.feedback.scores||{},
+        feedback:rpState.feedback.feedback||'',
+        tip:rpState.feedback.tip||'',
+        date:new Date().toISOString()
+      });
+      if(r.roleplayHistory.length>50)r.roleplayHistory=r.roleplayHistory.slice(0,50);
       saveState();
       trackAssignmentProgress('roleplay',rpState.scenario.cat);
       checkBadges();
@@ -3785,6 +3799,7 @@ function renderManager(){
       <div class="mgr-tab ${mgrTab==='reps'?'on':''}" onclick="mgrTab='reps';renderManager()">Reps</div>
       <div class="mgr-tab ${mgrTab==='assign'?'on':''}" onclick="mgrTab='assign';renderManager()">Assign</div>
       <div class="mgr-tab ${mgrTab==='grades'?'on':''}" onclick="mgrTab='grades';renderManager()">Grades</div>
+      <div class="mgr-tab ${mgrTab==='roleplay'?'on':''}" onclick="mgrTab='roleplay';renderManager()">Role-Play</div>
       <div class="mgr-tab ${mgrTab==='disc'?'on':''}" onclick="mgrTab='disc';renderManager()">Profiles</div>
       <div class="mgr-tab ${mgrTab==='manage'?'on':''}" onclick="mgrTab='manage';renderManager()">Settings</div>
     </div>`;
@@ -3922,6 +3937,109 @@ function renderManager(){
         </div>`;
       });
       html+=`</div>`;
+    });
+  }
+
+  if(mgrTab==='roleplay'){
+    html+=`<div class="sec-header">Role-Play Performance</div>`;
+
+    // Team summary stats
+    let totalRps=0,totalScore=0,repsWithData=0;
+    Object.values(reps).forEach(r=>{
+      const h=r.roleplayHistory||[];
+      if(h.length){repsWithData++;totalRps+=h.length;totalScore+=h.reduce((a,rp)=>a+(rp.score||0),0);}
+    });
+    const teamAvg=totalRps?Math.round(totalScore/totalRps):0;
+    const teamColor=teamAvg>=80?'var(--green)':teamAvg>=60?'var(--orange)':'var(--red)';
+
+    html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div class="card" style="text-align:center;"><div style="font-size:28px;font-weight:700;color:var(--white);">${totalRps}</div><div style="font-size:11px;color:var(--gray);">Total Sessions</div></div>
+      <div class="card" style="text-align:center;"><div style="font-size:28px;font-weight:700;color:${teamColor};">${teamAvg}%</div><div style="font-size:11px;color:var(--gray);">Avg Score</div></div>
+      <div class="card" style="text-align:center;"><div style="font-size:28px;font-weight:700;color:var(--blue);">${repsWithData}</div><div style="font-size:11px;color:var(--gray);">Reps Active</div></div>
+    </div>`;
+
+    // Per-rep breakdown
+    Object.entries(reps).forEach(([id,r])=>{
+      const h=r.roleplayHistory||[];
+      if(!h.length){
+        html+=`<div class="card" style="opacity:.5;"><span style="font-weight:600;">${r.name}</span> <span style="color:var(--gray);font-size:13px;">— No role-plays yet</span></div>`;
+        return;
+      }
+
+      const avg=Math.round(h.reduce((a,rp)=>a+(rp.score||0),0)/h.length);
+      const avgColor=avg>=80?'var(--green)':avg>=60?'var(--orange)':'var(--red)';
+
+      // Category breakdown
+      const byCat={};
+      h.forEach(rp=>{
+        if(!byCat[rp.cat])byCat[rp.cat]={count:0,totalScore:0};
+        byCat[rp.cat].count++;
+        byCat[rp.cat].totalScore+=(rp.score||0);
+      });
+
+      // Sub-scores average
+      const subTotals={empathy:0,diagnosis:0,evidence:0,technique:0,close:0};
+      let subCount=0;
+      h.forEach(rp=>{
+        if(rp.scores){
+          Object.entries(rp.scores).forEach(([k,v])=>{if(subTotals[k]!==undefined)subTotals[k]+=v;});
+          subCount++;
+        }
+      });
+
+      html+=`<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--white);">${r.name}</div>
+            <div style="font-size:12px;color:var(--gray);">${h.length} sessions</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:24px;font-weight:700;color:${avgColor};">${avg}%</div>
+            <div style="font-size:10px;color:var(--gray);">avg score</div>
+          </div>
+        </div>`;
+
+      // Sub-score bars
+      if(subCount){
+        html+=`<div style="display:flex;gap:6px;margin-bottom:10px;">`;
+        ['empathy','diagnosis','evidence','technique','close'].forEach(k=>{
+          const v=Math.round(subTotals[k]/subCount);
+          const c=v>=4?'var(--green)':v>=3?'var(--orange)':'var(--red)';
+          html+=`<div style="flex:1;text-align:center;padding:6px 2px;background:var(--dark3);border-radius:6px;">
+            <div style="font-size:14px;font-weight:700;color:${c};">${v.toFixed(1)}</div>
+            <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;">${k.substring(0,5)}</div>
+          </div>`;
+        });
+        html+=`</div>`;
+      }
+
+      // Category breakdown
+      html+=`<div style="border-top:1px solid var(--border);padding-top:8px;">`;
+      Object.entries(byCat).sort((a,b)=>b[1].count-a[1].count).slice(0,5).forEach(([cat,data])=>{
+        const catAvg=Math.round(data.totalScore/data.count);
+        const cc=catAvg>=80?'var(--green)':catAvg>=60?'var(--orange)':'var(--red)';
+        html+=`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;">
+          <span style="color:var(--gray-l);">${cat} (${data.count}x)</span>
+          <span style="font-weight:600;color:${cc};">${catAvg}%</span>
+        </div>`;
+      });
+      html+=`</div>`;
+
+      // Recent sessions (last 3)
+      html+=`<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;">
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray-d);margin-bottom:6px;">Recent AI Feedback</div>`;
+      h.slice(0,3).forEach(rp=>{
+        const sc=rp.score>=80?'var(--green)':rp.score>=60?'var(--orange)':'var(--red)';
+        html+=`<div style="padding:8px;background:var(--dark3);border-radius:6px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="font-size:11px;color:var(--gray);">${rp.cat} — ${new Date(rp.date).toLocaleDateString()}</span>
+            <span style="font-size:13px;font-weight:700;color:${sc};">${rp.score}%</span>
+          </div>
+          <div style="font-size:12px;color:var(--gray-l);line-height:1.5;">${rp.feedback}</div>
+          ${rp.tip?`<div style="font-size:11px;color:var(--gold);margin-top:4px;font-style:italic;">${rp.tip}</div>`:''}
+        </div>`;
+      });
+      html+=`</div></div>`;
     });
   }
 
