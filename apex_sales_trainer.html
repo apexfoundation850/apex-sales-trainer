@@ -809,6 +809,52 @@ async function loadAssignments(){
   snap.forEach(doc=>{assignments[doc.id]=doc.data();});
 }
 
+// ---- REAL-TIME LISTENERS ----
+let _usersUnsub=null;
+let _assignUnsub=null;
+
+function startRealtimeSync(){
+  // Listen for changes to all user docs
+  _usersUnsub=db.collection('users').onSnapshot(snap=>{
+    snap.docChanges().forEach(change=>{
+      const d=change.doc.data();
+      const uid=change.doc.id;
+      if(change.type==='removed'){
+        delete reps[uid];
+      }else{
+        reps[uid]={
+          name:d.name||'Unknown', points:d.points||0, streak:d.streak||0,
+          lastActive:d.lastActive||null, completedModules:d.completedModules||[],
+          quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
+          drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
+          badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep'
+        };
+      }
+    });
+    // Re-render views that show multi-user data
+    renderBoard();
+    if(isManager)renderManager();
+  });
+
+  // Listen for assignment changes
+  _assignUnsub=db.collection('assignments').onSnapshot(snap=>{
+    snap.docChanges().forEach(change=>{
+      if(change.type==='removed'){
+        delete assignments[change.doc.id];
+      }else{
+        assignments[change.doc.id]=change.doc.data();
+      }
+    });
+    if(currentRep)renderHome();
+    if(isManager)renderManager();
+  });
+}
+
+function stopRealtimeSync(){
+  if(_usersUnsub){_usersUnsub();_usersUnsub=null;}
+  if(_assignUnsub){_assignUnsub();_assignUnsub=null;}
+}
+
 // ---- GOOGLE SIGN-IN ----
 function googleSignIn(){
   const provider=new firebase.auth.GoogleAuthProvider();
@@ -853,6 +899,8 @@ auth.onAuthStateChanged(async user=>{
     // Load all users and assignments for leaderboard/manager
     await loadAllUsers();
     await loadAssignments();
+    // Start real-time sync for leaderboard/manager
+    startRealtimeSync();
     // Enter app
     currentRep=user.uid;
     isManager=(role==='manager');
@@ -884,6 +932,7 @@ auth.onAuthStateChanged(async user=>{
 });
 
 function switchRep(){
+  stopRealtimeSync();
   auth.signOut();
   document.getElementById('app').classList.remove('on');
   document.getElementById('splash').style.display='flex';
