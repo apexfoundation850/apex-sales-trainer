@@ -1285,14 +1285,28 @@ function renderTrain(){
 }
 
 function modItemHTML(m,done){
+  const hasQuiz=!!QUIZZES[m.id];
+  const quizPassed=hasPassedQuiz(m.id);
+  const quizScore=currentRep&&reps[currentRep].quizScores&&reps[currentRep].quizScores[m.id];
+  let statusIcon=done?'&#9989;':'&#9654;';
+  let extraInfo='';
+  if(!done&&hasQuiz){
+    if(quizPassed){
+      extraInfo=`<span style="font-size:10px;color:var(--green);">Quiz: ${quizScore.best}% &#9989;</span>`;
+    }else if(quizScore){
+      extraInfo=`<span style="font-size:10px;color:var(--orange);">Quiz: ${quizScore.best}% - need 80%</span>`;
+    }else{
+      extraInfo=`<span style="font-size:10px;color:var(--gray-d);">Quiz required</span>`;
+    }
+  }
   return `<div class="mod-item" onclick="openModule('${m.id}')">
     <div class="mod-icon" style="background:${m.color}20;color:${m.color}">${m.icon}</div>
     <div class="mod-info">
       <div class="mod-name">${m.title}</div>
       <div class="mod-desc">${m.desc}</div>
-      <div class="mod-slides">${m.slides.length} slides</div>
+      <div class="mod-slides">${m.slides.length} slides ${extraInfo}</div>
     </div>
-    <div class="mod-status">${done?'&#9989;':'&#9654;'}</div>
+    <div class="mod-status">${statusIcon}</div>
   </div>`;
 }
 
@@ -1300,15 +1314,38 @@ function modItemHTML(m,done){
 let currentModuleId=null;
 let currentSlide=0;
 
+let moduleOpenTime=null; // timestamp when module was opened
+
+function getMinTime(mod){
+  // Minimum minutes based on slide count: ~1.5 min per slide, minimum 5 min
+  return Math.max(5, Math.round(mod.slides.length * 1.5));
+}
+
+function hasPassedQuiz(modId){
+  if(!currentRep)return false;
+  const r=reps[currentRep];
+  const score=r.quizScores&&r.quizScores[modId];
+  return score&&score.best>=80;
+}
+
+function getTimeSpent(){
+  if(!moduleOpenTime)return 0;
+  return Math.floor((Date.now()-moduleOpenTime)/60000); // minutes
+}
+
 function openModule(id){
   currentModuleId=id;
   currentSlide=0;
   mvViewMode='slides';
+  moduleOpenTime=Date.now();
   const mod=MODULES.find(m=>m.id===id);
   document.getElementById('mvTitle').textContent=mod.title;
   renderModuleSlides(mod);
   document.getElementById('moduleViewer').classList.add('on');
   logActivity('Opened: '+mod.title);
+  // Start timer update for bottom bar
+  if(window._mvTimer)clearInterval(window._mvTimer);
+  window._mvTimer=setInterval(()=>updateModuleBottom(mod),30000); // update every 30s
 }
 
 let mvViewMode='slides'; // 'slides' or 'notes'
@@ -1352,16 +1389,61 @@ function renderModuleSlides(mod){
 
   document.getElementById('mvBody').innerHTML=html;
   document.getElementById('mvProgress').textContent=`${mod.slides.length} slides`;
+  updateModuleBottom(mod);
+}
 
+function updateModuleBottom(mod){
   const done=currentRep&&(reps[currentRep].completedModules||[]).includes(mod.id);
-  document.getElementById('mvBottom').innerHTML=done?
-    `<div style="font-size:13px;color:var(--green);">&#9989; Completed</div><button class="mv-nav-btn mv-prev" onclick="closeModule()">Close</button>`:
-    `<div></div><button class="mv-complete-btn" onclick="completeModule('${mod.id}')">&#9989; Mark Complete</button>`;
+  if(done){
+    document.getElementById('mvBottom').innerHTML=
+      `<div style="font-size:13px;color:var(--green);">&#9989; Completed</div><button class="mv-nav-btn mv-prev" onclick="closeModule()">Close</button>`;
+    return;
+  }
+
+  const minTime=getMinTime(mod);
+  const timeSpent=getTimeSpent();
+  const timeMet=timeSpent>=minTime;
+  const hasQuiz=!!QUIZZES[mod.id];
+  const quizPassed=hasPassedQuiz(mod.id);
+  const canComplete=timeMet&&(!hasQuiz||quizPassed);
+
+  let statusHtml='<div style="display:flex;flex-direction:column;gap:4px;">';
+
+  // Time requirement
+  if(timeMet){
+    statusHtml+=`<div style="font-size:11px;color:var(--green);">&#9989; ${minTime} min study time met</div>`;
+  }else{
+    statusHtml+=`<div style="font-size:11px;color:var(--gray);">&#9203; ${timeSpent}/${minTime} min study time</div>`;
+  }
+
+  // Quiz requirement
+  if(hasQuiz){
+    if(quizPassed){
+      statusHtml+=`<div style="font-size:11px;color:var(--green);">&#9989; Quiz passed</div>`;
+    }else{
+      statusHtml+=`<div style="font-size:11px;color:var(--orange);">&#10060; Pass quiz (80%+) to complete</div>`;
+    }
+  }
+
+  statusHtml+='</div>';
+
+  let btnHtml;
+  if(canComplete){
+    btnHtml=`<button class="mv-complete-btn" onclick="completeModule('${mod.id}')">&#9989; Mark Complete</button>`;
+  }else if(!timeMet&&(!hasQuiz||quizPassed)){
+    btnHtml=`<button class="mv-nav-btn mv-prev" style="opacity:.5;cursor:not-allowed;" disabled>&#9203; Keep studying...</button>`;
+  }else{
+    btnHtml=`<button class="mv-complete-btn" style="background:var(--blue);" onclick="closeModule();startQuiz('${mod.id}')">&#10068; Take Quiz</button>`;
+  }
+
+  document.getElementById('mvBottom').innerHTML=statusHtml+btnHtml;
 }
 
 function closeModule(){
   document.getElementById('moduleViewer').classList.remove('on');
   currentModuleId=null;
+  moduleOpenTime=null;
+  if(window._mvTimer){clearInterval(window._mvTimer);window._mvTimer=null;}
 }
 
 function completeModule(id){
@@ -1484,7 +1566,7 @@ function renderQuizResults(){
     <div style="font-size:64px;margin-bottom:12px;">${passed?'&#127942;':'&#128170;'}</div>
     <div class="quiz-score-num" style="color:${passed?'var(--green)':'var(--orange)'};">${pct}%</div>
     <div class="quiz-score-label">${s.correct} of ${s.questions.length} correct</div>
-    <div style="font-size:16px;font-weight:600;color:${passed?'var(--green)':'var(--orange)'};;margin-bottom:24px;">${passed?'Passed!':'Keep studying - 80% required to pass'}</div>
+    <div style="font-size:16px;font-weight:600;color:${passed?'var(--green)':'var(--orange)'};;margin-bottom:24px;">${passed?'Passed! Module completion unlocked.':'Keep studying - 80% required to pass'}</div>
     <button class="mv-complete-btn" style="margin:8px;" onclick="startQuiz('${s.modId}')">Retry Quiz</button>
     <button class="mv-nav-btn mv-prev" style="margin:8px;" onclick="renderQuiz()">Back to Quizzes</button>
   </div>`;
