@@ -248,6 +248,25 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
 .slides-toggle-btn{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--dark3);color:var(--gray);text-align:center;transition:all .2s;}
 .slides-toggle-btn.active{background:var(--red);border-color:var(--red);color:#fff;}
 
+/* ROLE PLAY */
+.rp-textarea{width:100%;min-height:120px;padding:16px;background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);color:var(--white);font-size:14px;line-height:1.6;resize:vertical;font-family:inherit;}
+.rp-textarea:focus{outline:none;border-color:var(--red);}
+.rp-textarea::placeholder{color:var(--gray-d);}
+.rp-submit{width:100%;padding:14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:12px;transition:all .2s;}
+.rp-submit:hover{background:var(--red-l);}
+.rp-submit:disabled{background:var(--gray-d);cursor:not-allowed;}
+.rp-feedback{margin-top:20px;padding:20px;background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);}
+.rp-score-ring{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto 12px;}
+.rp-scores-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:16px 0;}
+.rp-score-item{text-align:center;padding:8px 4px;background:var(--dark3);border-radius:8px;}
+.rp-score-item .num{font-size:20px;font-weight:700;}
+.rp-score-item .label{font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.rp-model{margin-top:16px;padding:14px;background:rgba(39,174,96,.08);border-left:3px solid var(--green);border-radius:0 8px 8px 0;}
+.rp-tip{margin-top:12px;padding:14px;background:rgba(201,168,76,.08);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;}
+.rp-loading{text-align:center;padding:40px;color:var(--gray);}
+.rp-loading .spinner{display:inline-block;width:32px;height:32px;border:3px solid var(--dark4);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* EMPTY STATE */
 .empty{text-align:center;padding:40px 20px;color:var(--gray);}
 .empty-icon{font-size:48px;margin-bottom:12px;opacity:.4;}
@@ -712,6 +731,20 @@ const DRILLS = [
 ];
 
 // ---- BADGE DEFINITIONS ----
+// ---- ROLE-PLAY SCENARIOS ----
+const ROLEPLAY_SCENARIOS = [
+  {cat:'Price & Budget',scenario:'You\'ve just presented a $14,200 proposal for crawl space encapsulation with drainage. The homeowner says: "Wow, that\'s way more than I was expecting. I was thinking maybe $5,000-6,000."',context:'You documented moisture readings of 22% (rot threshold is 28%), standing water in 3 areas, and active mold on floor joists. You haven\'t mentioned financing yet.'},
+  {cat:'Price & Budget',scenario:'After your presentation, the husband turns to his wife and says: "Honey, we just can\'t swing this right now." She nods in agreement.',context:'They\'re clearly aligned on the concern being financial. You noticed during the walk-around that they recently renovated their kitchen. Your proposal is $11,800 for structural piers.'},
+  {cat:'Urgency & Timing',scenario:'The homeowner says: "I believe everything you\'re showing me, but we\'re planning to sell the house in about two years. Can this wait until then?"',context:'You found 1.5 inches of settlement over 8 feet, stair-step cracking in the brick, and doors that won\'t close properly. 6 push piers recommended at $16,500.'},
+  {cat:'Urgency & Timing',scenario:'The customer says: "Let me sleep on it and I\'ll call you tomorrow."',context:'You\'ve been there for 2.5 hours. They engaged well during the presentation, asked good questions, and seemed to understand the problem. The wife looked concerned but the husband seems hesitant.'},
+  {cat:'Trust & Credibility',scenario:'The homeowner says: "How do I know you\'re not just trying to sell me stuff I don\'t need? The last contractor who came through here tried to sell me $20,000 worth of work."',context:'You\'re at the kitchen table about to start your presentation. You have 18 photos from the crawl space showing moisture damage, and moisture readings averaging 24%.'},
+  {cat:'Trust & Credibility',scenario:'The customer says: "I want to get two more quotes before I make any decisions."',context:'You\'ve delivered a thorough presentation with photo evidence. Your proposal is $9,800 for crawl space encapsulation. The customer seems to trust you but wants to compare.'},
+  {cat:'Technical Doubt',scenario:'The homeowner looks at your proposal and says: "Do I really need a dehumidifier? My buddy has a crawl space and he just put down plastic and it was fine."',context:'Their crawl space has 68% relative humidity, wood moisture at 21%, and you\'re recommending full encapsulation with commercial dehumidifier at $8,400.'},
+  {cat:'Technical Doubt',scenario:'The customer points to your proposal and says: "Why do I need battery backup on the sump pump? That seems like an unnecessary add-on."',context:'You\'re proposing interior drainage with sump pump and battery backup. The battery backup adds $800 to a $7,200 proposal. The area experienced 3 major storms with power outages last year.'},
+  {cat:'Competitor & Comparison',scenario:'The homeowner pulls out a printed quote and says: "This other company quoted me $6,500 for the same thing. Why are you almost double?"',context:'You haven\'t seen their quote yet. Your proposal is $11,200 for crawl space drainage and encapsulation with commercial dehumidifier, sealed vents, and battery backup.'},
+  {cat:'Competitor & Comparison',scenario:'The customer says: "My neighbor used [Competitor] and they were really happy with the work. Why should I go with you instead?"',context:'You know this competitor typically installs 6-mil liner (vs your 12-mil), doesn\'t include dehumidifiers, and doesn\'t seal penetrations. Your proposal is for full encapsulation.'}
+];
+
 const BADGES = [
   {id:'first_mod',name:'First Steps',icon:'&#128214;',desc:'Complete your first module',check:r=>r.completedModules&&r.completedModules.length>=1},
   {id:'all_core',name:'Core Complete',icon:'&#127942;',desc:'Complete all 7 core modules',check:r=>{const cm=r.completedModules||[];return MODULES.filter(m=>m.section==='core').every(m=>cm.includes(m.id))}},
@@ -1425,9 +1458,17 @@ function renderFcResults(){
 
 // ---- DRILLS PAGE ----
 let drillState={};
+let drillMode='menu'; // 'menu','drill','roleplay'
 
 function renderDrills(){
-  let html=`<div class="sec-header">Objection Handling Drills</div>
+  let html=`<div class="slides-toggle" style="margin-bottom:20px;">
+    <div class="slides-toggle-btn ${drillMode==='menu'||drillMode==='drill'?'active':''}" onclick="drillMode='menu';renderDrills()">&#9889; Quick Drills</div>
+    <div class="slides-toggle-btn ${drillMode==='roleplay'?'active':''}" onclick="drillMode='roleplay';renderRolePlay()">&#127908; Role Play</div>
+  </div>`;
+
+  if(drillMode==='roleplay') return; // handled by renderRolePlay
+
+  html+=`<div class="sec-header">Objection Handling Drills</div>
     <p style="font-size:13px;color:var(--gray);margin-bottom:16px;">A customer throws an objection. Pick the best response. Get it right to earn points.</p>
     <button class="mv-complete-btn" style="width:100%;margin-bottom:16px;" onclick="startDrill()">Start Drill (Random Scenario)</button>`;
 
@@ -1498,6 +1539,160 @@ function answerDrill(idx,correct,explanation){
       <button class="mv-nav-btn mv-prev" style="margin:8px;" onclick="renderDrills()">Back to Drills</button>
     </div>`;
   },1000);
+}
+
+// ---- ROLE-PLAY ----
+let rpState={scenario:null,loading:false};
+
+function renderRolePlay(){
+  drillMode='roleplay';
+  let html=`<div class="slides-toggle" style="margin-bottom:20px;">
+    <div class="slides-toggle-btn" onclick="drillMode='menu';renderDrills()">&#9889; Quick Drills</div>
+    <div class="slides-toggle-btn active" onclick="drillMode='roleplay';renderRolePlay()">&#127908; Role Play</div>
+  </div>`;
+
+  if(!rpState.scenario){
+    html+=`<div class="sec-header">AI Role Play</div>
+      <p style="font-size:13px;color:var(--gray);margin-bottom:16px;">Practice handling real objections. Type your response like you\'re talking to the homeowner. AI coaching evaluates your technique.</p>
+      <button class="mv-complete-btn" style="width:100%;margin-bottom:20px;" onclick="startRolePlay()">Start Random Scenario</button>`;
+
+    const cats=[...new Set(ROLEPLAY_SCENARIOS.map(s=>s.cat))];
+    cats.forEach(cat=>{
+      const count=ROLEPLAY_SCENARIOS.filter(s=>s.cat===cat).length;
+      html+=`<div class="mod-item" onclick="startRolePlay('${cat}')">
+        <div class="mod-icon" style="background:var(--dark4);">&#127908;</div>
+        <div class="mod-info">
+          <div class="mod-name">${cat}</div>
+          <div class="mod-desc">${count} scenarios</div>
+        </div>
+        <div style="font-size:13px;color:var(--gray);">&#9654;</div>
+      </div>`;
+    });
+  } else if(rpState.loading){
+    html+=`<div class="rp-loading">
+      <div class="spinner"></div>
+      <div style="font-size:14px;">Evaluating your response...</div>
+      <div style="font-size:12px;color:var(--gray-d);margin-top:4px;">AI coach is reviewing your technique</div>
+    </div>`;
+  } else if(rpState.feedback){
+    html+=renderRolePlayFeedback();
+  } else {
+    // Show scenario and input
+    const s=rpState.scenario;
+    html+=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="rpState.scenario=null;renderRolePlay()">&#8592; Back</button>
+      <div class="drill-scenario">
+        <div class="drill-cat">${s.cat}</div>
+        <div class="drill-objection">${s.scenario}</div>
+        <div class="drill-context">${s.context}</div>
+      </div>
+      <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:8px;">Your response:</div>
+      <p style="font-size:12px;color:var(--gray);margin-bottom:10px;">Respond as if you\'re speaking directly to the homeowner. Be natural.</p>
+      <textarea class="rp-textarea" id="rpResponse" placeholder="Type what you would say to this customer..."></textarea>
+      <button class="rp-submit" id="rpSubmit" onclick="submitRolePlay()">Get AI Coaching Feedback</button>`;
+  }
+
+  document.getElementById('pg-drills').innerHTML=html;
+}
+
+function startRolePlay(cat){
+  const pool=cat?ROLEPLAY_SCENARIOS.filter(s=>s.cat===cat):ROLEPLAY_SCENARIOS;
+  rpState={scenario:pool[Math.floor(Math.random()*pool.length)],loading:false,feedback:null};
+  renderRolePlay();
+}
+
+async function submitRolePlay(){
+  const response=document.getElementById('rpResponse').value.trim();
+  if(!response)return showToast('Type your response first','toast-streak');
+  if(response.length<20)return showToast('Give a more complete response','toast-streak');
+
+  rpState.loading=true;
+  rpState.repResponse=response;
+  renderRolePlay();
+
+  try{
+    const res=await fetch('/api/roleplay',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        scenario:rpState.scenario.scenario+' Context: '+rpState.scenario.context,
+        repResponse:response,
+        category:rpState.scenario.cat
+      })
+    });
+    if(!res.ok)throw new Error('API error');
+    rpState.feedback=await res.json();
+    rpState.loading=false;
+
+    // Award points
+    if(currentRep){
+      const score=rpState.feedback.overall_score||0;
+      const pts=score>=80?50:score>=60?30:15;
+      addPoints(pts,'Role play: '+rpState.scenario.cat);
+      const r=reps[currentRep];
+      r.drillsCompleted=(r.drillsCompleted||0)+1;
+      if(score>=80)r.drillsPerfect=(r.drillsPerfect||0)+1;
+      saveState();
+      checkBadges();
+    }
+  }catch(e){
+    console.error('Role play error:',e);
+    rpState.loading=false;
+    rpState.feedback={error:true,feedback:'Could not get AI feedback. Check your connection and try again.'};
+  }
+
+  renderRolePlay();
+}
+
+function renderRolePlayFeedback(){
+  const fb=rpState.feedback;
+  if(fb.error){
+    return `<div class="card"><p style="color:var(--red);">${fb.feedback}</p>
+      <button class="mv-complete-btn" style="margin-top:12px;" onclick="rpState.feedback=null;rpState.loading=false;renderRolePlay()">Try Again</button></div>`;
+  }
+
+  const score=fb.overall_score||0;
+  const color=score>=80?'var(--green)':score>=60?'var(--orange)':'var(--red)';
+  const border=score>=80?'rgba(39,174,96,.4)':score>=60?'rgba(230,126,34,.4)':'rgba(192,57,43,.4)';
+  const label=score>=80?'Strong Response':score>=60?'Good Foundation':'Needs Work';
+
+  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="rpState.scenario=null;rpState.feedback=null;renderRolePlay()">&#8592; Back to Scenarios</button>
+
+    <div class="drill-scenario" style="opacity:.7;font-size:13px;">
+      <div class="drill-cat">${rpState.scenario.cat}</div>
+      <div style="color:var(--gray-l);margin-bottom:6px;">${rpState.scenario.scenario}</div>
+      <div style="color:var(--gray);font-style:italic;">Your response: "${rpState.repResponse}"</div>
+    </div>
+
+    <div class="rp-feedback" style="border-color:${border};">
+      <div class="rp-score-ring" style="border:4px solid ${color};color:${color};">${score}</div>
+      <div style="text-align:center;font-size:16px;font-weight:700;color:${color};margin-bottom:4px;">${label}</div>
+
+      <div class="rp-scores-grid">
+        ${Object.entries(fb.scores||{}).map(([k,v])=>{
+          const c=v>=4?'var(--green)':v>=3?'var(--orange)':'var(--red)';
+          return `<div class="rp-score-item"><div class="num" style="color:${c}">${v}/5</div><div class="label">${k}</div></div>`;
+        }).join('')}
+      </div>
+
+      <div style="font-size:14px;color:var(--gray-l);line-height:1.7;margin:16px 0;">${fb.feedback||''}</div>
+
+      ${fb.better_response?`<div class="rp-model">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">Model Response</div>
+        <div style="font-size:13px;color:var(--gray-l);line-height:1.7;font-style:italic;">${fb.better_response}</div>
+      </div>`:''}
+
+      ${fb.tip?`<div class="rp-tip">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">Pro Tip</div>
+        <div style="font-size:13px;color:var(--gray-l);line-height:1.7;">${fb.tip}</div>
+      </div>`:''}
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="mv-complete-btn" style="flex:1;" onclick="startRolePlay('${rpState.scenario.cat}')">Next Scenario</button>
+      <button class="mv-nav-btn mv-prev" style="flex:1;" onclick="startRolePlay()">Random</button>
+    </div>`;
+
+  return html;
 }
 
 // ---- LEADERBOARD PAGE ----
