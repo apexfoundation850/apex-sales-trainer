@@ -241,6 +241,13 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
   .mv-body{padding:18px 14px;}
   .badge-grid{grid-template-columns:repeat(3,1fr);}
 }
+/* SLIDE EMBED */
+.slides-embed{position:relative;width:100%;padding-bottom:56.25%;margin-bottom:20px;border-radius:var(--radius);overflow:hidden;background:var(--dark3);border:1px solid var(--border);}
+.slides-embed iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
+.slides-toggle{display:flex;gap:8px;margin-bottom:16px;}
+.slides-toggle-btn{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--dark3);color:var(--gray);text-align:center;transition:all .2s;}
+.slides-toggle-btn.active{background:var(--red);border-color:var(--red);color:#fff;}
+
 /* EMPTY STATE */
 .empty{text-align:center;padding:40px 20px;color:var(--gray);}
 .empty-icon{font-size:48px;margin-bottom:12px;opacity:.4;}
@@ -365,6 +372,7 @@ const MODULES = [
 {
   id:'mod1', section:'core', title:'Pre-Inspection Phase', icon:'&#128222;',
   desc:'2-Day Call, 30-Min Call, Warm-Up & Agenda',
+  slidesId:'1c4vz58W9HrFl21wHZnmMMOXB_u3KGnYp-o4Bi7FQvxQ',
   color:'var(--red)', slides:[
     {t:'The Pre-Inspection Phase',c:'<p>Everything before you ring the doorbell determines whether you close. Three touchpoints build trust, establish control, and ensure you\'re walking into the right room with the right people.</p><p><strong>Step 1:</strong> 2-Day Out Call &mdash; Confirm, Qualify, Protect your time</p><p><strong>Step 2:</strong> 30-Minute Out Call &mdash; Logistics, Set the stage</p><p><strong>Step 3:</strong> Warm-Up & Agenda &mdash; Trust, Credibility, Take control</p><div class="tip-box">Confirming all decision-makers are present is the single highest-leverage action a rep can take before arriving on site.</div>',n:'Most reps think the sale begins when they walk in the door. Top closers know the sale begins the moment they confirm the appointment.'},
     {t:'2-Day Out Call',c:'<p>This is not a courtesy call &mdash; it is a qualification checkpoint. A two-minute conversation now prevents a wasted 3-hour appointment later.</p><ul><li><strong>All DMs Present:</strong> Confirm every decision-maker will be there. If a spouse or co-owner can\'t make it, offer to reschedule rather than proceed without them.</li><li><strong>Verify Scope:</strong> Confirm you can address their issue. Get enough detail to know you\'re the right company.</li><li><strong>Read the Customer:</strong> Listen for urgency, skepticism, or distraction. Adjust your expectations.</li><li><strong>Time Commitment:</strong> Ensure they\'ve blocked 2-3 hours. A customer expecting 45 minutes is a customer who will rush your close.</li></ul><div class="avoid-box">A rep who skips the DM confirmation and goes straight to the inspection is playing a harder game than they need to.</div>',n:'This is the most undervalued call in the entire sales process. Decision-maker confirmation is the single most predictive variable in whether a high-ticket appointment closes.'},
@@ -379,6 +387,7 @@ const MODULES = [
 {
   id:'mod2', section:'core', title:'Inspection Phase', icon:'&#128269;',
   desc:'Customer Walk-Around, Full Inspection, Door Knock',
+  slidesId:'1aQzWbWH0h5Wn6Da6FOuqk9dIyDBFE3w5JgE-kQeVwCM',
   color:'var(--blue)', slides:[
     {t:'The Inspection Phase',c:'<p>Three steps that turn data collection into trust building. The way you gather information says everything about who you are.</p><p><strong>Step 1:</strong> Customer Walk-Around &mdash; Listen, Gather, Build rapport</p><p><strong>Step 2:</strong> Full Inspection &mdash; Document, Measure, Photograph</p><p><strong>Step 3:</strong> Post-Inspection Door Knock &mdash; Prove effort, Set the table</p><div class="tip-box">The inspection is not just about finding problems &mdash; it is about building the evidence base that makes your proposal undeniable.</div>',n:'Most reps treat the inspection as the necessary work they do before the real sales conversation. That\'s backwards. The inspection IS the sales conversation.'},
     {t:'Customer Walk-Around',c:'<p>Before you form a single opinion, let the customer show you their home through their eyes.</p><ul><li><strong>Let Them Lead:</strong> Ask them to show you what they\'ve noticed. Walk behind them. Don\'t jump ahead.</li><li><strong>Start Documenting Now:</strong> Begin photographing during the walk-around in front of the customer.</li><li><strong>Take Measurements:</strong> Begin gathering key readings as you go &mdash; moisture levels, floor slope, crack widths.</li><li><strong>Listen More Than Talk:</strong> Every detail they give you is intelligence for your proposal.</li></ul>',n:'The instinct for an experienced rep is to immediately go check the things they know matter. Resist that instinct. Let the customer take you where they want to go first.'},
@@ -391,6 +400,7 @@ const MODULES = [
 {
   id:'mod3', section:'core', title:'Presentation Phase', icon:'&#128202;',
   desc:'Photo Review, Education, Building the Proposal',
+  slidesId:'1MTySgD-0H8_trQCNg82Qqoy7y_hRGvTD4TqHIYDVnMs',
   color:'var(--green)', slides:[
     {t:'The Presentation Phase',c:'<p>Educate before you propose. The presentation turns inspection evidence into customer understanding.</p><p><strong>Step 1:</strong> Photo Review &mdash; Show what you found, in order</p><p><strong>Step 2:</strong> Education &mdash; Explain what\'s normal and what isn\'t</p><p><strong>Step 3:</strong> Build the Proposal &mdash; Connect every recommendation to evidence</p><div class="tip-box">The customer who understands the problem buys the solution. The customer who doesn\'t understand the problem negotiates on price.</div>',n:'The presentation is where all of the trust built in the previous phases converts to understanding. Understanding is what closes.'},
     {t:'Photo Review',c:'<p>Sit down at the table and walk through every photo in sequence.</p><ul><li><strong>Start with what\'s normal</strong> &mdash; Show areas where things look good. This builds credibility before you show problems.</li><li><strong>Then show the concerns</strong> &mdash; Each photo should tell a story. What it shows, why it matters.</li><li><strong>Use their language</strong> &mdash; Reference what they told you during the walk-around. "Remember when you mentioned the door sticking? Here\'s what\'s causing that."</li><li><strong>Let them react</strong> &mdash; Pause after showing each finding. Let it land before moving on.</li></ul><div class="tip-box">The photos are your evidence. Present them like a case, not like a sales pitch. Evidence-based presentations close at significantly higher rates.</div>',n:'Starting with what\'s normal is critical. When you show good areas first, the problems that follow carry more weight because the customer trusts your calibration.'},
@@ -401,6 +411,7 @@ const MODULES = [
 {
   id:'mod4', section:'core', title:'Close Phase', icon:'&#9989;',
   desc:'The Ask, Objection Handling, Right-Sizing, Second Ask',
+  slidesId:'1rjsiqZuEPL-Bptpgh0KprmySWWiddMlNoPafwQcPo8s',
   color:'var(--purple)', slides:[
     {t:'The Close Phase',c:'<p>The close is not a technique. It is the natural result of the right conversation.</p><p>If you\'ve done the work in the previous phases, the close should feel like a conclusion, not a negotiation.</p><ul><li><strong>The First Ask</strong> &mdash; Direct, confident, earned</li><li><strong>Objection Handling</strong> &mdash; Diagnose, acknowledge, inform</li><li><strong>Right-Sizing</strong> &mdash; Adjust scope only with explicit trade-off communication</li><li><strong>The Second Ask</strong> &mdash; After addressing concerns, ask again</li><li><strong>The Leave-Behind</strong> &mdash; If they don\'t close today, leave something that sells for you</li></ul>',n:'The close rate is determined long before the close happens. Every step in the process has been a deposit into a trust account that you now withdraw from.'},
     {t:'The First Ask',c:'<div class="script-box">"Based on everything we\'ve gone through today, I believe this is the right solution for your home. The total investment is $[X]. With financing through [Upgrade/GoodLeap], that breaks down to about $[Y] per month. How would you like to move forward?"</div><ul><li><strong>Be direct</strong> &mdash; Don\'t hedge, apologize, or soften the number</li><li><strong>Present the monthly</strong> &mdash; Lead with the monthly payment, not just the total</li><li><strong>Ask a closing question</strong> &mdash; "How would you like to move forward?" not "What do you think?"</li></ul><div class="avoid-box">Never say "What do you think?" as a closing question. It invites deliberation instead of decision.</div>',n:'The ask must feel earned. If you\'ve done the work, this moment should feel natural for both the rep and the customer.'},
@@ -411,6 +422,7 @@ const MODULES = [
 {
   id:'mod5', section:'core', title:'Post-Appointment Follow-Up', icon:'&#128241;',
   desc:'5-Touch System, Converting Pending, Referral Capture',
+  slidesId:'1JlCeJN5ZRiwPA0GVpJwutckHmuQ1aenpzbU8iqp0Wrw',
   color:'var(--teal)', slides:[
     {t:'Post-Appointment Follow-Up',c:'<p>The 5-Touch Follow-Up System ensures no pending job falls through the cracks.</p><ul><li><strong>Touch 1 &mdash; Same Day:</strong> Thank-you text within 2 hours. Brief, personal, professional.</li><li><strong>Touch 2 &mdash; Day 2:</strong> Follow-up call. "Just wanted to see if you had any questions after looking through everything."</li><li><strong>Touch 3 &mdash; Day 5:</strong> Value-add message. Share a relevant article, tip, or local reference.</li><li><strong>Touch 4 &mdash; Day 10:</strong> Check-in call. "Wanted to make sure you have everything you need to make your decision."</li><li><strong>Touch 5 &mdash; Day 21:</strong> Final professional follow-up. Clear next step or close the loop.</li></ul><div class="tip-box">Within 24 hours is the follow-up window. After that, the customer has mentally moved on and re-engagement is significantly harder.</div>',n:'Most reps do one follow-up, then give up. The 5-touch system is designed so that no rep can claim they "tried" without actually completing the sequence.'},
     {t:'Converting Pending Jobs',c:'<p>A pending job is not a lost job &mdash; it is an opportunity in progress.</p><ul><li><strong>Understand the delay</strong> &mdash; Ask directly: "What would need to happen for you to feel comfortable moving forward?"</li><li><strong>Address specific concerns</strong> &mdash; If it\'s price, present financing. If it\'s timing, offer scheduling flexibility. If it\'s trust, share references.</li><li><strong>Create urgency honestly</strong> &mdash; "The conditions I documented aren\'t going to self-correct. Each season adds to the progression."</li><li><strong>Stay professional</strong> &mdash; Never guilt, pressure, or make the customer feel bad for not closing.</li></ul>',n:'The rep who follows up professionally and persistently will convert a significant percentage of pending jobs that lesser follow-up would have lost.'},
@@ -420,6 +432,7 @@ const MODULES = [
 {
   id:'mod6', section:'core', title:'Customer Psychology', icon:'&#129504;',
   desc:'How Homeowners Decide, Emotional Drivers, Buyer Types',
+  slidesId:'1ADBv8gkgjdY-8n9rxDZvFG4JLoYlvAAD6tcift26Fw4',
   color:'var(--orange)', slides:[
     {t:'How Customers Decide',c:'<p>Homeowners make decisions emotionally first, then justify them rationally. Understanding this is the foundation of effective selling.</p><ul><li><strong>Emotional decision</strong> &mdash; "I feel like this is the right thing to do"</li><li><strong>Rational justification</strong> &mdash; "The numbers make sense and the evidence supports it"</li></ul><p><strong>Loss Aversion:</strong> People feel losses roughly twice as powerfully as equivalent gains. Framing the cost of inaction (what they lose by waiting) is more motivating than framing the benefit of action (what they gain by fixing it).</p><div class="tip-box">The customer who understands what they\'re protecting is more motivated than the customer who understands what they\'re buying.</div>',n:'Loss aversion is the single most powerful psychological principle in home services sales. Used ethically, it helps customers see the real cost of delay.'},
     {t:'The Four Emotional Drivers',c:'<p>Every homeowner\'s primary concern falls into one of four categories:</p><ul><li><strong>Fear & Loss:</strong> "My house is going to fall apart." "We\'ll lose everything." &mdash; Lead with stabilization, protection, preventing the worst outcome.</li><li><strong>Protection & Safety:</strong> "I need to keep my family safe." &mdash; Lead with health risks (mold, air quality), structural integrity, peace of mind.</li><li><strong>Financial & Equity:</strong> "I\'m trying to protect my investment." "We\'re selling soon." &mdash; Lead with home value, resale impact, cost of delayed repair.</li><li><strong>Pride & Quality:</strong> "I take care of my home." &mdash; Lead with craftsmanship, thoroughness, doing it right the first time.</li></ul><div class="tip-box">The walk-around question "What\'s your biggest concern?" reveals which driver is primary. Frame the entire proposal around that driver.</div>',n:'Misidentifying the emotional driver leads to proposals that answer questions the customer isn\'t asking.'},
@@ -429,6 +442,7 @@ const MODULES = [
 {
   id:'mod7', section:'core', title:'Self-Generated Leads', icon:'&#127793;',
   desc:'Lead Economics, Referral Systems, Building Pipeline',
+  slidesId:'14UWjXsAcjDolo6xFTUdE_9id3X3nbhCSYhtTm4TNHd0',
   color:'#C9A84C', slides:[
     {t:'The Economics of Leads',c:'<p>Understanding lead economics is the difference between working hard and working smart.</p><ul><li><strong>Purchased leads:</strong> Cost $150-400+ each. Close rate: 15-25%. You\'re competing with every other company who bought the same lead.</li><li><strong>Self-generated leads:</strong> Cost nearly $0. Close rate: 40-65%. The customer already trusts you before you arrive.</li></ul><p><strong>The math is simple:</strong> A rep who generates 3-5 self-generated leads per week can build a pipeline that outperforms purchased leads in both close rate and profitability.</p><div class="tip-box">Self-generated leads are the highest-leverage activity in a sales rep\'s career. Every referral, every past-customer call, every neighborhood door knock is an investment in a pipeline that compounds over time.</div>',n:'Most reps rely entirely on company-provided leads. The top earners generate 30-50% of their own pipeline.'},
     {t:'Building Your Referral Engine',c:'<ul><li><strong>Ask after every install</strong> &mdash; Make it a non-negotiable habit</li><li><strong>Follow up on referrals within 24 hours</strong> &mdash; Speed matters. The referring customer\'s credibility is on the line.</li><li><strong>Thank the referrer</strong> &mdash; Call them back and let them know you reached out. This encourages future referrals.</li><li><strong>Leverage the referral book</strong> &mdash; Before/after photos from local jobs are the most powerful self-generated lead tool.</li><li><strong>Neighborhood marketing</strong> &mdash; After a visible install, knock on doors nearby. "We just finished some work for your neighbor and I wanted to introduce myself."</li></ul><div class="script-box">"Hi, I\'m [Name] with Apex Foundation Specialists. We just completed some work for the [Neighbor Name]s down the street and I wanted to introduce myself in case you ever have any questions about your foundation or crawl space. Here\'s my card."</div>',n:'One referral per install, consistently executed, compounds into a self-sustaining pipeline within 6 months.'}
@@ -438,6 +452,7 @@ const MODULES = [
 {
   id:'jt1', section:'jobtype', title:'Basement Drainage', icon:'&#127754;',
   desc:'Hydrostatic Pressure, Interior Drain Systems, Sump Pumps',
+  slidesId:'1Gfth6WxndhTMH72MlegHBr-McIy4P4gvNWHwKH_gfyc',
   color:'var(--blue)', slides:[
     {t:'Basement Drainage Overview',c:'<p>Basement drainage addresses <strong>hydrostatic pressure</strong> &mdash; the force exerted by water-saturated soil against below-grade foundation walls and floor slabs.</p><p>Water weighs ~62 lbs per cubic foot. When soil becomes saturated, the accumulated weight pushes against every surface, increasing by ~0.43 psi per foot of depth below the water table.</p><div class="tip-box"><strong>Key Concept:</strong> The correct approach is pressure relief through interior drainage &mdash; not pressure resistance through sealants.</div>',n:'Surface sealants fail because under sustained hydrostatic pressure, the coating\'s bond strength is eventually exceeded.'},
     {t:'Where Water Enters',c:'<ul><li><strong>Cove Joint (most common):</strong> Where basement floor meets foundation wall. Always has a slight gap.</li><li><strong>Wall Pores:</strong> Hydrostatic pressure forcing water through porous concrete. Shows as uniform dampness + efflorescence.</li><li><strong>Vertical/Diagonal Wall Cracks:</strong> Settlement or concrete shrinkage provides a direct path.</li><li><strong>Horizontal Wall Cracks:</strong> LATERAL SOIL PRESSURE &mdash; requires wall reinforcement evaluation. Drainage alone is not enough.</li><li><strong>Floor Slab Seepage:</strong> Water table above floor level pushes water upward.</li><li><strong>Window Wells:</strong> Below-grade windows concentrate surface water.</li></ul><div class="avoid-box"><strong>Critical:</strong> Horizontal cracks indicate lateral soil pressure pushing the wall inward &mdash; not just water entry. This is a structural issue requiring wall reinforcement evaluation.</div>',n:'Always distinguish between water entry (drainage problem) and structural movement (reinforcement problem). Misdiagnosis is the most common failure.'},
@@ -447,6 +462,7 @@ const MODULES = [
 {
   id:'jt2', section:'jobtype', title:'Crawl Space Drainage', icon:'&#128167;',
   desc:'Vapor vs Bulk Water, Perimeter Drain, Sump Systems',
+  slidesId:'1Yh8TCRNLr-w2lsCqi6mtnZg08kzmpr_pu6VftvygXcw',
   color:'var(--teal)', slides:[
     {t:'The Critical Distinction: Vapor vs Bulk Water',c:'<p>The most important diagnostic skill in crawl space moisture work is telling vapor and bulk water apart.</p><ul><li><strong>Vapor indicators:</strong> High RH (>60%), elevated wood MC (>19%), condensation, musty odor. No standing water.</li><li><strong>Bulk water indicators:</strong> Standing water, water staining on walls, silt deposits, efflorescence on block walls.</li></ul><p><strong>Solutions:</strong></p><ul><li><strong>Vapor:</strong> Encapsulation (vapor barrier, sealed vents, dehumidifier). A sump pump has zero effect on vapor.</li><li><strong>Bulk water:</strong> Interior perimeter drain and sump pump. Encapsulation alone cannot stop bulk water.</li><li><strong>When both exist:</strong> Drainage must be installed FIRST, then encapsulation.</li></ul><div class="avoid-box">Installing liner before drainage in an actively wet crawl space traps water beneath the liner.</div>',n:'This distinction drives the entire scope recommendation. Getting it wrong leads to callbacks and lost trust.'},
     {t:'System Components',c:'<ul><li><strong>Perimeter Drain:</strong> 4" perforated PVC along interior perimeter at footing, sloped 1/8" per foot min toward sump</li><li><strong>Gravel Bed + Filter Fabric:</strong> Washed gravel surrounding pipe, geotextile wrap prevents siltation</li><li><strong>Sump Basin:</strong> Perforated plastic, minimum 18" deep, 18-24" diameter, at lowest point</li><li><strong>Primary Pump:</strong> Submersible, float-activated, 1/3-1/2 HP, 1,500-3,000+ GPH</li><li><strong>Battery Backup:</strong> 12V deep-cycle marine battery. Replace every 3-5 years. NON-OPTIONAL.</li><li><strong>Discharge:</strong> Minimum 6 feet from foundation, path permanently draining away</li><li><strong>Clean-out Ports:</strong> Every 10-20 feet; flush every 3-5 years</li></ul><div class="avoid-box">Battery backup is non-negotiable for this region. Major storms &mdash; when you most need the pump &mdash; are exactly when you lose power.</div>',n:'A primary pump without backup leaves the system defenseless during the conditions it was installed to handle. Always include battery backup in scope.'}
@@ -455,6 +471,7 @@ const MODULES = [
 {
   id:'jt3', section:'jobtype', title:'Crawl Space Encapsulation', icon:'&#128737;',
   desc:'Moisture Control, Liner Systems, Dehumidifier Sizing',
+  slidesId:'1d9Y00nSst1f1WPGOZn6qurQixD5WaXysgVzTzcTtCzg',
   color:'var(--green)', slides:[
     {t:'Encapsulation Overview',c:'<p>Encapsulation seals the crawl space from ground moisture vapor and outside air, creating a controlled environment that protects the structure above.</p><p><strong>The Problem:</strong> An unsealed crawl space in the Florida Panhandle allows 10-15 gallons of soil moisture vapor per day into the space. With 40-50% of first-floor air coming from the crawl space (stack effect), this moisture directly affects the living space.</p><p><strong>Key Numbers:</strong></p><ul><li>Normal wood MC: 12-15%</li><li>Elevated risk: 19%+</li><li>Active rot threshold: 28%+</li><li>Safe crawl space RH: Below 60% (55% preferred)</li><li>Energy savings: 15%+ reduction in annual HVAC costs</li></ul>',n:'The stack effect is the most powerful selling point for encapsulation. 40-50% of first-floor air comes from the crawl space &mdash; whatever is in the crawl space, the family is breathing.'},
     {t:'System Components',c:'<ul><li><strong>Vapor Barrier (Liner):</strong> Minimum 12-mil reinforced polyethylene. Covers floor wall-to-wall, sealed at seams and perimeter.</li><li><strong>Wall Coverage:</strong> Liner extends up foundation walls, sealed to wall with termination bar or adhesive.</li><li><strong>Penetration Sealing:</strong> Every pipe, wire, and penetration sealed. Often skipped by competitors.</li><li><strong>Vent Sealing:</strong> All crawl space vents permanently sealed or replaced with sealed covers.</li><li><strong>Dehumidifier:</strong> Commercial-grade, sized to space. 70-pint minimum for most crawl spaces. Drain to sump or exterior.</li><li><strong>Insulation:</strong> When applicable, closed-cell foam on rim joists and/or walls.</li></ul><div class="tip-box"><strong>Competitor gap:</strong> The three most commonly missing components in competitor proposals are: properly sized dehumidifier, penetration sealing, and specific liner mil rating.</div>',n:'An encapsulation without a properly sized dehumidifier is like installing a car engine without oil. The system needs active moisture management to perform.'}
@@ -463,6 +480,7 @@ const MODULES = [
 {
   id:'jt4', section:'jobtype', title:'Poly Injection (Concrete Lifting)', icon:'&#11014;',
   desc:'Slab Leveling, Material Science, Settlement Patterns',
+  slidesId:'1Z5NsP3GnTLq-DD0PxsrrliIpo8qPQXFJLQ2ZrVgDfJY',
   color:'var(--orange)', slides:[
     {t:'Poly Injection Overview',c:'<p>Polyurethane injection lifts and levels settled concrete slabs by injecting expanding structural foam beneath the slab through small drilled ports.</p><p><strong>Key advantages over mudjacking:</strong></p><ul><li>Material weight: 2-4 lbs/ft3 (vs. mudjacking at 100+ lbs/ft3)</li><li>Hole size: 5/8" penny-sized (vs. 1-2" holes for mudjacking)</li><li>Cure time: 15 minutes (vs. 24-48 hours)</li><li>Waterproof and non-erosive &mdash; won\'t wash out</li></ul><div class="avoid-box"><strong>Important:</strong> Always evaluate root cause. If the soil condition that caused the settlement hasn\'t changed, lifting without addressing the cause may result in re-settlement.</div>',n:'Mudjacking uses heavy slurry that adds weight to already failing soil. Polyurethane is a fraction of the weight and doesn\'t create additional load.'},
     {t:'Settlement Patterns',c:'<ul><li><strong>Garage floors:</strong> Most common. Typically settles toward the center where fill soil compacts.</li><li><strong>Driveways:</strong> Settlement at joints and near foundation where backfill soil meets native soil.</li><li><strong>Pool decks:</strong> Settlement away from the pool shell as surrounding soil compacts.</li><li><strong>Sidewalks:</strong> Trip hazards at joints where one section settles relative to another.</li><li><strong>Stoops/Porches:</strong> Pulling away from the house as fill soil beneath compacts.</li></ul><p><strong>Floor slope thresholds:</strong></p><ul><li>1" per 8 feet: Significant &mdash; warrants evaluation</li><li>2"+ per 8 feet: Urgent structural concern</li></ul>',n:'Always measure and document the exact settlement before proposing. "It looks uneven" is not documentation &mdash; "1.5 inches of displacement over 8 feet" is.'}
@@ -471,6 +489,7 @@ const MODULES = [
 {
   id:'jt5', section:'jobtype', title:'Structural Piers', icon:'&#127959;',
   desc:'Push Piers vs Helical, Load Transfer, Settlement Signs',
+  slidesId:'1HSwr3bqY1L0aQH3RKi9akanUTFl6HfL_rf3N8hCiVXc',
   color:'var(--red)', slides:[
     {t:'Structural Piers Overview',c:'<p>Steel shafts driven deep beneath a settling foundation, bypassing unstable near-surface soil and transferring the home\'s weight to load-bearing strata below.</p><p><strong>The Core Principle &mdash; Load Transfer:</strong> The failing soil near the surface cannot support the home\'s weight. Piers bypass that soil entirely, reaching down to competent load-bearing material that has never moved.</p>',n:'Settlement stops because the load is no longer relying on the soil that was failing. This is the fundamental concept to communicate.'},
     {t:'Reading the Signs of Settlement',c:'<ul><li><strong>Stair-step cracks (brick/block):</strong> Classic differential settlement. Foundation dropped at one corner.</li><li><strong>Diagonal cracks at door/window corners:</strong> Foundation dropping differentially, racking frames out of square.</li><li><strong>Vertical cracks in poured concrete:</strong> Differential settlement pulling wall apart.</li><li><strong>Horizontal cracks in block walls:</strong> LATERAL PRESSURE &mdash; NOT settlement. Requires wall reinforcement.</li><li><strong>Cracks wider at top than bottom:</strong> Foundation is rotating.</li><li><strong>Sloping floors:</strong> 1"/8ft = significant. 2"+/8ft = urgent.</li></ul><div class="avoid-box"><strong>Critical Diagnostic:</strong> Horizontal cracks indicate lateral soil pressure &mdash; not settlement. Never propose only piers for horizontal cracking.</div>',n:'The most dangerous diagnostic error is recommending piers for horizontal cracking. That is a lateral pressure problem requiring wall reinforcement.'},
@@ -1135,6 +1154,7 @@ let currentSlide=0;
 function openModule(id){
   currentModuleId=id;
   currentSlide=0;
+  mvViewMode='slides';
   const mod=MODULES.find(m=>m.id===id);
   document.getElementById('mvTitle').textContent=mod.title;
   renderModuleSlides(mod);
@@ -1142,17 +1162,45 @@ function openModule(id){
   logActivity('Opened: '+mod.title);
 }
 
+let mvViewMode='slides'; // 'slides' or 'notes'
+
 function renderModuleSlides(mod){
   let html='';
-  mod.slides.forEach((s,i)=>{
-    html+=`<div class="mv-slide" id="slide-${i}">
-      <div class="mv-slide-num">Slide ${i+1} of ${mod.slides.length}</div>
-      <div class="mv-slide-title">${s.t}</div>
-      <div class="mv-slide-content">${s.c}</div>
-      ${s.n?`<div class="mv-notes-toggle" onclick="this.nextElementSibling.classList.toggle('show')">&#128218; Speaker Notes</div>
-      <div class="mv-notes">${s.n}</div>`:''}
+
+  // View toggle if deck has Google Slides
+  if(mod.slidesId){
+    html+=`<div class="slides-toggle">
+      <div class="slides-toggle-btn ${mvViewMode==='slides'?'active':''}" onclick="mvViewMode='slides';renderModuleSlides(MODULES.find(m=>m.id==='${mod.id}'))">&#127902; Slide Deck</div>
+      <div class="slides-toggle-btn ${mvViewMode==='notes'?'active':''}" onclick="mvViewMode='notes';renderModuleSlides(MODULES.find(m=>m.id==='${mod.id}'))">&#128218; Study Notes</div>
     </div>`;
-  });
+  }
+
+  if(mod.slidesId && mvViewMode==='slides'){
+    // Embedded Google Slides viewer
+    html+=`<div class="slides-embed">
+      <iframe src="https://docs.google.com/presentation/d/${mod.slidesId}/embed?start=false&loop=false&delayms=60000" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+    </div>`;
+    // Compact notes below the deck
+    html+=`<div class="sec-header">Slide Notes</div>`;
+    mod.slides.forEach((s,i)=>{
+      html+=`<div style="margin-bottom:12px;padding:12px;background:var(--dark3);border-radius:8px;cursor:pointer;" onclick="this.querySelector('.mv-notes').classList.toggle('show')">
+        <div style="font-size:13px;font-weight:600;color:var(--white);">Slide ${i+1}: ${s.t}</div>
+        <div class="mv-notes" style="margin-top:8px;">${s.n||'No notes for this slide.'}</div>
+      </div>`;
+    });
+  } else {
+    // Full text study notes view (original layout)
+    mod.slides.forEach((s,i)=>{
+      html+=`<div class="mv-slide" id="slide-${i}">
+        <div class="mv-slide-num">Slide ${i+1} of ${mod.slides.length}</div>
+        <div class="mv-slide-title">${s.t}</div>
+        <div class="mv-slide-content">${s.c}</div>
+        ${s.n?`<div class="mv-notes-toggle" onclick="this.nextElementSibling.classList.toggle('show')">&#128218; Speaker Notes</div>
+        <div class="mv-notes">${s.n}</div>`:''}
+      </div>`;
+    });
+  }
+
   document.getElementById('mvBody').innerHTML=html;
   document.getElementById('mvProgress').textContent=`${mod.slides.length} slides`;
 
