@@ -1485,7 +1485,8 @@ function saveState(){
         fcReviews:r.fcReviews||0, drillsCompleted:r.drillsCompleted||0,
         drillsPerfect:r.drillsPerfect||0, badges:r.badges||[],
         activityLog:(r.activityLog||[]).slice(0,100),
-        discResult:r.discResult||null
+        discResult:r.discResult||null,
+        certificates:r.certificates||[]
       }).catch(e=>console.warn('Save failed:',e));
     }
     // Save assignments
@@ -1506,7 +1507,7 @@ async function loadUserData(uid){
       quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
       drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
       badges:d.badges||[], activityLog:d.activityLog||[],
-      discResult:d.discResult||null
+      discResult:d.discResult||null, certificates:d.certificates||[]
     };
     return d.role||'rep';
   }
@@ -1826,6 +1827,7 @@ function renderHome(){
       </div>`;
     });
   }
+  html+=getCertificatesHTML();
   document.getElementById('pg-home').innerHTML=html;
 }
 
@@ -1903,9 +1905,22 @@ function openModule(id){
   renderModuleSlides(mod);
   document.getElementById('moduleViewer').classList.add('on');
   logActivity('Opened: '+mod.title);
+  // Clear quiz lockouts for this module (rep is re-studying)
+  if(currentRep){
+    const r=reps[currentRep];
+    if(r.quizScores){
+      ['foundation','advanced','expert'].forEach(t=>{
+        const key=t==='foundation'?id:id+'_'+t;
+        if(r.quizScores[key]&&r.quizScores[key].failedAt){
+          r.quizScores[key].restudied=true;
+        }
+      });
+      saveState();
+    }
+  }
   // Start timer update for bottom bar
   if(window._mvTimer)clearInterval(window._mvTimer);
-  window._mvTimer=setInterval(()=>updateModuleBottom(mod),30000); // update every 30s
+  window._mvTimer=setInterval(()=>updateModuleBottom(mod),30000);
 }
 
 let mvViewMode='slides'; // 'slides' or 'notes'
@@ -2118,7 +2133,9 @@ function showQuizTiers(modId){
     const passed=score&&score.best>=80;
     const qs=tiers[tier]||[];
 
-    if(unlocked){
+    const locked=isQuizLocked(modId,tier);
+
+    if(unlocked&&!locked){
       html+=`<div class="mod-item" onclick="startQuiz('${modId}','${tier}')" style="border-color:${passed?'var(--green)':info.color}20;">
         <div class="mod-icon" style="background:${info.color}20;color:${info.color}">${info.icon}</div>
         <div class="mod-info">
@@ -2127,6 +2144,18 @@ function showQuizTiers(modId){
         </div>
         <div style="text-align:right;">
           ${passed?`<div style="font-size:16px;font-weight:700;color:var(--green);">${score.best}% &#9989;</div>`:(score?`<div style="font-size:16px;font-weight:700;color:var(--orange);">${score.best}%</div><div style="font-size:10px;color:var(--gray);">Need 80%</div>`:`<div style="font-size:12px;color:${info.color};">&#9654; Start</div>`)}
+        </div>
+      </div>`;
+    }else if(unlocked&&locked){
+      html+=`<div class="mod-item" style="border-color:var(--red)20;opacity:.7;" onclick="openModule('${modId}');switchTab('train');">
+        <div class="mod-icon" style="background:rgba(192,57,43,.15);color:var(--red);">&#128274;</div>
+        <div class="mod-info">
+          <div class="mod-name">${info.label}</div>
+          <div class="mod-desc" style="color:var(--red-l);">Review module to unlock retake</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px;font-weight:700;color:var(--red);">${score.best}%</div>
+          <div style="font-size:10px;color:var(--red-l);">Locked</div>
         </div>
       </div>`;
     }else{
@@ -2146,10 +2175,26 @@ function showQuizTiers(modId){
 
 let quizState={};
 
+function isQuizLocked(modId,tier){
+  if(!currentRep)return false;
+  const r=reps[currentRep];
+  const scoreKey=tier==='foundation'?modId:modId+'_'+tier;
+  const score=r.quizScores&&r.quizScores[scoreKey];
+  if(!score||!score.failedAt)return false;
+  // Locked if failed AND hasn't re-studied (reopened module after failing)
+  return !score.restudied;
+}
+
 function startQuiz(modId,tier){
   tier=tier||'foundation';
   const tiers=QUIZZES[modId];
   if(!tiers)return;
+  // Check lockout
+  if(isQuizLocked(modId,tier)){
+    const mod=MODULES.find(m=>m.id===modId);
+    showToast('Review the '+mod.title+' module before retaking','toast-streak');
+    return;
+  }
   const qs=tiers[tier]||tiers.foundation||[];
   if(!qs.length)return;
   const mod=MODULES.find(m=>m.id===modId);
@@ -2219,11 +2264,24 @@ function renderQuizResults(){
         r.quizScores[s.modId]={best:pct,last:pct,date:new Date().toISOString()};
       }
     }
+    // Record failure lockout
+    if(!passed){
+      r.quizScores[scoreKey].failedAt=new Date().toISOString();
+      r.quizScores[scoreKey].restudied=false;
+    }else{
+      // Clear any lockout on pass
+      if(r.quizScores[scoreKey].failedAt){
+        delete r.quizScores[scoreKey].failedAt;
+        delete r.quizScores[scoreKey].restudied;
+      }
+    }
     saveState();
     const tierPts=tier==='expert'?75:tier==='advanced'?60:50;
     if(passed)addPoints(tierPts,tierInfo.label+' quiz passed: '+mod.title);
     else addPoints(15,'Quiz attempted: '+mod.title);
     checkBadges();
+    // Check for certificates
+    if(passed)checkCertificates();
   }
 
   const nextTier=tier==='foundation'?'advanced':tier==='advanced'?'expert':null;
@@ -2234,11 +2292,12 @@ function renderQuizResults(){
     <div style="font-size:12px;padding:4px 12px;border-radius:12px;background:${tierInfo.color}20;color:${tierInfo.color};font-weight:700;display:inline-block;margin-bottom:8px;">${tierInfo.label} Tier</div>
     <div class="quiz-score-num" style="color:${passed?'var(--green)':'var(--orange)'};">${pct}%</div>
     <div class="quiz-score-label">${s.correct} of ${s.questions.length} correct</div>
-    <div style="font-size:16px;font-weight:600;color:${passed?'var(--green)':'var(--orange)'};margin-bottom:8px;">${passed?'Passed!':'Keep studying - 80% required to pass'}</div>
+    <div style="font-size:16px;font-weight:600;color:${passed?'var(--green)':'var(--orange)'};margin-bottom:8px;">${passed?'Passed!':'Failed — review the module before retaking'}</div>
     ${unlockedNext?`<div style="font-size:14px;color:var(--gold);margin-bottom:16px;">&#128275; ${TIER_INFO[nextTier].label} tier unlocked!</div>`:''}
     ${tier==='foundation'&&passed?`<div style="font-size:12px;color:var(--green);margin-bottom:16px;">Module completion unlocked</div>`:''}
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-      <button class="mv-complete-btn" style="margin:4px;" onclick="startQuiz('${s.modId}','${tier}')">Retry ${tierInfo.label}</button>
+      ${passed?`<button class="mv-complete-btn" style="margin:4px;" onclick="startQuiz('${s.modId}','${tier}')">Retry ${tierInfo.label}</button>`
+        :`<button class="mv-complete-btn" style="margin:4px;background:var(--blue);" onclick="openModule('${s.modId}');switchTab('train');">&#128218; Go Study ${mod.title}</button>`}
       ${unlockedNext?`<button class="mv-complete-btn" style="margin:4px;background:${TIER_INFO[nextTier].color};" onclick="startQuiz('${s.modId}','${nextTier}')">Start ${TIER_INFO[nextTier].label} &#9654;</button>`:''}
       <button class="mv-nav-btn mv-prev" style="margin:4px;" onclick="showQuizTiers('${s.modId}')">Back to Tiers</button>
     </div>
@@ -2742,6 +2801,71 @@ function renderDiscResultsScreen(result){
   </div>`;
 
   document.getElementById('pg-assess').innerHTML=html;
+}
+
+// ---- CERTIFICATES ----
+const CERTIFICATES = [
+  {id:'cert_core',title:'Core Sales Process',desc:'Completed all 7 Core Sales Process modules with passing quiz scores',
+   check:r=>{
+     const coreMods=['mod1','mod2','mod3','mod4','mod5','mod6','mod7'];
+     return coreMods.every(m=>(r.completedModules||[]).includes(m)&&r.quizScores&&r.quizScores[m]&&r.quizScores[m].best>=80);
+   }},
+  {id:'cert_jobtype',title:'Job Type Specialist',desc:'Completed all 5 Job Type Education modules with passing quiz scores',
+   check:r=>{
+     const jtMods=['jt1','jt2','jt3','jt4','jt5'];
+     return jtMods.every(m=>(r.completedModules||[]).includes(m)&&r.quizScores&&r.quizScores[m]&&r.quizScores[m].best>=80);
+   }},
+  {id:'cert_advanced',title:'Advanced Sales Certification',desc:'Passed all Advanced tier quizzes across every module',
+   check:r=>{
+     const allMods=['mod1','mod2','mod3','mod4','mod5','mod6','mod7','jt1','jt2','jt3','jt4','jt5'];
+     return allMods.every(m=>r.quizScores&&r.quizScores[m+'_advanced']&&r.quizScores[m+'_advanced'].best>=80);
+   }},
+  {id:'cert_master',title:'Apex Master Certification',desc:'Passed all Expert tier quizzes — the highest achievement in the program',
+   check:r=>{
+     const allMods=['mod1','mod2','mod3','mod4','mod5','mod6','mod7','jt1','jt2','jt3','jt4','jt5'];
+     return allMods.every(m=>r.quizScores&&r.quizScores[m+'_expert']&&r.quizScores[m+'_expert'].best>=80);
+   }}
+];
+
+function checkCertificates(){
+  if(!currentRep)return;
+  const r=reps[currentRep];
+  r.certificates=r.certificates||[];
+  CERTIFICATES.forEach(cert=>{
+    if(!r.certificates.includes(cert.id)&&cert.check(r)){
+      r.certificates.push(cert.id);
+      saveState();
+      setTimeout(()=>showToast('Certificate earned: '+cert.title+' &#127891;','toast-badge'),1200);
+    }
+  });
+}
+
+function renderCertificateCard(cert,repName,date){
+  return `<div class="cert">
+    <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gray);margin-bottom:8px;">Certificate of Completion</div>
+    <div class="cert-title">${cert.title}</div>
+    <div style="width:80px;height:1px;background:var(--gold);margin:12px auto;"></div>
+    <div style="font-size:12px;color:var(--gray);margin-bottom:8px;">This certifies that</div>
+    <div class="cert-name">${repName}</div>
+    <div class="cert-detail">${cert.desc}</div>
+    <div style="width:120px;height:1px;background:var(--gold);margin:16px auto;"></div>
+    <div style="font-family:Georgia,serif;font-size:16px;color:var(--gold);margin-bottom:4px;">Apex Foundation Specialists</div>
+    <div class="cert-date">${date||new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</div>
+  </div>`;
+}
+
+// Show certificates on the home page if earned
+function getCertificatesHTML(){
+  if(!currentRep)return '';
+  const r=reps[currentRep];
+  if(!r.certificates||!r.certificates.length)return '';
+  let html='<div class="sec-header">Certificates</div>';
+  r.certificates.forEach(certId=>{
+    const cert=CERTIFICATES.find(c=>c.id===certId);
+    if(!cert)return;
+    html+=renderCertificateCard(cert,r.name);
+  });
+  return html;
 }
 
 // ---- LEADERBOARD PAGE ----
