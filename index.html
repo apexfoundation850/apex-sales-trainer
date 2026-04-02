@@ -2272,7 +2272,13 @@ function answerQuiz(idx){
   if(!correct)document.getElementById('qopt-'+q.c).classList.add('correct');
   document.getElementById('quizExplain').classList.add('show');
   document.querySelectorAll('.quiz-opt').forEach(b=>b.style.pointerEvents='none');
-  setTimeout(()=>{s.current++;renderQuizQuestion();},2500);
+  // Show Next button instead of auto-advancing
+  const nextBtn=document.createElement('button');
+  nextBtn.className='mv-complete-btn';
+  nextBtn.style.cssText='width:100%;margin-top:16px;';
+  nextBtn.innerHTML=s.current+1>=s.questions.length?'See Results &#8594;':'Next Question &#8594;';
+  nextBtn.onclick=()=>{s.current++;renderQuizQuestion();};
+  document.getElementById('quizExplain').parentElement.appendChild(nextBtn);
 }
 
 function renderQuizResults(){
