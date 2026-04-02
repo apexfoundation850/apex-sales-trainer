@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#C0392B">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.json">
 <title>Apex Sales Trainer</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -1826,6 +1829,8 @@ function renderHome(){
     });
   }
 
+  html+=getOnboardingHTML();
+
   // Quick Actions
   html+=`<div class="sec-header">Quick Actions</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -2391,8 +2396,15 @@ function renderFlashcard(){
 }
 
 function fcAnswer(type){
-  if(type==='know')fcState.known++;
-  else fcState.again++;
+  if(type==='know'){
+    fcState.known++;
+  }else{
+    fcState.again++;
+    // Spaced repetition: add missed card back 3-5 cards later
+    const card=fcState.cards[fcState.current];
+    const insertAt=Math.min(fcState.current+3+Math.floor(Math.random()*3),fcState.cards.length);
+    fcState.cards.splice(insertAt,0,{...card,_retry:true});
+  }
   if(currentRep){
     reps[currentRep].fcReviews=(reps[currentRep].fcReviews||0)+1;
     saveState();
@@ -3691,6 +3703,40 @@ function renderDiscResultsScreen(result){
   document.getElementById('pg-assess').innerHTML=html;
 }
 
+// ---- ONBOARDING CHECKLIST ----
+const ONBOARDING_STEPS = [
+  {id:'ob1',phase:'Days 1-3',title:'Complete Modules 1-5 (Sales Process)',check:r=>['mod1','mod2','mod3','mod4','mod5'].every(m=>(r.completedModules||[]).includes(m))},
+  {id:'ob2',phase:'Days 4-6',title:'Complete all 5 Job Type modules',check:r=>['jt1','jt2','jt3','jt4','jt5'].every(m=>(r.completedModules||[]).includes(m))},
+  {id:'ob3',phase:'Day 7',title:'Complete DISC Assessment',check:r=>!!r.discResult},
+  {id:'ob4',phase:'Day 7',title:'Complete Motivators Assessment',check:r=>!!r.motivatorsResult},
+  {id:'ob5',phase:'Day 7',title:'Complete EQ Assessment',check:r=>!!r.eqResult},
+  {id:'ob6',phase:'Days 1-7',title:'Pass all Foundation tier quizzes',check:r=>{const m=['mod1','mod2','mod3','mod4','mod5','mod6','mod7','jt1','jt2','jt3','jt4','jt5'];return m.every(id=>r.quizScores&&r.quizScores[id]&&r.quizScores[id].best>=80);}},
+  {id:'ob7',phase:'Days 1-7',title:'Complete 10 objection drills',check:r=>(r.drillsCompleted||0)>=10},
+  {id:'ob8',phase:'Days 1-7',title:'Complete 5 AI role-play sessions',check:r=>(r.roleplayHistory||[]).length>=5},
+  {id:'ob9',phase:'Days 8-14',title:'Pass all Advanced tier quizzes',check:r=>{const m=['mod1','mod2','mod3','mod4','mod5','mod6','mod7','jt1','jt2','jt3','jt4','jt5'];return m.every(id=>r.quizScores&&r.quizScores[id+'_advanced']&&r.quizScores[id+'_advanced'].best>=80);}},
+  {id:'ob10',phase:'Days 15-30',title:'Complete 20 total AI role-play sessions',check:r=>(r.roleplayHistory||[]).length>=20},
+  {id:'ob11',phase:'Days 15-30',title:'Earn all Expert tier quiz passes',check:r=>{const m=['mod1','mod2','mod3','mod4','mod5','mod6','mod7','jt1','jt2','jt3','jt4','jt5'];return m.every(id=>r.quizScores&&r.quizScores[id+'_expert']&&r.quizScores[id+'_expert'].best>=80);}}
+];
+
+function getOnboardingHTML(){
+  if(!currentRep)return '';
+  const r=reps[currentRep];
+  const completed=ONBOARDING_STEPS.filter(s=>s.check(r)).length;
+  const total=ONBOARDING_STEPS.length;
+  if(completed>=total)return '';
+  const pct=Math.round(completed/total*100);
+  let html=`<div class="sec-header">Onboarding Roadmap</div><div class="card" style="border-color:var(--red)30;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><div style="font-size:14px;font-weight:700;">Your First 30 Days</div><div style="font-size:13px;color:var(--gray);">${completed}/${total}</div></div>
+    <div class="pbar" style="margin-bottom:12px;"><div class="pbar-fill" style="width:${pct}%;background:var(--red);"></div></div>`;
+  let lastPhase='';
+  ONBOARDING_STEPS.forEach(step=>{
+    const done=step.check(r);
+    if(step.phase!==lastPhase){html+=`<div style="font-size:11px;color:var(--red);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin:10px 0 6px;">${step.phase}</div>`;lastPhase=step.phase;}
+    html+=`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);"><div style="font-size:16px;">${done?'&#9989;':'&#11036;'}</div><div style="font-size:13px;color:${done?'var(--gray)':'var(--white)'};">${step.title}</div></div>`;
+  });
+  return html+`</div>`;
+}
+
 // ---- CERTIFICATES ----
 const CERTIFICATES = [
   {id:'cert_core',title:'Core Sales Process',desc:'Completed all 7 Core Sales Process modules with passing quiz scores',
@@ -3831,6 +3877,21 @@ function renderManager(){
         <span class="lb-level ${lvl.cls}">${lvl.name}</span>
       </div>`;
     });
+  }
+
+  if(mgrTab==='overview'){
+    const now=new Date();const weekAgo=new Date(now-7*86400000);const twoWeeksAgo=new Date(now-14*86400000);
+    html+=`<div class="sec-header" style="margin-top:20px;">Weekly Activity Trend</div>`;
+    Object.entries(reps).forEach(([id,r])=>{
+      const log=r.activityLog||[];
+      const thisWeek=log.filter(a=>new Date(a.time)>=weekAgo).length;
+      const lastWeek=log.filter(a=>{const d=new Date(a.time);return d>=twoWeeksAgo&&d<weekAgo;}).length;
+      const trend=thisWeek>lastWeek?'&#9650;':thisWeek<lastWeek?'&#9660;':'&#9644;';
+      const trendColor=thisWeek>lastWeek?'var(--green)':thisWeek<lastWeek?'var(--red)':'var(--gray)';
+      const rpW=(r.roleplayHistory||[]).filter(rp=>new Date(rp.date)>=weekAgo).length;
+      html+=`<div class="mgr-stat"><div style="flex:1;"><span style="font-weight:600;color:var(--white);">${r.name}</span><span style="font-size:12px;color:var(--gray);margin-left:8px;">${thisWeek} this wk / ${lastWeek} last wk</span></div><div style="display:flex;align-items:center;gap:8px;">${rpW?`<span style="font-size:11px;color:var(--purple);">${rpW} RP</span>`:''}<span style="font-size:16px;color:${trendColor};">${trend}</span></div></div>`;
+    });
+    html+=`<div style="margin-top:20px;text-align:center;"><button class="mv-nav-btn mv-prev" onclick="exportCSV()" style="padding:12px 32px;">&#128190; Export All Data (CSV)</button></div>`;
   }
 
   if(mgrTab==='reps'){
@@ -4299,6 +4360,23 @@ function deleteAssignment(aid){
   delete assignments[aid];
   db.collection('assignments').doc(aid).delete().catch(e=>console.warn(e));
   renderManager();
+}
+
+function exportCSV(){
+  const h=['Name','Role','Points','Streak','Modules','Quizzes Passed','Avg Quiz','Drills','FC Reviews','Role-Plays','Avg RP Score','DISC','Motivator','EQ','Last Active'];
+  const rows=[h.join(',')];
+  Object.values(reps).forEach(r=>{
+    const qs=r.quizScores||{};const qk=Object.keys(qs);
+    const qP=qk.filter(k=>qs[k].best>=80).length;
+    const qA=qk.length?Math.round(qk.reduce((a,k)=>a+qs[k].best,0)/qk.length):0;
+    const rh=r.roleplayHistory||[];
+    const ra=rh.length?Math.round(rh.reduce((a,p)=>a+(p.score||0),0)/rh.length):0;
+    rows.push(['"'+(r.name||'')+'"',r.role||'rep',r.points||0,r.streak||0,(r.completedModules||[]).length+'/'+MODULES.length,qP,qA,r.drillsCompleted||0,r.fcReviews||0,rh.length,ra,r.discResult?r.discResult.primary:'',r.motivatorsResult?r.motivatorsResult.primary:'',r.eqResult?r.eqResult.overall:'',r.lastActive||''].join(','));
+  });
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='apex_report_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  showToast('CSV exported','toast-success');
 }
 
 function promoteToManager(uid){
