@@ -267,6 +267,23 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
 .rp-loading .spinner{display:inline-block;width:32px;height:32px;border:3px solid var(--dark4);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* DISC ASSESSMENT */
+.disc-d{color:#d4461a;} .disc-i{color:#d4a017;} .disc-s{color:#22a358;} .disc-c{color:#2e7dd4;}
+.disc-bg-d{background:#d4461a;} .disc-bg-i{background:#d4a017;} .disc-bg-s{background:#22a358;} .disc-bg-c{background:#2e7dd4;}
+.disc-opt{display:block;width:100%;text-align:left;padding:16px;background:var(--dark3);border:2px solid var(--border);border-radius:10px;color:var(--gray-l);font-size:14px;cursor:pointer;margin-bottom:10px;transition:all .2s;line-height:1.5;}
+.disc-opt:hover{border-color:var(--gray);color:var(--white);}
+.disc-opt.selected{border-color:var(--red);background:rgba(192,57,43,.1);color:var(--white);}
+.disc-wheel{display:grid;grid-template-columns:1fr 1fr;gap:3px;max-width:320px;margin:20px auto;border-radius:16px;overflow:hidden;}
+.disc-quad{padding:24px 16px;text-align:center;position:relative;}
+.disc-quad-letter{font-size:36px;font-weight:800;opacity:.9;}
+.disc-quad-name{font-size:11px;letter-spacing:1px;text-transform:uppercase;margin-top:2px;opacity:.8;}
+.disc-quad-pct{font-size:20px;font-weight:700;margin-top:6px;}
+.disc-quad.primary{box-shadow:inset 0 0 0 3px rgba(255,255,255,.4);}
+.disc-profile-card{padding:24px;border-radius:var(--radius);margin:20px 0;text-align:center;}
+.disc-section{margin:16px 0;padding:16px;background:var(--dark3);border-radius:var(--radius);}
+.disc-section-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:10px;}
+.disc-tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px;}
+
 /* EMPTY STATE */
 .empty{text-align:center;padding:40px 20px;color:var(--gray);}
 .empty-icon{font-size:48px;margin-bottom:12px;opacity:.4;}
@@ -332,6 +349,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
     <div id="pg-cards" class="page"></div>
     <div id="pg-drills" class="page"></div>
     <div id="pg-board" class="page"></div>
+    <div id="pg-assess" class="page"></div>
     <div id="pg-mgr" class="page"></div>
   </div>
 
@@ -354,6 +372,9 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
     </button>
     <button class="bnav-btn" data-tab="board" onclick="switchTab('board')">
       <svg viewBox="0 0 24 24"><path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zM22 11h-5.5v10H22V11z"/></svg>Board
+    </button>
+    <button class="bnav-btn" data-tab="assess" onclick="switchTab('assess');renderAssessment()">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>Assess
     </button>
     <button class="bnav-btn" data-tab="mgr" onclick="switchTab('mgr')" style="display:none;">
       <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>Manage
@@ -1236,6 +1257,165 @@ const ROLEPLAY_SCENARIOS = [
   {cat:'Sales Psychology',scenario:'The homeowner had a bad experience with another company and is skeptical.',context:'Homeowner attitude: . Skill focus: Building trust through transparency.'},
 ];
 
+// ---- DISC ASSESSMENT DATA ----
+const discQuestions = [
+  {cat:'In the Appointment',text:"You walk into a new appointment. What's your first move?",opts:[
+    {text:'Take charge. Introduce yourself confidently and steer the conversation toward the problem.',s:{D:3,I:1}},
+    {text:'Warm them up. Build some personal connection before getting into the work.',s:{I:3,S:1}},
+    {text:'Read the room. Get comfortable, then ease into the inspection at their pace.',s:{S:3}},
+    {text:"Get to the inspection. You're here for a reason — start gathering the facts.",s:{C:3,D:1}}
+  ]},
+  {cat:'Under Pressure',text:"A homeowner is clearly skeptical. They've had other companies out and didn't buy. You...",opts:[
+    {text:'Address it head-on: "What did they tell you? Let me show you what\'s actually going on."',s:{D:3,C:1}},
+    {text:'Use charm and energy to reset the mood and rebuild their confidence.',s:{I:3}},
+    {text:'Slow down, listen more, and let the trust build naturally.',s:{S:3}},
+    {text:'Walk them through the data methodically until the facts speak for themselves.',s:{C:3}}
+  ]},
+  {cat:'Closing',text:"You've done a full walkthrough. The homeowner seems interested but quiet. You...",opts:[
+    {text:'Ask for the decision directly. "Based on what we found today, I\'d like to get you on the schedule."',s:{D:3}},
+    {text:'Paint the picture of what their home looks like after — make them feel the outcome.',s:{I:3,S:1}},
+    {text:'Give them space and let the conversation come naturally to a decision.',s:{S:3}},
+    {text:'Walk through the findings one more time to make sure they understand everything before deciding.',s:{C:3,S:1}}
+  ]},
+  {cat:'Working Style',text:'How do you prefer to start your workday?',opts:[
+    {text:"Jump straight into calls or appointments. Let's go.",s:{D:3,I:1}},
+    {text:'Check in with the team, get the energy up, then head out.',s:{I:3}},
+    {text:'Review my schedule, prepare for each appointment, get organized.',s:{S:2,C:2}},
+    {text:"Review notes from yesterday, look up information on today's jobs, prep thoroughly.",s:{C:3}}
+  ]},
+  {cat:'Handling Objections',text:"A homeowner says the price is too high. Your go-to response?",opts:[
+    {text:'Push back confidently: "Let me show you what happens if you wait."',s:{D:3}},
+    {text:'Connect them emotionally to the risk: "I\'ve seen what this looks like in two years..."',s:{I:3,S:1}},
+    {text:'Validate their concern, then gently walk them toward the value over time.',s:{S:3}},
+    {text:'Break down the cost vs. the long-term structural risk with specific numbers.',s:{C:3,D:1}}
+  ]},
+  {cat:'Team Dynamics',text:"There's a sales team meeting. What's your role in the room?",opts:[
+    {text:"You've got opinions and you're going to share them. You lead the conversation.",s:{D:3,I:1}},
+    {text:"You're energetic, vocal, and make the meeting enjoyable for everyone.",s:{I:3}},
+    {text:'You listen, absorb, and contribute when you have something useful to add.',s:{S:3,C:1}},
+    {text:'You take notes, ask specific questions, and want the details to be accurate.',s:{C:3}}
+  ]},
+  {cat:'After a Loss',text:"You lose a deal you thought you had. What's your reaction?",opts:[
+    {text:'Frustrated briefly, then immediately focused on the next one.',s:{D:3}},
+    {text:"It stings — you put real energy into that. But you shake it off and talk to someone.",s:{I:3,S:1}},
+    {text:"You sit with it for a bit. It bothers you more than you let on.",s:{S:3}},
+    {text:'You replay the appointment to understand exactly where it went wrong.',s:{C:3,D:1}}
+  ]},
+  {cat:'Motivation',text:'What kind of recognition means the most to you?',opts:[
+    {text:'Being #1. Public leaderboard, top numbers, acknowledged in front of the team.',s:{D:3,I:1}},
+    {text:'Verbal praise from the boss and the team — being appreciated out loud.',s:{I:3,S:1}},
+    {text:'A personal, sincere "I see how hard you work" from someone I respect.',s:{S:3}},
+    {text:'Being trusted with complex accounts or asked for my expert input.',s:{C:3}}
+  ]},
+  {cat:'Pace',text:'How long does a typical appointment run for you?',opts:[
+    {text:"I'm efficient. Get in, diagnose, present, ask for the close. 45 minutes or less.",s:{D:3}},
+    {text:'Varies — I get into conversations and they go longer than planned.',s:{I:3,S:1}},
+    {text:"I take the time they need. If it's 90 minutes and they leave comfortable, that's a win.",s:{S:3}},
+    {text:"I'm thorough. I won't leave until I've assessed everything properly.",s:{C:3,S:1}}
+  ]},
+  {cat:'Decision Making',text:"When you're unsure how to handle a situation in an appointment, you...",opts:[
+    {text:'Trust your gut and make a call. Hesitation loses deals.',s:{D:3,I:1}},
+    {text:'Read the person and do what feels right for the relationship.',s:{I:2,S:2}},
+    {text:'Slow down and let the customer guide the pace.',s:{S:3}},
+    {text:"Rely on what I know — facts and process don't fail you.",s:{C:3}}
+  ]},
+  {cat:'Follow-Up',text:"A customer says they'll think about it and call you. How do you handle the follow-up?",opts:[
+    {text:"Call them the next day. I'm not waiting around.",s:{D:3,I:1}},
+    {text:'Send a warm personal message — then call later in the week.',s:{I:3,S:1}},
+    {text:'Give them space and reach out when it feels right.',s:{S:3}},
+    {text:'Follow a structured follow-up sequence: specific timing, specific messaging.',s:{C:3,D:1}}
+  ]},
+  {cat:'Under Stress',text:"You're having a rough week — slow leads, no closes. How do you handle it?",opts:[
+    {text:'Push harder. Make more calls, book more appointments. Grind through it.',s:{D:3,I:1}},
+    {text:'Talk to someone — a teammate or my manager. I need to reset with people.',s:{I:3,S:1}},
+    {text:"Stay steady. It'll come back. Keep showing up and trust the process.",s:{S:3}},
+    {text:"Analyze what's not working and change my approach methodically.",s:{C:3}}
+  ]},
+  {cat:'The Customer',text:'What type of homeowner do you naturally do best with?',opts:[
+    {text:"The decisive buyer who's ready to act. We get each other.",s:{D:3}},
+    {text:'The friendly, talkative homeowner who just needs someone they can connect with.',s:{I:3}},
+    {text:'The cautious, trust-based buyer who needs time and sincerity.',s:{S:3}},
+    {text:'The analytical skeptic who wants facts and specifics before deciding.',s:{C:3}}
+  ]},
+  {cat:'Work Style',text:'How do you feel about updating the CRM and completing paperwork?',opts:[
+    {text:"It's not my favorite but I do what I have to.",s:{D:2,I:1}},
+    {text:"I forget or put it off — I'm better with people than admin.",s:{I:3}},
+    {text:"I do it consistently — keeping things in order helps me take care of my customers.",s:{S:3,C:1}},
+    {text:'I actually like it. Accurate data helps me perform better.',s:{C:3}}
+  ]},
+  {cat:'Conflict',text:"A homeowner gets angry mid-appointment about a past contractor who ripped them off. You...",opts:[
+    {text:'Use it as an opening: "That\'s exactly why I want to show you something different today."',s:{D:3,I:1}},
+    {text:'Match their emotion, validate their frustration, and then turn it toward a positive.',s:{I:3}},
+    {text:'Listen fully before saying anything. Let them vent. Then rebuild the trust slowly.',s:{S:3}},
+    {text:'Stay calm and factual: "Let me show you specifically what makes our process different."',s:{C:3,S:1}}
+  ]},
+  {cat:'Big Picture',text:"Why do you think you're good at sales?",opts:[
+    {text:"I take control of the situation and don't let deals drift.",s:{D:3}},
+    {text:'People like me and trust me quickly.',s:{I:3}},
+    {text:'I genuinely care about the customer and they can feel it.',s:{S:3,I:1}},
+    {text:'I know my stuff. Credibility closes deals.',s:{C:3,D:1}}
+  ]},
+  {cat:'Coaching',text:"Your manager wants to ride along on your next appointment. Your honest reaction?",opts:[
+    {text:"Fine, but stay out of my way. I know how to run my appointments.",s:{D:3}},
+    {text:"Great — I'm actually excited to show what I can do.",s:{I:3,D:1}},
+    {text:"A little nervous, but I trust the intent. I'll be myself.",s:{S:3}},
+    {text:"Good — I want feedback. I'll take notes on what can improve.",s:{C:3,S:1}}
+  ]},
+  {cat:'The Sale',text:'What do you believe is the most important part of a sales appointment?',opts:[
+    {text:'The decision moment. Everything else is just setup.',s:{D:3}},
+    {text:'The connection. If they like you, everything else is easier.',s:{I:3}},
+    {text:'The trust. A customer who trusts you will say yes — and come back.',s:{S:3}},
+    {text:'The diagnosis. If you find the real problem, the sale makes itself.',s:{C:3,S:1}}
+  ]},
+  {cat:'Preferences',text:'Which work environment do you thrive in most?',opts:[
+    {text:'Fast-paced, competitive, results-focused. High stakes, high reward.',s:{D:3}},
+    {text:'Energetic, people-heavy, with variety and team interaction.',s:{I:3}},
+    {text:'Steady and supportive — clear expectations, good team culture, consistent leads.',s:{S:3}},
+    {text:'Organized and process-driven — good tools, accurate information, defined systems.',s:{C:3}}
+  ]},
+  {cat:'Self-Awareness',text:"What's the thing you're most likely to get wrong in a sales appointment?",opts:[
+    {text:"Moving too fast — sometimes I close before the customer is emotionally ready.",s:{D:3}},
+    {text:"Getting so into the conversation I forget to close.",s:{I:3}},
+    {text:"Not asking for the decision when I should — I'm too patient sometimes.",s:{S:3}},
+    {text:'Over-explaining. I want them to understand everything before deciding.',s:{C:3}}
+  ]}
+];
+
+const discProfiles = {
+  D:{name:'Dominance',color:'#d4461a',emoji:'&#127919;',
+    tagline:'Direct. Decisive. Results-driven. Built to close.',
+    blindspot:'Can move so fast homeowners feel rushed instead of guided. A scared homeowner who is not ready will shut down, not sign. Slowing down at key moments is not weakness — it is control.',
+    strengths:['Commanding presence and confidence','Fast diagnosis and decision-making','Handles objections directly without flinching','Self-motivated — does not need to be pushed'],
+    motivators:['Clear targets with real earning upside','Autonomy to run deals their own way','Public recognition as a top performer','Competition — leaderboards and rankings','Fast feedback on results'],
+    drains:['Micromanagement','Slow pipeline or stalled leads','Excessive admin and reporting','Being second-guessed in front of customers'],
+    coachingStyle:'Be direct and results-focused. Skip the softening. Give them the hardest accounts. Coach outcomes, not every step. Challenge them to slow down at the emotional close moment.',
+    aiPersona:'You are coaching a high-D sales rep. They are direct and confident. Match their pace. Be blunt. No fluff. Challenge them on moments where they moved too fast. Praise decisiveness. Push them to read emotional readiness before asking for the close.'},
+  I:{name:'Influence',color:'#d4a017',emoji:'&#128293;',
+    tagline:'Enthusiastic. Persuasive. People-first. Lights up the room.',
+    blindspot:'Can be so likable that homeowners enjoy the conversation and then do not buy. Rapport is the vehicle, not the destination. Deals get lost in the follow-up gap.',
+    strengths:['Builds instant rapport and trust','Enthusiastic, energizing presence','Natural storyteller — uses narratives that stick','High emotional intelligence with homeowners'],
+    motivators:['Public praise and team recognition','Exciting leads and fresh conversations','Freedom to be themselves in appointments','Collaborative team culture','Hearing customer impact stories'],
+    drains:['Working in isolation for too long','Repetitive tasks with no variety','Heavy admin requirements','Being dismissed or shut down in team settings'],
+    coachingStyle:'Use energy and enthusiasm back at them. Give public recognition aggressively. Build structure around their natural warmth. Coach the close and the follow-up — that is the gap.',
+    aiPersona:'You are coaching a high-I sales rep. They are warm, energetic, and relationship-focused. Match their enthusiasm but redirect toward structure. Praise their connection-building. Coach them to always end with a clear close attempt. Keep feedback upbeat but honest about the follow-through gap.'},
+  S:{name:'Steadiness',color:'#22a358',emoji:'&#129309;',
+    tagline:'Reliable. Patient. Trust-builder. In it for the long game.',
+    blindspot:'Avoids the confrontation of asking for a decision even when the customer is ready. Staying in limbo damages the relationship more than asking. Trust gives permission to guide — not using it is a disservice.',
+    strengths:['Builds deep, lasting trust with homeowners','Consistent and reliable — shows up the same way every time','Active listener who hears what is really being said','Excellent follow-through on commitments'],
+    motivators:['Genuine customer appreciation and thank-you moments','Stability in process, territory, and comp','Team culture that feels like family','Personal one-on-one recognition from management','Referrals and repeat customers who ask for them by name'],
+    drains:['Sudden changes without warning or context','High-pressure culture that feels inauthentic','Team conflict','Feeling unseen despite consistent effort'],
+    coachingStyle:'Give advance notice on changes. Teach them to close in language that feels natural to them. Set explicit decision-timeline expectations on open deals. Recognize consistency specifically and publicly.',
+    aiPersona:'You are coaching a high-S sales rep. They are patient, warm, and trust-driven. Be steady and supportive in your tone. Praise their relationship work and follow-through. Gently but directly coach them to ask for the decision — frame it as a caring act, not a sales tactic.'},
+  C:{name:'Conscientiousness',color:'#2e7dd4',emoji:'&#128300;',
+    tagline:'Analytical. Precise. Credibility-driven. Thorough by nature.',
+    blindspot:'Over-explains and under-closes. Can get so deep in data that the close never comes. Also slower to build emotional connection — and emotion often precedes logic in the buying decision.',
+    strengths:['Technical credibility that earns respect from skeptical homeowners','Thorough diagnosis — misses nothing on an inspection','Process discipline and accurate documentation','Handles complex technical objections with authority'],
+    motivators:['Time and resources to prepare properly','Being the acknowledged expert on the team','Complex accounts where knowledge is the differentiator','Organized systems and predictable process','Feedback that recognizes quality, not just close rate'],
+    drains:['Being rushed through an appointment','Disorganized or inconsistent process','Product or install quality that does not match what they promise','Sloppy handoffs or unclear expectations'],
+    coachingStyle:'Help them identify the close signal and act on it immediately. Give prep resources. Assign complex technical accounts. Teach a short emotional bridge. Recognize diagnostic quality, not just revenue.',
+    aiPersona:'You are coaching a high-C sales rep. They are analytical, precise, and credibility-driven. Respect their depth of knowledge. Praise their diagnostic thoroughness. Coach them to recognize when a homeowner is already convinced and to shift from presenting to asking.'}
+};
+
 const BADGES = [
   {id:'first_mod',name:'First Steps',icon:'&#128214;',desc:'Complete your first module',check:r=>r.completedModules&&r.completedModules.length>=1},
   {id:'all_core',name:'Core Complete',icon:'&#127942;',desc:'Complete all 7 core modules',check:r=>{const cm=r.completedModules||[];return MODULES.filter(m=>m.section==='core').every(m=>cm.includes(m.id))}},
@@ -1304,7 +1484,8 @@ function saveState(){
         completedModules:r.completedModules||[], quizScores:r.quizScores||{},
         fcReviews:r.fcReviews||0, drillsCompleted:r.drillsCompleted||0,
         drillsPerfect:r.drillsPerfect||0, badges:r.badges||[],
-        activityLog:(r.activityLog||[]).slice(0,100)
+        activityLog:(r.activityLog||[]).slice(0,100),
+        discResult:r.discResult||null
       }).catch(e=>console.warn('Save failed:',e));
     }
     // Save assignments
@@ -1324,7 +1505,8 @@ async function loadUserData(uid){
       lastActive:d.lastActive||null, completedModules:d.completedModules||[],
       quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
       drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
-      badges:d.badges||[], activityLog:d.activityLog||[]
+      badges:d.badges||[], activityLog:d.activityLog||[],
+      discResult:d.discResult||null
     };
     return d.role||'rep';
   }
@@ -1341,7 +1523,8 @@ async function loadAllUsers(){
       lastActive:d.lastActive||null, completedModules:d.completedModules||[],
       quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
       drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
-      badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep'
+      badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep',
+      discResult:d.discResult||null
     };
   });
 }
@@ -1370,7 +1553,8 @@ function startRealtimeSync(){
           lastActive:d.lastActive||null, completedModules:d.completedModules||[],
           quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
           drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
-          badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep'
+          badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep',
+          discResult:d.discResult||null
         };
       }
     });
@@ -1462,6 +1646,7 @@ auth.onAuthStateChanged(async user=>{
       renderCards();
       renderDrills();
       renderBoard();
+      renderAssessment();
       if(isManager)renderManager();
     },500);
   }else{
@@ -2302,7 +2487,8 @@ async function submitRolePlay(){
       body:JSON.stringify({
         scenario:rpState.scenario.scenario+' Context: '+rpState.scenario.context,
         repResponse:response,
-        category:rpState.scenario.cat
+        category:rpState.scenario.cat,
+        discProfile:currentRep&&reps[currentRep].discResult?reps[currentRep].discResult:null
       })
     });
     if(!res.ok)throw new Error('API error');
@@ -2381,6 +2567,183 @@ function renderRolePlayFeedback(){
   return html;
 }
 
+// ---- DISC ASSESSMENT PAGE ----
+let discState=null;
+
+function renderAssessment(){
+  const r=currentRep?reps[currentRep]:null;
+  const existing=r&&r.discResult;
+  let html='<div class="sec-header">Assessments</div>';
+
+  if(existing){
+    const p=discProfiles[existing.primary];
+    const s=discProfiles[existing.secondary];
+    html+=`<div class="card" style="border-color:${p.color}30;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div style="font-size:36px;">${p.emoji}</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--white);">Your DISC Profile</div>
+          <div style="font-size:13px;color:${p.color};font-weight:600;">${p.name} (${existing.primary})</div>
+        </div>
+      </div>
+      <div style="font-size:14px;color:var(--gray-l);font-style:italic;margin-bottom:12px;">${p.tagline}</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        ${['D','I','S','C'].map(l=>`<div style="flex:1;text-align:center;padding:8px;border-radius:8px;background:${discProfiles[l].color}${existing.primary===l?'30':'10'};">
+          <div style="font-size:18px;font-weight:700;color:${discProfiles[l].color};">${existing.pcts[l]}%</div>
+          <div style="font-size:10px;color:var(--gray);">${l}</div>
+        </div>`).join('')}
+      </div>
+      <button class="mv-nav-btn mv-prev" style="width:100%;" onclick="viewDiscResults()">View Full Profile</button>
+    </div>
+    <button class="rp-submit" style="background:var(--dark4);margin-bottom:20px;" onclick="startDiscSurvey()">Retake Assessment</button>`;
+  }else{
+    html+=`<div class="card" style="text-align:center;padding:30px;">
+      <div style="font-size:48px;margin-bottom:12px;">&#128202;</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;">DISC Sales Profile</div>
+      <div style="font-size:13px;color:var(--gray);margin-bottom:20px;">Discover your natural selling style. 20 questions, takes about 5 minutes. Your results personalize AI coaching across the app.</div>
+      <button class="mv-complete-btn" style="width:100%;" onclick="startDiscSurvey()">Start Assessment</button>
+    </div>`;
+  }
+  document.getElementById('pg-assess').innerHTML=html;
+}
+
+function startDiscSurvey(){
+  discState={current:0,answers:new Array(20).fill(null)};
+  renderDiscQuestion();
+}
+
+function renderDiscQuestion(){
+  const s=discState;
+  if(s.current>=discQuestions.length){return calculateDiscScores();}
+  const q=discQuestions[s.current];
+  const pct=Math.round((s.current/discQuestions.length)*100);
+
+  let html=`<div style="position:sticky;top:0;background:var(--dark);padding:12px 0 8px;z-index:10;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:12px;color:var(--gray);">Question ${s.current+1} of ${discQuestions.length}</div>
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--red);font-weight:700;">${q.cat}</div>
+    </div>
+    <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:var(--red);"></div></div>
+  </div>
+  <div style="font-size:18px;font-weight:700;color:var(--white);margin:20px 0 16px;line-height:1.4;">${q.text}</div>`;
+
+  q.opts.forEach((opt,i)=>{
+    const selected=s.answers[s.current]===i;
+    html+=`<button class="disc-opt ${selected?'selected':''}" onclick="answerDisc(${i})">${opt.text}</button>`;
+  });
+
+  html+=`<div style="display:flex;justify-content:space-between;margin-top:20px;">
+    ${s.current>0?`<button class="mv-nav-btn mv-prev" onclick="discState.current--;renderDiscQuestion()">&#8592; Back</button>`:'<div></div>'}
+    <button class="mv-nav-btn mv-next" ${s.answers[s.current]===null?'disabled style="opacity:.4;cursor:not-allowed;"':''} onclick="discState.current++;renderDiscQuestion()">Next &#8594;</button>
+  </div>`;
+  document.getElementById('pg-assess').innerHTML=html;
+}
+
+function answerDisc(idx){
+  discState.answers[discState.current]=idx;
+  renderDiscQuestion();
+}
+
+function calculateDiscScores(){
+  const scores={D:0,I:0,S:0,C:0};
+  discQuestions.forEach((q,i)=>{
+    const ans=discState.answers[i];
+    if(ans===null)return;
+    const s=q.opts[ans].s;
+    for(const[k,v]of Object.entries(s))scores[k]=(scores[k]||0)+v;
+  });
+  const total=scores.D+scores.I+scores.S+scores.C;
+  const pcts={D:Math.round(scores.D/total*100),I:Math.round(scores.I/total*100),S:Math.round(scores.S/total*100),C:Math.round(scores.C/total*100)};
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const primary=sorted[0][0];
+  const secondary=sorted[1][0];
+
+  const result={primary,secondary,scores,pcts,completedAt:new Date().toISOString()};
+
+  // Save to user
+  if(currentRep){
+    reps[currentRep].discResult=result;
+    saveState();
+    // Direct Firestore save
+    if(currentUid){
+      db.collection('users').doc(currentUid).update({discResult:result}).catch(e=>console.warn(e));
+    }
+    addPoints(75,'Completed DISC Assessment');
+  }
+
+  discState.result=result;
+  renderDiscResultsScreen(result);
+}
+
+function viewDiscResults(){
+  if(!currentRep||!reps[currentRep].discResult)return;
+  renderDiscResultsScreen(reps[currentRep].discResult);
+}
+
+function renderDiscResultsScreen(result){
+  const p=discProfiles[result.primary];
+  const s=discProfiles[result.secondary];
+
+  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>`;
+
+  // DISC Wheel
+  html+=`<div class="disc-wheel">
+    <div class="disc-quad ${result.primary==='D'?'primary':''}" style="background:#d4461a${result.primary==='D'?'':'40'};">
+      <div class="disc-quad-letter">D</div><div class="disc-quad-name">Dominance</div><div class="disc-quad-pct">${result.pcts.D}%</div>
+    </div>
+    <div class="disc-quad ${result.primary==='I'?'primary':''}" style="background:#d4a017${result.primary==='I'?'':'40'};">
+      <div class="disc-quad-letter">I</div><div class="disc-quad-name">Influence</div><div class="disc-quad-pct">${result.pcts.I}%</div>
+    </div>
+    <div class="disc-quad ${result.primary==='S'?'primary':''}" style="background:#22a358${result.primary==='S'?'':'40'};">
+      <div class="disc-quad-letter">S</div><div class="disc-quad-name">Steadiness</div><div class="disc-quad-pct">${result.pcts.S}%</div>
+    </div>
+    <div class="disc-quad ${result.primary==='C'?'primary':''}" style="background:#2e7dd4${result.primary==='C'?'':'40'};">
+      <div class="disc-quad-letter">C</div><div class="disc-quad-name">Conscientiousness</div><div class="disc-quad-pct">${result.pcts.C}%</div>
+    </div>
+  </div>`;
+
+  // Profile Card
+  html+=`<div class="disc-profile-card" style="background:${p.color}15;border:1px solid ${p.color}30;">
+    <div style="font-size:48px;margin-bottom:8px;">${p.emoji}</div>
+    <div style="font-size:24px;font-weight:800;color:${p.color};">${p.name}</div>
+    <div style="font-size:14px;color:var(--gray-l);font-style:italic;margin-top:6px;">${p.tagline}</div>
+    <div style="font-size:12px;color:var(--gray);margin-top:8px;">Secondary: ${s.name} (${result.secondary}) — ${result.pcts[result.secondary]}%</div>
+  </div>`;
+
+  // Strengths
+  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--green);">&#9989; Your Strengths</div>
+    <ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">
+      ${p.strengths.map(s=>`<li>${s}</li>`).join('')}
+    </ul></div>`;
+
+  // Blind Spot
+  html+=`<div class="disc-section" style="border-left:3px solid ${p.color};"><div class="disc-section-title" style="color:${p.color};">&#9888; Blind Spot</div>
+    <div style="font-size:14px;color:var(--gray-l);line-height:1.7;">${p.blindspot}</div></div>`;
+
+  // Motivators
+  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--gold);">&#11088; What Motivates You</div>
+    <ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">
+      ${p.motivators.map(m=>`<li>${m}</li>`).join('')}
+    </ul></div>`;
+
+  // Drains
+  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--red);">&#128547; What Drains You</div>
+    <ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">
+      ${p.drains.map(d=>`<li>${d}</li>`).join('')}
+    </ul></div>`;
+
+  // Coaching Style
+  html+=`<div class="disc-section" style="background:rgba(201,168,76,.08);border-left:3px solid var(--gold);">
+    <div class="disc-section-title" style="color:var(--gold);">&#128218; For Your Manager</div>
+    <div style="font-size:14px;color:var(--gray-l);line-height:1.7;">${p.coachingStyle}</div></div>`;
+
+  html+=`<div style="text-align:center;margin-top:20px;">
+    <button class="mv-nav-btn mv-prev" onclick="renderAssessment()">Back to Assessments</button>
+  </div>`;
+
+  document.getElementById('pg-assess').innerHTML=html;
+}
+
 // ---- LEADERBOARD PAGE ----
 function renderBoard(){
   const sorted=Object.entries(reps).sort((a,b)=>(b[1].points||0)-(a[1].points||0));
@@ -2423,6 +2786,7 @@ function renderManager(){
       <div class="mgr-tab ${mgrTab==='reps'?'on':''}" onclick="mgrTab='reps';renderManager()">Reps</div>
       <div class="mgr-tab ${mgrTab==='assign'?'on':''}" onclick="mgrTab='assign';renderManager()">Assign</div>
       <div class="mgr-tab ${mgrTab==='grades'?'on':''}" onclick="mgrTab='grades';renderManager()">Grades</div>
+      <div class="mgr-tab ${mgrTab==='disc'?'on':''}" onclick="mgrTab='disc';renderManager()">DISC</div>
       <div class="mgr-tab ${mgrTab==='manage'?'on':''}" onclick="mgrTab='manage';renderManager()">Settings</div>
     </div>`;
 
@@ -2545,6 +2909,50 @@ function renderManager(){
       });
       html+=`</div>`;
     });
+  }
+
+  if(mgrTab==='disc'){
+    html+=`<div class="sec-header">Team DISC Profiles</div>`;
+    const withDisc=Object.entries(reps).filter(([_,r])=>r.discResult);
+    const without=Object.entries(reps).filter(([_,r])=>!r.discResult);
+
+    if(withDisc.length){
+      withDisc.forEach(([id,r])=>{
+        const dr=r.discResult;
+        const p=discProfiles[dr.primary];
+        html+=`<div class="card" style="border-left:4px solid ${p.color};">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-size:24px;">${p.emoji}</div>
+              <div>
+                <div style="font-size:15px;font-weight:700;color:var(--white);">${r.name}</div>
+                <div style="font-size:12px;color:${p.color};font-weight:600;">${p.name} (${dr.primary}) / ${discProfiles[dr.secondary].name} (${dr.secondary})</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:4px;">
+              ${['D','I','S','C'].map(l=>`<div style="padding:4px 8px;border-radius:6px;background:${discProfiles[l].color}${dr.primary===l?'30':'10'};font-size:11px;font-weight:700;color:${discProfiles[l].color};">${l}:${dr.pcts[l]}%</div>`).join('')}
+            </div>
+          </div>
+          <div style="font-size:13px;color:var(--gray-l);font-style:italic;">${p.tagline}</div>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Coaching Approach</div>
+            <div style="font-size:13px;color:var(--gray);line-height:1.6;">${p.coachingStyle}</div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--gray-d);">Taken: ${new Date(dr.completedAt).toLocaleDateString()}</div>
+        </div>`;
+      });
+    }
+
+    if(without.length){
+      html+=`<div style="margin-top:16px;font-size:13px;color:var(--gray);margin-bottom:8px;">Not yet taken:</div>`;
+      without.forEach(([id,r])=>{
+        html+=`<div class="mgr-stat"><span style="color:var(--gray-l);">${r.name}</span><span style="font-size:12px;color:var(--gray-d);">No profile</span></div>`;
+      });
+    }
+
+    if(!withDisc.length&&!without.length){
+      html+=`<div class="empty"><div class="empty-icon">&#128202;</div><div class="empty-text">No reps have taken the DISC assessment yet.</div></div>`;
+    }
   }
 
   if(mgrTab==='manage'){
