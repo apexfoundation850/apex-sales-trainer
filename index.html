@@ -1486,6 +1486,8 @@ function saveState(){
         drillsPerfect:r.drillsPerfect||0, badges:r.badges||[],
         activityLog:(r.activityLog||[]).slice(0,100),
         discResult:r.discResult||null,
+        motivatorsResult:r.motivatorsResult||null,
+        eqResult:r.eqResult||null,
         certificates:r.certificates||[]
       }).catch(e=>console.warn('Save failed:',e));
     }
@@ -1507,7 +1509,8 @@ async function loadUserData(uid){
       quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
       drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
       badges:d.badges||[], activityLog:d.activityLog||[],
-      discResult:d.discResult||null, certificates:d.certificates||[]
+      discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
+      eqResult:d.eqResult||null, certificates:d.certificates||[]
     };
     return d.role||'rep';
   }
@@ -1525,7 +1528,8 @@ async function loadAllUsers(){
       quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
       drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
       badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep',
-      discResult:d.discResult||null
+      discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
+      eqResult:d.eqResult||null
     };
   });
 }
@@ -1555,7 +1559,8 @@ function startRealtimeSync(){
           quizScores:d.quizScores||{}, fcReviews:d.fcReviews||0,
           drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
           badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep',
-          discResult:d.discResult||null
+          discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
+          eqResult:d.eqResult||null
         };
       }
     });
@@ -2547,7 +2552,9 @@ async function submitRolePlay(){
         scenario:rpState.scenario.scenario+' Context: '+rpState.scenario.context,
         repResponse:response,
         category:rpState.scenario.cat,
-        discProfile:currentRep&&reps[currentRep].discResult?reps[currentRep].discResult:null
+        discProfile:currentRep&&reps[currentRep].discResult?reps[currentRep].discResult:null,
+        motivatorsProfile:currentRep&&reps[currentRep].motivatorsResult?reps[currentRep].motivatorsResult:null,
+        eqProfile:currentRep&&reps[currentRep].eqResult?reps[currentRep].eqResult:null
       })
     });
     if(!res.ok)throw new Error('API error');
@@ -2629,43 +2636,881 @@ function renderRolePlayFeedback(){
 // ---- DISC ASSESSMENT PAGE ----
 let discState=null;
 
-function renderAssessment(){
-  const r=currentRep?reps[currentRep]:null;
-  const existing=r&&r.discResult;
-  let html='<div class="sec-header">Assessments</div>';
+// ============================================================
+// ASSESSMENTS CODE — Motivators + EQ Assessments
+// Injected into Apex Sales Trainer alongside existing DISC code
+// ============================================================
 
-  if(existing){
-    const p=discProfiles[existing.primary];
-    const s=discProfiles[existing.secondary];
-    html+=`<div class="card" style="border-color:${p.color}30;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <div style="font-size:36px;">${p.emoji}</div>
-        <div>
-          <div style="font-size:18px;font-weight:700;color:var(--white);">Your DISC Profile</div>
-          <div style="font-size:13px;color:${p.color};font-weight:600;">${p.name} (${existing.primary})</div>
-        </div>
-      </div>
-      <div style="font-size:14px;color:var(--gray-l);font-style:italic;margin-bottom:12px;">${p.tagline}</div>
-      <div style="display:flex;gap:8px;margin-bottom:12px;">
-        ${['D','I','S','C'].map(l=>`<div style="flex:1;text-align:center;padding:8px;border-radius:8px;background:${discProfiles[l].color}${existing.primary===l?'30':'10'};">
-          <div style="font-size:18px;font-weight:700;color:${discProfiles[l].color};">${existing.pcts[l]}%</div>
-          <div style="font-size:10px;color:var(--gray);">${l}</div>
-        </div>`).join('')}
-      </div>
-      <button class="mv-nav-btn mv-prev" style="width:100%;" onclick="viewDiscResults()">View Full Profile</button>
-    </div>
-    <button class="rp-submit" style="background:var(--dark4);margin-bottom:20px;" onclick="startDiscSurvey()">Retake Assessment</button>`;
-  }else{
-    html+=`<div class="card" style="text-align:center;padding:30px;">
-      <div style="font-size:48px;margin-bottom:12px;">&#128202;</div>
-      <div style="font-size:18px;font-weight:700;margin-bottom:8px;">DISC Sales Profile</div>
-      <div style="font-size:13px;color:var(--gray);margin-bottom:20px;">Discover your natural selling style. 20 questions, takes about 5 minutes. Your results personalize AI coaching across the app.</div>
-      <button class="mv-complete-btn" style="width:100%;" onclick="startDiscSurvey()">Start Assessment</button>
-    </div>`;
-  }
-  document.getElementById('pg-assess').innerHTML=html;
+// ---- MOTIVATORS DATA ----
+
+const motivatorsQuestions = [
+  {cat:'What Matters Most',text:"You just had a great appointment. What made it great?",opts:[
+    {text:"I understood the problem at a deep level and explained it better than anyone else could have.",m:'T'},
+    {text:"I closed a solid job and the commission is going to be real.",m:'U'},
+    {text:"The homeowner genuinely needed help and I was the right person at the right time.",m:'S'},
+    {text:"I ran it completely my way and it worked perfectly.",m:'I'}
+  ]},
+  {cat:'Recognition',text:"Your best week ever. How do you want it acknowledged?",opts:[
+    {text:"A specific breakdown of what I did differently that worked \u2014 I want to understand it.",m:'T'},
+    {text:"Put me on the leaderboard and let the numbers speak.",m:'U'},
+    {text:"Tell me in private \u2014 sincerely \u2014 that my work is making a difference.",m:'S'},
+    {text:"Call it out in front of the team. I earned it.",m:'I'}
+  ]},
+  {cat:'A Tough Week',text:"You\'re grinding through a slow stretch. What keeps you going?",opts:[
+    {text:"I study and improve \u2014 use the slow time to get sharper.",m:'T'},
+    {text:"I run the math. I know what it takes to hit my number, so I just grind.",m:'U'},
+    {text:"I remember the customers I\'ve actually helped. That\'s the real job.",m:'S'},
+    {text:"I refuse to be the one who quits. My pride won\'t let me.",m:'I'}
+  ]},
+  {cat:'Company Fit',text:"What would make you feel most proud to work here?",opts:[
+    {text:"Knowing we use the best methods and our team actually knows what we\'re doing.",m:'T'},
+    {text:"Having the best comp plan and the earning potential to match my effort.",m:'U'},
+    {text:"Knowing the work genuinely improves families\' lives and that\'s not just marketing.",m:'S'},
+    {text:"Being known in the market as the best team with the best reps.",m:'I'}
+  ]},
+  {cat:'A Frustrated Day',text:"Something at work is bothering you. What is it most likely to be?",opts:[
+    {text:"I was asked to explain something I didn\'t fully understand. That bothers me.",m:'T'},
+    {text:"I wasted time on bad leads or unnecessary admin.",m:'U'},
+    {text:"The process or environment felt disorganized and inconsistent.",m:'TR'},
+    {text:"I felt like my judgment was questioned or my work was undervalued.",m:'I'}
+  ]},
+  {cat:'The Customer',text:"What kind of customer interaction do you find most satisfying?",opts:[
+    {text:"A technically complex situation where I was the only rep who could figure it out.",m:'T'},
+    {text:"A big job where the economics were clear and the homeowner committed quickly.",m:'U'},
+    {text:"A scared homeowner who left the appointment feeling genuinely taken care of.",m:'S'},
+    {text:"A tough customer who was skeptical of everyone else but trusted me.",m:'I'}
+  ]},
+  {cat:'Training',text:"The company is running a product knowledge training. Your attitude?",opts:[
+    {text:"Genuinely excited \u2014 I want to know more than anyone else on the team.",m:'T'},
+    {text:"I\'ll go if it makes me more effective. Show me how it helps my numbers.",m:'U'},
+    {text:"I appreciate it \u2014 better knowledge means I serve customers more honestly.",m:'S'},
+    {text:"I want to be involved in shaping the training, not just sitting through it.",m:'I'}
+  ]},
+  {cat:'The Team',text:"What role do you naturally play in a team environment?",opts:[
+    {text:"The one who explains things when no one else can.",m:'T'},
+    {text:"The one who pushes performance and keeps score.",m:'U'},
+    {text:"The one who keeps the culture human and looks out for people.",m:'S'},
+    {text:"The one who sets the standard everyone else measures themselves against.",m:'I'}
+  ]},
+  {cat:'Process',text:"A new sales process is being rolled out. How do you respond?",opts:[
+    {text:"I want to understand the reasoning before I commit to it.",m:'T'},
+    {text:"I\'ll try it if it seems like it\'ll improve my results.",m:'U'},
+    {text:"I\'m open to it \u2014 if it\'s clear and consistent, I\'ll run it well.",m:'TR'},
+    {text:"I\'ll adapt what fits and keep what already works for me.",m:'I'}
+  ]},
+  {cat:'Company Values',text:"What does it look like when a company does things right?",opts:[
+    {text:"They invest in being genuinely excellent \u2014 best product, best training, best methods.",m:'T'},
+    {text:"They build systems that reward performance and don\'t punish success.",m:'U'},
+    {text:"Their people actually care about customers and you can feel it in every interaction.",m:'S'},
+    {text:"They have clear values and they actually live them \u2014 not just on a wall somewhere.",m:'TR'}
+  ]},
+  {cat:'Leaving a Job',text:"What would push you to leave a sales job?",opts:[
+    {text:"I stopped learning. There\'s nothing new to master here.",m:'T'},
+    {text:"The comp plan changed and the earning potential isn\'t there anymore.",m:'U'},
+    {text:"I started to feel like the company didn\'t really care about customers \u2014 or us.",m:'S'},
+    {text:"The company\'s process and values became inconsistent. I can\'t operate in that.",m:'TR'}
+  ]},
+  {cat:'Work Environment',text:"What does a great work environment look like to you?",opts:[
+    {text:"Smart people who take quality seriously and always want to get better.",m:'T'},
+    {text:"Efficient, well-organized, and structured around performance.",m:'U'},
+    {text:"Warm, supportive, with people who genuinely look out for each other.",m:'S'},
+    {text:"Clear, consistent standards \u2014 I know what excellence looks like here.",m:'TR'}
+  ]},
+  {cat:'A Great Manager',text:"What makes a manager someone you actually respect?",opts:[
+    {text:"They know the product and process better than anyone \u2014 and keep learning.",m:'T'},
+    {text:"They\'re straight about comp, territory, and expectations. No surprises.",m:'U'},
+    {text:"They treat me like a person, not just a number. They actually ask how I\'m doing.",m:'S'},
+    {text:"They\'re consistent. What they say matches what they do \u2014 every time.",m:'TR'}
+  ]},
+  {cat:'After the Close',text:"The job is sold. What makes you feel best about it?",opts:[
+    {text:"I gave the homeowner a full, honest education. They made a real decision.",m:'T'},
+    {text:"The dollar amount was strong and my commission reflects the work I put in.",m:'U'},
+    {text:"I could hear the relief in their voice. They were genuinely grateful.",m:'S'},
+    {text:"The presentation was excellent \u2014 it represented Apex well.",m:'A'}
+  ]},
+  {cat:'Frustrations',text:"What kind of company problem frustrates you most?",opts:[
+    {text:"Inconsistent install quality \u2014 we promise one thing and deliver something else.",m:'A'},
+    {text:"Bad leads and inefficient processes that waste my selling time.",m:'U'},
+    {text:"Customers who were let down by the company after I sold them.",m:'S'},
+    {text:"Lack of clear process \u2014 nobody knows what the standard is.",m:'TR'}
+  ]},
+  {cat:'Pride',text:"You\'re describing your job to someone. What are you most proud of?",opts:[
+    {text:"I genuinely understand what I\'m selling \u2014 I can explain it better than anyone.",m:'T'},
+    {text:"I earn based on what I produce. Nobody\'s capping my income.",m:'U'},
+    {text:"I help people protect their homes and their families. That\'s real.",m:'S'},
+    {text:"The presentation, the product, the process \u2014 it\'s done right here.",m:'A'}
+  ]},
+  {cat:'Off Days',text:"You\'re in a slump \u2014 mentally not there. What brings you back?",opts:[
+    {text:"Digging into the product or process \u2014 learning something new resets me.",m:'T'},
+    {text:"A clear target and the discipline to go after it.",m:'U'},
+    {text:"Talking to someone who reminded me why the work matters.",m:'S'},
+    {text:"Getting back in my own lane \u2014 running an appointment the way I know works.",m:'I'}
+  ]},
+  {cat:'Your Best Work',text:"When are you at your absolute best as a sales rep?",opts:[
+    {text:"When I\'m the most prepared person in the room and I know it.",m:'T'},
+    {text:"When the incentive is clear, the leads are hot, and I\'m in a rhythm.",m:'U'},
+    {text:"When I genuinely connect with a homeowner and they feel safe with me.",m:'S'},
+    {text:"When I\'m running my own process, my own way, and it\'s working.",m:'I'}
+  ]}
+];
+
+const motivatorProfiles = {
+  T:{key:'T',name:'Theoretical',emoji:'&#128300;',color:'#7c3aed',
+    tagline:'Driven by understanding. Needs to know the why behind everything.',
+    desc:'Motivated by knowledge and mastery. Wants to understand how foundation systems actually work.',
+    inSales:'Depth of product knowledge is a competitive moat. Analytical homeowners will trust them fastest. Risk: gets so deep in explanation that they forget to ask for the decision.',
+    motivators:['Access to technical training, specs, and product depth','Complex jobs where knowledge matters','Being asked to explain or teach something','Understanding the why behind company decisions','Continuous learning'],
+    drains:['Being asked to sell something they don\'t fully understand','Repetitive, simple jobs','Decisions made without good reasoning','Being pushed to close before diagnosing properly'],
+    coaching:['Feed them knowledge constantly','Assign them as team expert on specific job types','Help them compress the gap between insight and ask','Explain the why behind process changes','Use them to train other reps','Recognize quality of diagnosis publicly'],
+    aiPersona:'You are coaching a Theoretical-motivated sales rep. They are driven by mastery and understanding. Engage their intellect. Praise their depth of knowledge. Coach them on the gap between explaining well and asking for the decision.'},
+  U:{key:'U',name:'Utilitarian',emoji:'&#128176;',color:'#d4461a',
+    tagline:'Driven by return. Time, effort, and money must pay off.',
+    desc:'Keeps score. Commission, close rate, leads per week \u2014 tracks what matters. Practical, efficient.',
+    inSales:'Natural fit for performance-based sales. Understands the game and plays it hard. Challenge is keeping them engaged during slow periods.',
+    motivators:['High commission upside','Efficient processes','Metrics and tracking','Fast lead flow','Bonuses and SPIFFs'],
+    drains:['Comp plan changes or surprises','Bad leads that waste time','Bureaucratic processes','Feeling like effort doesn\'t translate to income'],
+    coaching:['Be transparent about comp mechanics','Never change comp without advance notice','Give fast performance feedback','Use SPIFFs to spike energy','Respect their time','Show them the math'],
+    aiPersona:'You are coaching a Utilitarian-motivated sales rep. They are driven by results, efficiency, and financial return. Be direct and results-focused. Connect every coaching point to a tangible outcome.'},
+  A:{key:'A',name:'Aesthetic',emoji:'&#127912;',color:'#db2777',
+    tagline:'Driven by quality, harmony, and doing things right.',
+    desc:'Cares about how things feel \u2014 the customer experience, install quality, how they present themselves.',
+    inSales:'Creates a customer experience that feels premium. Attention to quality builds referrals naturally.',
+    motivators:['Being proud of what they sell','A clean, professional process','Work environment that reflects quality','Creative latitude','Customer feedback confirming excellence'],
+    drains:['Install quality issues','Sloppy company presentation','Being asked to cut corners','Cluttered, disorganized environment'],
+    coaching:['Take their quality concerns seriously','Let them own the experience side','Don\'t dismiss install quality frustrations','Give latitude in how they run appointments','Recognize quality of customer experience'],
+    aiPersona:'You are coaching an Aesthetic-motivated sales rep. They care deeply about quality and doing things right. Acknowledge their standards. Praise exceptional customer experiences.'},
+  S:{key:'S',name:'Social',emoji:'&#129309;',color:'#22a358',
+    tagline:'Driven by impact on people. The sale is always personal.',
+    desc:'Motivated by genuinely helping people. When a homeowner signs, what lights them up is knowing the family\'s home is safe.',
+    inSales:'In a high-stakes product like foundation repair, the Social motivator is a genuine competitive edge. Customers sense authenticity.',
+    motivators:['Knowing jobs sold solve real problems','Customer gratitude','Being part of a team that genuinely cares','Seeing homeowner relief','Feeling like the company mission is real'],
+    drains:['Selling something they don\'t believe helps','Being pressured to close jobs they think aren\'t right','Cold, competitive culture','Commission-only pressure'],
+    coaching:['Connect their work to real impact','Reframe the close as an act of service','Recognize referrals and repeat customers','Don\'t let numbers-based culture erode purpose','Use them to mentor new reps'],
+    aiPersona:'You are coaching a Social-motivated sales rep. They are driven by genuine impact on people. Connect every coaching point to how it serves the homeowner better. Reframe closing as the most caring thing they can do.'},
+  I:{key:'I',name:'Individualistic',emoji:'&#127942;',color:'#2e7dd4',
+    tagline:'Driven by autonomy, status, and standing out from the crowd.',
+    desc:'Wants to be recognized as exceptional. Competitive by nature. When acknowledged as a top performer, doubles down.',
+    inSales:'Desire to stand out drives performance when properly channeled. Will push harder than anyone when winning feels personal.',
+    motivators:['Public recognition as best performer','Autonomy to make decisions','A leadership role, even informal','Access from senior leadership','Being differentiated from the rest'],
+    drains:['Being treated the same regardless of performance','Micromanagement','Lower performers receiving similar recognition','Contribution not acknowledged'],
+    coaching:['Give public recognition tied to results','Offer informal authority','Negotiate autonomy explicitly','Never undermine judgment in front of others','When producing, stay out of the way'],
+    aiPersona:'You are coaching an Individualistic-motivated sales rep. They are driven by status, autonomy, and being exceptional. Respect their independence. Challenge them by appealing to competitive pride.'},
+  TR:{key:'TR',name:'Traditional',emoji:'&#129517;',color:'#b45309',
+    tagline:'Driven by order, purpose, and a system they can believe in.',
+    desc:'Needs a framework \u2014 clear values, a process they respect, a company mission that means something.',
+    inSales:'Most benefits from a strong company identity and consistent process. When values and process are clear, becomes a powerful brand ambassador.',
+    motivators:['A clear, consistent sales process','Company mission and values that feel real','Structure and predictability','Being part of something that stands for quality','Respect for the way things are done'],
+    drains:['Frequent process changes without explanation','Company behavior conflicting with stated values','Disorganization, inconsistency','Being asked to sell in ways that feel ethically uncomfortable'],
+    coaching:['Explain the why behind every process change','Involve them early in process discussions','Be consistent: follow through on commitments','Give them the full sales playbook','Recognize consistency and reliability'],
+    aiPersona:'You are coaching a Traditional-motivated sales rep. They are driven by structure, consistency, and doing things the right way. Reference process and standards. Praise consistency and reliability.'}
+};
+
+// ---- MOTIVATORS SURVEY ENGINE ----
+
+let motivatorsState = null;
+
+function startMotivatorsSurvey() {
+  motivatorsState = {
+    current: 0,
+    answers: new Array(motivatorsQuestions.length).fill(null) // each answer: {first: idx, second: idx} or null
+  };
+  renderMotivatorsQuestion();
 }
 
+function renderMotivatorsQuestion() {
+  const s = motivatorsState;
+  if (s.current >= motivatorsQuestions.length) { return calculateMotivatorScores(); }
+  const q = motivatorsQuestions[s.current];
+  const pct = Math.round((s.current / motivatorsQuestions.length) * 100);
+  const pick = s.answers[s.current]; // {first: idx, second: idx} or null
+
+  let html = '<div style="position:sticky;top:0;background:var(--dark);padding:12px 0 8px;z-index:10;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+  html += '<div style="font-size:12px;color:var(--gray);">Question ' + (s.current + 1) + ' of ' + motivatorsQuestions.length + '</div>';
+  html += '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7c3aed;font-weight:700;">' + q.cat + '</div>';
+  html += '</div>';
+  html += '<div class="pbar"><div class="pbar-fill" style="width:' + pct + '%;background:#7c3aed;"></div></div>';
+  html += '</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:var(--white);margin:20px 0 8px;line-height:1.4;">' + q.text + '</div>';
+  html += '<div style="font-size:12px;color:var(--gray);margin-bottom:16px;">Tap your <strong style="color:#7c3aed;">1st choice</strong> (3 pts), then your <strong style="color:var(--gray-l);">2nd choice</strong> (1 pt)</div>';
+
+  q.opts.forEach(function(opt, i) {
+    var isFirst = pick && pick.first === i;
+    var isSecond = pick && pick.second === i;
+    var cls = 'disc-opt';
+    var badge = '';
+    var extraStyle = '';
+    if (isFirst) {
+      cls += ' selected';
+      badge = '<span style="display:inline-block;background:#7c3aed;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:8px;">1st</span>';
+      extraStyle = 'border-color:#7c3aed;background:rgba(124,58,237,.15);color:var(--white);';
+    } else if (isSecond) {
+      badge = '<span style="display:inline-block;background:var(--dark5);color:var(--gray-l);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-right:8px;">2nd</span>';
+      extraStyle = 'border-color:var(--gray);background:rgba(255,255,255,.04);color:var(--white);';
+    }
+    html += '<button class="' + cls + '" style="' + extraStyle + '" onclick="answerMotivators(' + i + ')">' + badge + opt.text + '</button>';
+  });
+
+  var bothPicked = pick && pick.first !== null && pick.second !== null;
+  html += '<div style="display:flex;justify-content:space-between;margin-top:20px;">';
+  if (s.current > 0) {
+    html += '<button class="mv-nav-btn mv-prev" onclick="motivatorsState.current--;renderMotivatorsQuestion()">&#8592; Back</button>';
+  } else {
+    html += '<div></div>';
+  }
+  html += '<button class="mv-nav-btn mv-next" ' + (!bothPicked ? 'disabled style="opacity:.4;cursor:not-allowed;"' : '') + ' onclick="motivatorsState.current++;renderMotivatorsQuestion()">Next &#8594;</button>';
+  html += '</div>';
+
+  document.getElementById('pg-assess').innerHTML = html;
+}
+
+function answerMotivators(idx) {
+  var s = motivatorsState;
+  var pick = s.answers[s.current];
+
+  if (!pick) {
+    // Nothing selected yet — set as 1st
+    s.answers[s.current] = { first: idx, second: null };
+  } else if (pick.first === idx) {
+    // Tapping the 1st choice — deselect it
+    if (pick.second !== null) {
+      // Promote 2nd to 1st
+      s.answers[s.current] = { first: pick.second, second: null };
+    } else {
+      s.answers[s.current] = null;
+    }
+  } else if (pick.second === idx) {
+    // Tapping the 2nd choice — deselect it
+    s.answers[s.current] = { first: pick.first, second: null };
+  } else if (pick.second === null) {
+    // 1st is set, no 2nd yet — set as 2nd
+    pick.second = idx;
+  } else {
+    // Both already set, tapping a third option — replace 2nd
+    pick.second = idx;
+  }
+
+  renderMotivatorsQuestion();
+}
+
+function calculateMotivatorScores() {
+  var scores = { T: 0, U: 0, A: 0, S: 0, I: 0, TR: 0 };
+
+  motivatorsQuestions.forEach(function(q, i) {
+    var pick = motivatorsState.answers[i];
+    if (!pick) return;
+    if (pick.first !== null) {
+      var m1 = q.opts[pick.first].m;
+      scores[m1] = (scores[m1] || 0) + 3;
+    }
+    if (pick.second !== null) {
+      var m2 = q.opts[pick.second].m;
+      scores[m2] = (scores[m2] || 0) + 1;
+    }
+  });
+
+  var total = 0;
+  for (var k in scores) total += scores[k];
+  if (total === 0) total = 1;
+
+  var pcts = {};
+  for (var k in scores) pcts[k] = Math.round((scores[k] / total) * 100);
+
+  var sorted = Object.entries(scores).sort(function(a, b) { return b[1] - a[1]; });
+  var primary = sorted[0][0];
+  var secondary = sorted[1][0];
+
+  var result = {
+    primary: primary,
+    secondary: secondary,
+    scores: scores,
+    pcts: pcts,
+    completedAt: new Date().toISOString()
+  };
+
+  // Save to user
+  if (currentRep) {
+    reps[currentRep].motivatorsResult = result;
+    saveState();
+    if (currentUid) {
+      db.collection('users').doc(currentUid).update({ motivatorsResult: result }).catch(function(e) { console.warn(e); });
+    }
+    addPoints(75, 'Completed Motivators Assessment');
+  }
+
+  motivatorsState.result = result;
+  renderMotivatorsResults(result);
+}
+
+function viewMotivatorsResults() {
+  if (!currentRep || !reps[currentRep].motivatorsResult) return;
+  renderMotivatorsResults(reps[currentRep].motivatorsResult);
+}
+
+function renderMotivatorsResults(result) {
+  var p = motivatorProfiles[result.primary];
+  var s = motivatorProfiles[result.secondary];
+  var allKeys = ['T', 'U', 'A', 'S', 'I', 'TR'];
+  var maxScore = 0;
+  allKeys.forEach(function(k) { if (result.scores[k] > maxScore) maxScore = result.scores[k]; });
+  if (maxScore === 0) maxScore = 1;
+
+  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>';
+
+  // Profile card
+  html += '<div style="padding:24px;border-radius:12px;margin:0 0 20px;text-align:center;background:' + p.color + '15;border:1px solid ' + p.color + '30;">';
+  html += '<div style="font-size:48px;margin-bottom:8px;">' + p.emoji + '</div>';
+  html += '<div style="font-size:24px;font-weight:800;color:' + p.color + ';">' + p.name + '</div>';
+  html += '<div style="font-size:14px;color:var(--gray-l);font-style:italic;margin-top:6px;">' + p.tagline + '</div>';
+  html += '<div style="font-size:12px;color:var(--gray);margin-top:8px;">Secondary: ' + s.name + ' (' + result.secondary + ') \u2014 ' + result.pcts[result.secondary] + '%</div>';
+  html += '</div>';
+
+  // Bar chart of all 6 motivators
+  html += '<div class="card" style="padding:20px;">';
+  html += '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--gray);margin-bottom:14px;">Motivator Scores</div>';
+  allKeys.forEach(function(k) {
+    var prof = motivatorProfiles[k];
+    var pct = maxScore > 0 ? Math.round((result.scores[k] / maxScore) * 100) : 0;
+    var isPrimary = k === result.primary;
+    html += '<div style="margin-bottom:10px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+    html += '<div style="font-size:13px;color:' + (isPrimary ? prof.color : 'var(--gray-l)') + ';font-weight:' + (isPrimary ? '700' : '500') + ';">' + prof.emoji + ' ' + prof.name + '</div>';
+    html += '<div style="font-size:13px;color:' + (isPrimary ? prof.color : 'var(--gray)') + ';font-weight:700;">' + result.pcts[k] + '%</div>';
+    html += '</div>';
+    html += '<div class="pbar" style="height:8px;"><div class="pbar-fill" style="width:' + pct + '%;background:' + prof.color + ';' + (isPrimary ? '' : 'opacity:.6;') + '"></div></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Description
+  html += '<div class="card" style="border-left:3px solid ' + p.color + ';">';
+  html += '<div style="font-size:14px;color:var(--gray-l);line-height:1.7;">' + p.desc + '</div>';
+  html += '<div style="font-size:13px;color:var(--gray);margin-top:10px;line-height:1.6;"><strong style="color:var(--white);">In Sales:</strong> ' + p.inSales + '</div>';
+  html += '</div>';
+
+  // Motivators
+  html += '<div class="disc-section"><div class="disc-section-title" style="color:var(--green);">&#11088; What Motivates You</div>';
+  html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">';
+  p.motivators.forEach(function(m) { html += '<li>' + m + '</li>'; });
+  html += '</ul></div>';
+
+  // Drains
+  html += '<div class="disc-section"><div class="disc-section-title" style="color:var(--red);">&#128547; What Drains You</div>';
+  html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">';
+  p.drains.forEach(function(d) { html += '<li>' + d + '</li>'; });
+  html += '</ul></div>';
+
+  // Coaching
+  html += '<div class="disc-section" style="background:rgba(201,168,76,.08);border-left:3px solid var(--gold);">';
+  html += '<div class="disc-section-title" style="color:var(--gold);">&#128218; For Your Manager</div>';
+  html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">';
+  p.coaching.forEach(function(c) { html += '<li>' + c + '</li>'; });
+  html += '</ul></div>';
+
+  html += '<div style="text-align:center;margin-top:20px;">';
+  html += '<button class="mv-nav-btn mv-prev" onclick="renderAssessment()">Back to Assessments</button>';
+  html += '</div>';
+
+  document.getElementById('pg-assess').innerHTML = html;
+}
+
+
+// ---- EQ ASSESSMENT DATA ----
+
+const eqQuestions = [
+  {comp:'SA',text:"You just lost a deal you were confident about. Your first instinct is to:",context:"The homeowner seemed interested all the way through.",opts:[
+    {text:"Feel frustrated. It just wasn\'t the right fit \u2014 some you win, some you don\'t.",score:1},
+    {text:"Wonder if the lead was bad or the timing was off.",score:2},
+    {text:"Replay the appointment to figure out where things shifted.",score:3},
+    {text:"Identify the specific moment the energy changed and what I was doing at that point.",score:4}
+  ]},
+  {comp:'SA',text:"How accurately can you predict how you\'ll perform on a given day before the day starts?",context:"Before you\'ve made a single call.",opts:[
+    {text:"I don\'t think about it \u2014 I just show up.",score:1},
+    {text:"I have a rough sense but it\'s mostly about the leads.",score:2},
+    {text:"I can usually tell if I\'m off and try to adjust.",score:3},
+    {text:"I have a reliable pre-work check-in with myself and I\'m usually right about where my head is.",score:4}
+  ]},
+  {comp:'SA',text:"A manager gives you feedback that surprises you. You:",context:"Something you weren\'t expecting.",opts:[
+    {text:"Disagree internally \u2014 I know myself pretty well.",score:1},
+    {text:"Accept it on the surface but file it away without acting on it.",score:2},
+    {text:"Think about it seriously and ask clarifying questions.",score:3},
+    {text:"Actively look for evidence of it in my next few appointments and adjust if I see it.",score:4}
+  ]},
+  {comp:'SA',text:"In a tough appointment, you are most likely to notice:",context:"When things aren\'t going well.",opts:[
+    {text:"That the appointment ended without a close \u2014 afterward.",score:1},
+    {text:"That the homeowner seemed cold or disengaged.",score:2},
+    {text:"The moment my own energy or confidence dropped.",score:3},
+    {text:"Exactly what I did or said that contributed to the shift \u2014 and when.",score:4}
+  ]},
+  {comp:'SR',text:"You had three rough appointments in a row. Walking into the fourth, you:",context:"Two \'think about it\'s\' and one hostile homeowner.",opts:[
+    {text:"Carry some of the tension from the last one in with me.",score:1},
+    {text:"Try to shake it off but the frustration still shows a little.",score:2},
+    {text:"Give myself a moment between appointments to reset before walking in.",score:3},
+    {text:"Walk in completely present \u2014 the previous three don\'t exist until I\'m back in the car.",score:4}
+  ]},
+  {comp:'SR',text:"A homeowner says something dismissive or rude mid-appointment. Your body does:",context:'"Just give me a price."',opts:[
+    {text:"My tone gets shorter. I can feel myself shutting down.",score:1},
+    {text:"I get a little defensive, though I try not to show it.",score:2},
+    {text:"I notice the reaction and consciously soften my response.",score:3},
+    {text:"I stay completely neutral and get genuinely curious about why they said that.",score:4}
+  ]},
+  {comp:'SR',text:"You disagree with a decision your manager just made. You:",context:"Something about comp, territory, or process.",opts:[
+    {text:"Vent about it to another rep.",score:1},
+    {text:"Go quiet and comply without saying anything.",score:2},
+    {text:"Wait for a good moment, then raise it directly with the manager.",score:3},
+    {text:"Ask for a conversation, present my perspective clearly, and commit to the outcome either way.",score:4}
+  ]},
+  {comp:'SR',text:"You\'re in month two of a slump. No obvious reason. You:",context:"Same leads, same process \u2014 numbers just aren\'t there.",opts:[
+    {text:"Start to doubt whether sales is the right path for me.",score:1},
+    {text:"Keep going but feel increasingly demoralized.",score:2},
+    {text:"Separate my sense of self from the results and stay consistent.",score:3},
+    {text:"Stay grounded, get analytical, and run experiments to break the pattern without losing my confidence.",score:4}
+  ]},
+  {comp:'EM',text:"A homeowner says \'I need to think about it.\' What do you hear?",context:"Said politely, no obvious hostility.",opts:[
+    {text:"They\'re not ready to decide. I\'ll follow up in a week.",score:1},
+    {text:"Price might be an issue. I should revisit the value.",score:2},
+    {text:"Something is holding them back that they haven\'t said out loud.",score:3},
+    {text:"I can usually tell which specific emotional state is behind it \u2014 and I address that, not the words.",score:4}
+  ]},
+  {comp:'EM',text:"Midway through your presentation, the homeowner\'s spouse has gone quiet. You:",context:"They were engaged at the start. Now arms-crossed, phone in hand.",opts:[
+    {text:"Keep going \u2014 maybe they\'re just tired.",score:1},
+    {text:"Try to wrap up faster so they can get on with their day.",score:2},
+    {text:"Pause and ask the spouse a direct question to re-engage them.",score:3},
+    {text:"Recognize the shift, name it gently, and redirect the whole conversation to what the spouse needs to hear.",score:4}
+  ]},
+  {comp:'EM',text:"A homeowner pushes back hard on price. Beneath the objection, you sense:",context:"More edge in their voice than the price alone would warrant.",opts:[
+    {text:"They just don\'t have the budget \u2014 time to adjust the scope.",score:1},
+    {text:"They may have been burned before and this is caution, not hostility.",score:2},
+    {text:"I ask a question to find out what\'s really going on before responding.",score:3},
+    {text:"I can usually tell within 30 seconds whether it\'s fear, past experience, a power play, or genuine budget \u2014 and I respond to what it actually is.",score:4}
+  ]},
+  {comp:'EM',text:"How often do homeowners share personal context you didn\'t ask about?",context:'"We\'ve been dealing with a lot lately."',opts:[
+    {text:"Rarely \u2014 I keep appointments professional and on-topic.",score:1},
+    {text:"Sometimes \u2014 when it comes up naturally.",score:2},
+    {text:"Often \u2014 I create the space for it and it usually matters.",score:3},
+    {text:"Almost always \u2014 I actively draw it out because the real sale is usually in that context.",score:4}
+  ]},
+  {comp:'SS',text:"You walk into an appointment and immediately read the room as tense \u2014 a couple that seems like they\'ve been arguing. You:",context:"Body language is closed, minimal eye contact with each other.",opts:[
+    {text:"Launch into my normal process and let the appointment do the work.",score:1},
+    {text:"Slow down a little and try to keep things light.",score:2},
+    {text:"Consciously warm the room \u2014 acknowledge the situation indirectly, earn individual trust from each person.",score:3},
+    {text:"Read which one is the real decision-maker right now, win that person first, and let the dynamic shift from there.",score:4}
+  ]},
+  {comp:'SS',text:"You\'re presenting to a clearly analytical homeowner who is reading everything and asking detailed technical questions. You:",context:"Takes 90 minutes where others take 45.",opts:[
+    {text:"Give my standard presentation and answer questions as they come.",score:1},
+    {text:"Slow down and add more detail than usual.",score:2},
+    {text:"Shift my whole approach \u2014 lead with data, remove the emotional framing, let the logic close it.",score:3},
+    {text:"Pre-empt their questions by leading with the exact information they\'ll want \u2014 and they close themselves.",score:4}
+  ]},
+  {comp:'SS',text:"An appointment you\'ve been building suddenly goes cold \u2014 the homeowner\'s tone shifts completely. You:",context:"You were 10 minutes from the close. Something happened.",opts:[
+    {text:"Try to push through to the close anyway.",score:1},
+    {text:"Back off and try to rebuild rapport by softening your tone.",score:2},
+    {text:"Stop, name the shift directly: \'I feel like something changed \u2014 can I ask what\'s going on?\'",score:3},
+    {text:"Read exactly what changed, address it specifically, and reset the conversation on the real issue.",score:4}
+  ]},
+  {comp:'SS',text:"How do you handle a homeowner type that doesn\'t naturally match your style?",context:"The one that consistently gives you the most trouble.",opts:[
+    {text:"I run my process and hope it lands.",score:1},
+    {text:"I notice it\'s hard and try to push through.",score:2},
+    {text:"I have adjustments I make for different types, even if it takes me a few minutes to calibrate.",score:3},
+    {text:"I\'ve mapped out my challenging types and built explicit approaches for each \u2014 the mismatch costs me very few deals now.",score:4}
+  ]},
+  {comp:'MO',text:"Six appointments today, zero closes. How are you feeling walking into tomorrow?",context:"Not a bad lead day \u2014 just six conversations that didn\'t convert.",opts:[
+    {text:"Pretty demoralized. That\'s a rough day to shake off.",score:1},
+    {text:"Tired, but I\'ll reset once I\'m back at it.",score:2},
+    {text:"Already thinking about what I\'ll do differently tomorrow.",score:3},
+    {text:"Energized \u2014 six at-bats is six more looks at where I can improve. Tomorrow is a fresh start.",score:4}
+  ]},
+  {comp:'MO',text:"When do you seek out feedback or coaching?",context:"Outside of required check-ins.",opts:[
+    {text:"When I\'m told to or when things are going badly.",score:1},
+    {text:"Occasionally, when I feel stuck.",score:2},
+    {text:"Regularly \u2014 I like knowing where my gaps are.",score:3},
+    {text:"I actively seek it out even when things are going well \u2014 good is the enemy of excellent.",score:4}
+  ]},
+  {comp:'MO',text:"What keeps you in sales during a genuinely difficult stretch?",context:"Not a one-week slump \u2014 a real rough patch.",opts:[
+    {text:"Honestly? Not much. I have to white-knuckle it.",score:1},
+    {text:"Knowing I need the income. That focuses me.",score:2},
+    {text:"The belief that I\'m good at this and it will come back.",score:3},
+    {text:"Something deeper than commission \u2014 I care about what I do and I\'m not done getting better at it.",score:4}
+  ]},
+  {comp:'MO',text:"When you close a big job, you feel:",context:"A deal you worked hard on finally comes together.",opts:[
+    {text:"Relief more than anything \u2014 glad that\'s over.",score:1},
+    {text:"Satisfied. Good commission, time to move on.",score:2},
+    {text:"Genuinely proud of how I ran it. The result validates the process.",score:3},
+    {text:"Energized and hungry. This raises the bar for the next one.",score:4}
+  ]}
+];
+
+const eqProfiles = {
+  SA:{key:'SA',name:'Self-Awareness',emoji:'&#128374;',color:'#c8390a',
+    what:'Knowing your own emotions, triggers, strengths, and blind spots in real time.',
+    highDesc:'Has an accurate, honest read on themselves. Can feel when an appointment is drifting and course-correct.',
+    lowDesc:'Tends to be surprised by outcomes others could have predicted. Blind spots are costing deals.',
+    hiCoaching:['Use as a model in team debriefs','Give harder emotional scenarios','Help them recognize when self-awareness tips into over-analysis'],
+    loCoaching:['Record ride-along appointments and review together','After each lost deal ask what they were feeling','Introduce a 60-second pre-appointment check-in ritual','Deliver feedback privately'],
+    aiPersona:'This rep has low Self-Awareness. Surface moments where tone or pacing might be signaling something unhelpful. Ask them to narrate what they were feeling at specific moments.'},
+  SR:{key:'SR',name:'Self-Regulation',emoji:'&#129482;',color:'#1a5276',
+    what:'Managing emotional reactions under pressure, rejection, or conflict.',
+    highDesc:'Doesn\'t bring their bad day into the appointment. When pushed back hard, they get curious rather than defensive.',
+    lowDesc:'Emotional state leaks into appointments more than they realize. Objections that feel personal create visible tension.',
+    hiCoaching:['Give the most emotionally difficult accounts','Use to debrief difficult appointments with newer reps','Help distinguish healthy engagement from detachment'],
+    loCoaching:['Build a transition ritual between appointments','Debrief immediately after difficult appointments','Role-play hostile homeowner scenarios','Never assign back-to-back difficult appointments without buffer'],
+    aiPersona:'This rep has low Self-Regulation. They leak emotional state into appointments. Play a hostile or difficult homeowner. Observe when the rep gets defensive. Stop and name what happened. Coach the reset.'},
+  EM:{key:'EM',name:'Empathy',emoji:'&#128065;',color:'#1e7e5a',
+    what:'Reading what the homeowner is actually feeling \u2014 beneath what they\'re saying.',
+    highDesc:'Hears what isn\'t being said. Asks the question that names the real feeling \u2014 and the room shifts.',
+    lowDesc:'Tends to take what homeowners say at face value. Misses the real conversation happening underneath.',
+    hiCoaching:['Use their empathy to develop close language','Pair with a more transactional rep','Coach the risk of over-empathizing'],
+    loCoaching:['Teach the "name the feeling" technique','Use ride-alongs to observe body language','Role-play with subtext scenarios','Introduce active listening pauses'],
+    aiPersona:'This rep has low Empathy. They respond to what homeowners say but miss what they feel. Play a homeowner whose stated objection masks a different emotional reality. Coach the rep to ask what\'s really going on.'},
+  SS:{key:'SS',name:'Social Skills',emoji:'&#128279;',color:'#7d3c98',
+    what:'Building rapport, reading the room, adapting style to different people.',
+    highDesc:'Reads the room fast and shifts gears without the homeowner noticing. Can manage multiple personalities in one room.',
+    lowDesc:'Tends to run the same approach in every appointment regardless of who\'s in the room. Friction builds with mismatched styles.',
+    hiCoaching:['Pair with analytical or reserved reps on ride-alongs','Give multi-person appointments','Help identify when social comfort doesn\'t close'],
+    loCoaching:['Map homeowner types and build explicit response strategies','After difficult appointments ask what type of person that was','Role-play switching personas mid-appointment','Identify their comfort zone and build scaffolding outside it'],
+    aiPersona:'This rep has underdeveloped Social Skills. They run one approach regardless of who they\'re with. Shift the homeowner persona mid-scenario. Observe whether they adapt. Coach specific adjustments.'},
+  MO:{key:'MO',name:'Motivation',emoji:'&#128293;',color:'#b7770d',
+    what:'The inner drive that sustains performance through rejection, slow periods, and setbacks.',
+    highDesc:'Doesn\'t need external pressure to push. Pursues coaching and feedback because they genuinely want to improve.',
+    lowDesc:'Performance is more dependent on external conditions than it should be. Often high capacity with low activation.',
+    hiCoaching:['Give progressively harder challenges','Involve in mentoring or setting team goals','Watch for burnout'],
+    loCoaching:['Find the specific thing that still generates excitement','Create short-cycle visible wins','Address the underlying cause','Don\'t confuse this with laziness \u2014 find the switch'],
+    aiPersona:'This rep has low Motivation. They perform inconsistently depending on external conditions. Call out when they go through the motions. Push for effort, not just completion.'}
+};
+
+// ---- EQ SURVEY ENGINE ----
+
+let eqState = null;
+
+function startEqSurvey() {
+  eqState = {
+    current: 0,
+    answers: new Array(eqQuestions.length).fill(null)
+  };
+  renderEqQuestion();
+}
+
+function renderEqQuestion() {
+  var s = eqState;
+  if (s.current >= eqQuestions.length) { return calculateEqScores(); }
+  var q = eqQuestions[s.current];
+  var pct = Math.round((s.current / eqQuestions.length) * 100);
+
+  var html = '<div style="position:sticky;top:0;background:var(--dark);padding:12px 0 8px;z-index:10;">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+  html += '<div style="font-size:12px;color:var(--gray);">Question ' + (s.current + 1) + ' of ' + eqQuestions.length + '</div>';
+  html += '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1e7e5a;font-weight:700;">' + eqProfiles[q.comp].name + '</div>';
+  html += '</div>';
+  html += '<div class="pbar"><div class="pbar-fill" style="width:' + pct + '%;background:#1e7e5a;"></div></div>';
+  html += '</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:var(--white);margin:20px 0 6px;line-height:1.4;">' + q.text + '</div>';
+  if (q.context) {
+    html += '<div style="font-size:13px;color:var(--gray);font-style:italic;margin-bottom:16px;">' + q.context + '</div>';
+  }
+
+  q.opts.forEach(function(opt, i) {
+    var selected = s.answers[s.current] === i;
+    html += '<button class="disc-opt ' + (selected ? 'selected' : '') + '" ' + (selected ? 'style="border-color:#1e7e5a;background:rgba(30,126,90,.12);"' : '') + ' onclick="answerEq(' + i + ')">' + opt.text + '</button>';
+  });
+
+  html += '<div style="display:flex;justify-content:space-between;margin-top:20px;">';
+  if (s.current > 0) {
+    html += '<button class="mv-nav-btn mv-prev" onclick="eqState.current--;renderEqQuestion()">&#8592; Back</button>';
+  } else {
+    html += '<div></div>';
+  }
+  html += '<button class="mv-nav-btn mv-next" ' + (s.answers[s.current] === null ? 'disabled style="opacity:.4;cursor:not-allowed;"' : '') + ' onclick="eqState.current++;renderEqQuestion()">Next &#8594;</button>';
+  html += '</div>';
+
+  document.getElementById('pg-assess').innerHTML = html;
+}
+
+function answerEq(idx) {
+  eqState.answers[eqState.current] = idx;
+  renderEqQuestion();
+}
+
+function calculateEqScores() {
+  var compKeys = ['SA', 'SR', 'EM', 'SS', 'MO'];
+  var rawScores = {};
+  compKeys.forEach(function(k) { rawScores[k] = 0; });
+
+  eqQuestions.forEach(function(q, i) {
+    var ans = eqState.answers[i];
+    if (ans === null) return;
+    rawScores[q.comp] += q.opts[ans].score;
+  });
+
+  // Each component: 4 questions x 4 max = 16 max raw
+  var scores = {};
+  compKeys.forEach(function(k) {
+    scores[k] = Math.round((rawScores[k] / 16) * 100);
+  });
+
+  // Overall: average of 5 component scores
+  var overallSum = 0;
+  compKeys.forEach(function(k) { overallSum += scores[k]; });
+  var overall = Math.round(overallSum / 5);
+
+  // Tier
+  var overallTier;
+  if (overall >= 80) overallTier = 'High EQ';
+  else if (overall >= 60) overallTier = 'Developing EQ';
+  else overallTier = 'EQ Growth Opportunity';
+
+  // Strongest / weakest
+  var sorted = Object.entries(scores).sort(function(a, b) { return b[1] - a[1]; });
+  var strongest = sorted[0][0];
+  var weakest = sorted[sorted.length - 1][0];
+
+  var result = {
+    overall: overall,
+    overallTier: overallTier,
+    scores: scores,
+    strongest: strongest,
+    weakest: weakest,
+    completedAt: new Date().toISOString()
+  };
+
+  // Save to user
+  if (currentRep) {
+    reps[currentRep].eqResult = result;
+    saveState();
+    if (currentUid) {
+      db.collection('users').doc(currentUid).update({ eqResult: result }).catch(function(e) { console.warn(e); });
+    }
+    addPoints(75, 'Completed EQ Assessment');
+  }
+
+  eqState.result = result;
+  renderEqResults(result);
+}
+
+function viewEqResults() {
+  if (!currentRep || !reps[currentRep].eqResult) return;
+  renderEqResults(reps[currentRep].eqResult);
+}
+
+function renderEqResults(result) {
+  var compKeys = ['SA', 'SR', 'EM', 'SS', 'MO'];
+
+  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>';
+
+  // Overall score circle
+  var tierColor = result.overall >= 80 ? '#22a358' : result.overall >= 60 ? '#b7770d' : '#c8390a';
+  html += '<div style="text-align:center;margin-bottom:24px;">';
+  html += '<div style="display:inline-block;width:120px;height:120px;border-radius:50%;border:4px solid ' + tierColor + ';display:flex;align-items:center;justify-content:center;flex-direction:column;margin:0 auto 12px;">';
+  html += '<div style="width:120px;height:120px;border-radius:50%;border:4px solid ' + tierColor + ';display:flex;align-items:center;justify-content:center;flex-direction:column;">';
+  html += '<div style="font-size:36px;font-weight:800;color:' + tierColor + ';">' + result.overall + '</div>';
+  html += '<div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);">Overall</div>';
+  html += '</div>';
+  html += '</div>';
+  html += '<div style="font-size:18px;font-weight:700;color:' + tierColor + ';">' + result.overallTier + '</div>';
+  html += '</div>';
+
+  // Component bars
+  html += '<div class="card" style="padding:20px;">';
+  html += '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--gray);margin-bottom:14px;">EQ Components</div>';
+  compKeys.forEach(function(k) {
+    var prof = eqProfiles[k];
+    var score = result.scores[k];
+    var tier;
+    if (score >= 85) tier = 'High';
+    else if (score >= 65) tier = 'Moderate';
+    else tier = 'Growth Area';
+    var barColor = score >= 85 ? '#22a358' : score >= 65 ? '#b7770d' : '#c8390a';
+    var isStrongest = k === result.strongest;
+    var isWeakest = k === result.weakest;
+
+    html += '<div style="margin-bottom:12px;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+    html += '<div style="font-size:13px;color:' + prof.color + ';font-weight:600;">' + prof.emoji + ' ' + prof.name;
+    if (isStrongest) html += ' <span style="font-size:10px;color:var(--green);font-weight:700;">&#9650; Strongest</span>';
+    if (isWeakest) html += ' <span style="font-size:10px;color:var(--red);font-weight:700;">&#9660; Growth Area</span>';
+    html += '</div>';
+    html += '<div style="font-size:13px;color:' + barColor + ';font-weight:700;">' + score + '<span style="font-size:10px;color:var(--gray);font-weight:400;"> / 100</span></div>';
+    html += '</div>';
+    html += '<div class="pbar" style="height:8px;"><div class="pbar-fill" style="width:' + score + '%;background:' + barColor + ';"></div></div>';
+    html += '<div style="font-size:11px;color:var(--gray);margin-top:2px;">' + tier + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Strongest component detail
+  var strongProf = eqProfiles[result.strongest];
+  html += '<div class="disc-section" style="border-left:3px solid var(--green);">';
+  html += '<div class="disc-section-title" style="color:var(--green);">&#9989; Strongest: ' + strongProf.name + '</div>';
+  html += '<div style="font-size:13px;color:var(--gray-l);margin-bottom:6px;"><strong>What it means:</strong> ' + strongProf.what + '</div>';
+  html += '<div style="font-size:14px;color:var(--gray-l);line-height:1.7;">' + strongProf.highDesc + '</div>';
+  html += '<div style="margin-top:10px;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:var(--gray);margin-bottom:6px;">Coaching Tips</div>';
+  html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:13px;line-height:1.8;">';
+  strongProf.hiCoaching.forEach(function(c) { html += '<li>' + c + '</li>'; });
+  html += '</ul></div>';
+
+  // Weakest component detail
+  var weakProf = eqProfiles[result.weakest];
+  html += '<div class="disc-section" style="border-left:3px solid var(--red);">';
+  html += '<div class="disc-section-title" style="color:var(--red);">&#128680; Growth Area: ' + weakProf.name + '</div>';
+  html += '<div style="font-size:13px;color:var(--gray-l);margin-bottom:6px;"><strong>What it means:</strong> ' + weakProf.what + '</div>';
+  html += '<div style="font-size:14px;color:var(--gray-l);line-height:1.7;">' + weakProf.lowDesc + '</div>';
+  html += '<div style="margin-top:10px;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:var(--gray);margin-bottom:6px;">Development Plan</div>';
+  html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:13px;line-height:1.8;">';
+  weakProf.loCoaching.forEach(function(c) { html += '<li>' + c + '</li>'; });
+  html += '</ul></div>';
+
+  // All components breakdown
+  html += '<div class="disc-section">';
+  html += '<div class="disc-section-title" style="color:var(--gray-l);">&#128209; All Components</div>';
+  compKeys.forEach(function(k) {
+    var prof = eqProfiles[k];
+    var score = result.scores[k];
+    var isHigh = score >= 85;
+    html += '<div style="padding:10px 0;border-bottom:1px solid var(--border);">';
+    html += '<div style="font-size:14px;font-weight:600;color:' + prof.color + ';margin-bottom:4px;">' + prof.emoji + ' ' + prof.name + ' \u2014 ' + score + '/100</div>';
+    html += '<div style="font-size:12px;color:var(--gray);margin-bottom:4px;">' + prof.what + '</div>';
+    html += '<div style="font-size:13px;color:var(--gray-l);line-height:1.6;">' + (isHigh ? prof.highDesc : prof.lowDesc) + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  html += '<div style="text-align:center;margin-top:20px;">';
+  html += '<button class="mv-nav-btn mv-prev" onclick="renderAssessment()">Back to Assessments</button>';
+  html += '</div>';
+
+  document.getElementById('pg-assess').innerHTML = html;
+}
+
+
+// ---- UPDATED renderAssessment() — shows all 3 assessments ----
+
+function renderAssessment() {
+  var r = currentRep ? reps[currentRep] : null;
+  var html = '<div class="sec-header">Assessments</div>';
+
+  // ---- 1. DISC Card ----
+  var discExisting = r && r.discResult;
+  if (discExisting) {
+    var dp = discProfiles[discExisting.primary];
+    var ds = discProfiles[discExisting.secondary];
+    html += '<div class="card" style="border-color:' + dp.color + '30;">';
+    html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">';
+    html += '<div style="font-size:36px;">' + dp.emoji + '</div>';
+    html += '<div>';
+    html += '<div style="font-size:18px;font-weight:700;color:var(--white);">DISC Profile</div>';
+    html += '<div style="font-size:13px;color:' + dp.color + ';font-weight:600;">' + dp.name + ' (' + discExisting.primary + ')</div>';
+    html += '</div></div>';
+    html += '<div style="font-size:14px;color:var(--gray-l);font-style:italic;margin-bottom:12px;">' + dp.tagline + '</div>';
+    html += '<div style="display:flex;gap:8px;margin-bottom:12px;">';
+    ['D','I','S','C'].forEach(function(l) {
+      html += '<div style="flex:1;text-align:center;padding:8px;border-radius:8px;background:' + discProfiles[l].color + (discExisting.primary === l ? '30' : '10') + ';">';
+      html += '<div style="font-size:18px;font-weight:700;color:' + discProfiles[l].color + ';">' + discExisting.pcts[l] + '%</div>';
+      html += '<div style="font-size:10px;color:var(--gray);">' + l + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<button class="mv-nav-btn mv-prev" style="flex:1;" onclick="viewDiscResults()">View Full Profile</button>';
+    html += '<button class="mv-nav-btn mv-next" style="flex:1;background:var(--dark4);" onclick="startDiscSurvey()">Retake</button>';
+    html += '</div></div>';
+  } else {
+    html += '<div class="card" style="text-align:center;padding:30px;">';
+    html += '<div style="font-size:48px;margin-bottom:12px;">&#128202;</div>';
+    html += '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">DISC Sales Profile</div>';
+    html += '<div style="font-size:13px;color:var(--gray);margin-bottom:20px;">Discover your natural selling style. 20 questions, takes about 5 minutes. Your results personalize AI coaching across the app.</div>';
+    html += '<button class="mv-complete-btn" style="width:100%;" onclick="startDiscSurvey()">Start Assessment</button>';
+    html += '</div>';
+  }
+
+  // ---- 2. Motivators Card ----
+  var motExisting = r && r.motivatorsResult;
+  if (motExisting) {
+    var mp = motivatorProfiles[motExisting.primary];
+    var ms = motivatorProfiles[motExisting.secondary];
+    html += '<div class="card" style="border-color:' + mp.color + '30;">';
+    html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">';
+    html += '<div style="font-size:36px;">' + mp.emoji + '</div>';
+    html += '<div>';
+    html += '<div style="font-size:18px;font-weight:700;color:var(--white);">Motivators Profile</div>';
+    html += '<div style="font-size:13px;color:' + mp.color + ';font-weight:600;">' + mp.name + ' (' + motExisting.primary + ')</div>';
+    html += '</div></div>';
+    html += '<div style="font-size:14px;color:var(--gray-l);font-style:italic;margin-bottom:12px;">' + mp.tagline + '</div>';
+
+    // Mini bar chart in card
+    var allMotKeys = ['T','U','A','S','I','TR'];
+    var motMax = 0;
+    allMotKeys.forEach(function(k) { if (motExisting.scores[k] > motMax) motMax = motExisting.scores[k]; });
+    if (motMax === 0) motMax = 1;
+    html += '<div style="margin-bottom:12px;">';
+    allMotKeys.forEach(function(k) {
+      var pr = motivatorProfiles[k];
+      var w = Math.round((motExisting.scores[k] / motMax) * 100);
+      html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">';
+      html += '<div style="width:22px;font-size:10px;color:var(--gray);text-align:right;">' + k + '</div>';
+      html += '<div style="flex:1;height:6px;background:var(--dark4);border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + w + '%;background:' + pr.color + ';border-radius:3px;"></div></div>';
+      html += '<div style="width:28px;font-size:10px;color:var(--gray);text-align:right;">' + motExisting.pcts[k] + '%</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<button class="mv-nav-btn mv-prev" style="flex:1;" onclick="viewMotivatorsResults()">View Full Profile</button>';
+    html += '<button class="mv-nav-btn mv-next" style="flex:1;background:var(--dark4);" onclick="startMotivatorsSurvey()">Retake</button>';
+    html += '</div></div>';
+  } else {
+    html += '<div class="card" style="text-align:center;padding:30px;">';
+    html += '<div style="font-size:48px;margin-bottom:12px;">&#128300;</div>';
+    html += '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">Motivators Profile</div>';
+    html += '<div style="font-size:13px;color:var(--gray);margin-bottom:20px;">Discover what drives you in sales. 18 rank-choice questions, takes about 5 minutes. Reveals your core motivational drivers.</div>';
+    html += '<button class="mv-complete-btn" style="width:100%;background:#7c3aed;" onclick="startMotivatorsSurvey()">Start Assessment</button>';
+    html += '</div>';
+  }
+
+  // ---- 3. EQ Card ----
+  var eqExisting = r && r.eqResult;
+  if (eqExisting) {
+    var eqColor = eqExisting.overall >= 80 ? '#22a358' : eqExisting.overall >= 60 ? '#b7770d' : '#c8390a';
+    var strongP = eqProfiles[eqExisting.strongest];
+    html += '<div class="card" style="border-color:' + eqColor + '30;">';
+    html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">';
+    html += '<div style="width:52px;height:52px;border-radius:50%;border:3px solid ' + eqColor + ';display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:' + eqColor + ';">' + eqExisting.overall + '</div>';
+    html += '<div>';
+    html += '<div style="font-size:18px;font-weight:700;color:var(--white);">EQ Assessment</div>';
+    html += '<div style="font-size:13px;color:' + eqColor + ';font-weight:600;">' + eqExisting.overallTier + '</div>';
+    html += '</div></div>';
+
+    // Mini component bars
+    var eqKeys = ['SA','SR','EM','SS','MO'];
+    html += '<div style="margin-bottom:12px;">';
+    eqKeys.forEach(function(k) {
+      var ep = eqProfiles[k];
+      var sc = eqExisting.scores[k];
+      var bc = sc >= 85 ? '#22a358' : sc >= 65 ? '#b7770d' : '#c8390a';
+      html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">';
+      html += '<div style="width:22px;font-size:10px;color:var(--gray);text-align:right;">' + k + '</div>';
+      html += '<div style="flex:1;height:6px;background:var(--dark4);border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + sc + '%;background:' + bc + ';border-radius:3px;"></div></div>';
+      html += '<div style="width:28px;font-size:10px;color:var(--gray);text-align:right;">' + sc + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<button class="mv-nav-btn mv-prev" style="flex:1;" onclick="viewEqResults()">View Full Results</button>';
+    html += '<button class="mv-nav-btn mv-next" style="flex:1;background:var(--dark4);" onclick="startEqSurvey()">Retake</button>';
+    html += '</div></div>';
+  } else {
+    html += '<div class="card" style="text-align:center;padding:30px;">';
+    html += '<div style="font-size:48px;margin-bottom:12px;">&#129504;</div>';
+    html += '<div style="font-size:18px;font-weight:700;margin-bottom:8px;">EQ Assessment</div>';
+    html += '<div style="font-size:13px;color:var(--gray);margin-bottom:20px;">Measure your emotional intelligence across 5 key sales competencies. 20 questions, takes about 5 minutes. Identifies strengths and growth areas.</div>';
+    html += '<button class="mv-complete-btn" style="width:100%;background:#1e7e5a;" onclick="startEqSurvey()">Start Assessment</button>';
+    html += '</div>';
+  }
+
+  document.getElementById('pg-assess').innerHTML = html;
+}
+
+
+// ---- DISC SURVEY FUNCTIONS (existing) ----
 function startDiscSurvey(){
   discState={current:0,answers:new Array(20).fill(null)};
   renderDiscQuestion();
@@ -2868,6 +3713,7 @@ function getCertificatesHTML(){
   return html;
 }
 
+
 // ---- LEADERBOARD PAGE ----
 function renderBoard(){
   const sorted=Object.entries(reps).sort((a,b)=>(b[1].points||0)-(a[1].points||0));
@@ -2910,7 +3756,7 @@ function renderManager(){
       <div class="mgr-tab ${mgrTab==='reps'?'on':''}" onclick="mgrTab='reps';renderManager()">Reps</div>
       <div class="mgr-tab ${mgrTab==='assign'?'on':''}" onclick="mgrTab='assign';renderManager()">Assign</div>
       <div class="mgr-tab ${mgrTab==='grades'?'on':''}" onclick="mgrTab='grades';renderManager()">Grades</div>
-      <div class="mgr-tab ${mgrTab==='disc'?'on':''}" onclick="mgrTab='disc';renderManager()">DISC</div>
+      <div class="mgr-tab ${mgrTab==='disc'?'on':''}" onclick="mgrTab='disc';renderManager()">Profiles</div>
       <div class="mgr-tab ${mgrTab==='manage'?'on':''}" onclick="mgrTab='manage';renderManager()">Settings</div>
     </div>`;
 
@@ -3036,47 +3882,70 @@ function renderManager(){
   }
 
   if(mgrTab==='disc'){
-    html+=`<div class="sec-header">Team DISC Profiles</div>`;
-    const withDisc=Object.entries(reps).filter(([_,r])=>r.discResult);
-    const without=Object.entries(reps).filter(([_,r])=>!r.discResult);
+    html+=`<div class="sec-header">Team Assessment Profiles</div>`;
+    Object.entries(reps).forEach(([id,r])=>{
+      const dr=r.discResult;
+      const mr=r.motivatorsResult;
+      const er=r.eqResult;
+      const hasAny=dr||mr||er;
 
-    if(withDisc.length){
-      withDisc.forEach(([id,r])=>{
-        const dr=r.discResult;
+      html+=`<div class="card">
+        <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px;">${r.name}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">`;
+
+      // DISC badge
+      if(dr){
         const p=discProfiles[dr.primary];
-        html+=`<div class="card" style="border-left:4px solid ${p.color};">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-              <div style="font-size:24px;">${p.emoji}</div>
-              <div>
-                <div style="font-size:15px;font-weight:700;color:var(--white);">${r.name}</div>
-                <div style="font-size:12px;color:${p.color};font-weight:600;">${p.name} (${dr.primary}) / ${discProfiles[dr.secondary].name} (${dr.secondary})</div>
-              </div>
-            </div>
-            <div style="display:flex;gap:4px;">
-              ${['D','I','S','C'].map(l=>`<div style="padding:4px 8px;border-radius:6px;background:${discProfiles[l].color}${dr.primary===l?'30':'10'};font-size:11px;font-weight:700;color:${discProfiles[l].color};">${l}:${dr.pcts[l]}%</div>`).join('')}
-            </div>
-          </div>
-          <div style="font-size:13px;color:var(--gray-l);font-style:italic;">${p.tagline}</div>
-          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
-            <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Coaching Approach</div>
-            <div style="font-size:13px;color:var(--gray);line-height:1.6;">${p.coachingStyle}</div>
-          </div>
-          <div style="margin-top:8px;font-size:11px;color:var(--gray-d);">Taken: ${new Date(dr.completedAt).toLocaleDateString()}</div>
+        html+=`<span class="disc-tag" style="background:${p.color}20;color:${p.color};">DISC: ${dr.primary} ${p.name}</span>`;
+      }else{
+        html+=`<span class="disc-tag" style="background:var(--dark4);color:var(--gray-d);">DISC: Not taken</span>`;
+      }
+
+      // Motivators badge
+      if(mr){
+        const mp=motivatorProfiles[mr.primary];
+        html+=`<span class="disc-tag" style="background:${mp.color}20;color:${mp.color};">Motivator: ${mp.name}</span>`;
+      }else{
+        html+=`<span class="disc-tag" style="background:var(--dark4);color:var(--gray-d);">Motivator: Not taken</span>`;
+      }
+
+      // EQ badge
+      if(er){
+        const eqColor=er.overall>=80?'var(--green)':er.overall>=60?'var(--orange)':'var(--red)';
+        html+=`<span class="disc-tag" style="background:${eqColor}20;color:${eqColor};">EQ: ${er.overall}/100</span>`;
+      }else{
+        html+=`<span class="disc-tag" style="background:var(--dark4);color:var(--gray-d);">EQ: Not taken</span>`;
+      }
+
+      html+=`</div>`;
+
+      // Detail rows
+      if(dr){
+        const p=discProfiles[dr.primary];
+        html+=`<div style="font-size:12px;color:var(--gray);margin-bottom:4px;"><strong style="color:${p.color};">DISC:</strong> ${p.tagline}</div>`;
+      }
+      if(mr){
+        const mp=motivatorProfiles[mr.primary];
+        html+=`<div style="font-size:12px;color:var(--gray);margin-bottom:4px;"><strong style="color:${mp.color};">Motivator:</strong> ${mp.tagline}</div>`;
+      }
+      if(er){
+        const weakProf=eqProfiles[er.weakest];
+        html+=`<div style="font-size:12px;color:var(--gray);margin-bottom:4px;"><strong style="color:${weakProf.color};">EQ Growth Area:</strong> ${weakProf.name} (${er.scores[er.weakest]}/100)</div>`;
+      }
+
+      // Coaching summary if all 3 present
+      if(dr&&mr&&er){
+        const dp=discProfiles[dr.primary];
+        const mp=motivatorProfiles[mr.primary];
+        const wp=eqProfiles[er.weakest];
+        html+=`<div style="margin-top:8px;padding:10px;background:var(--dark3);border-radius:8px;border-left:3px solid var(--gold);">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:4px;">Combined Coaching Read</div>
+          <div style="font-size:12px;color:var(--gray-l);line-height:1.6;">Sells as a <strong>${dp.name}</strong> (${dr.primary}), motivated by <strong>${mp.name}</strong> values. EQ priority: develop <strong>${wp.name}</strong> (${er.scores[er.weakest]}/100).</div>
         </div>`;
-      });
-    }
+      }
 
-    if(without.length){
-      html+=`<div style="margin-top:16px;font-size:13px;color:var(--gray);margin-bottom:8px;">Not yet taken:</div>`;
-      without.forEach(([id,r])=>{
-        html+=`<div class="mgr-stat"><span style="color:var(--gray-l);">${r.name}</span><span style="font-size:12px;color:var(--gray-d);">No profile</span></div>`;
-      });
-    }
-
-    if(!withDisc.length&&!without.length){
-      html+=`<div class="empty"><div class="empty-icon">&#128202;</div><div class="empty-text">No reps have taken the DISC assessment yet.</div></div>`;
-    }
+      html+=`</div>`;
+    });
   }
 
   if(mgrTab==='manage'){

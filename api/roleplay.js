@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { scenario, repResponse, category, discProfile } = req.body;
+  const { scenario, repResponse, category, discProfile, motivatorsProfile, eqProfile } = req.body;
 
   if (!scenario || !repResponse) {
     return res.status(400).json({ error: 'Missing scenario or repResponse' });
@@ -70,16 +70,49 @@ Respond in this exact JSON format:
     C: 'You are coaching a high-C sales rep. They are analytical, precise, and credibility-driven. Respect their depth of knowledge. Praise their diagnostic thoroughness. Coach them to recognize when a homeowner is already convinced and to shift from presenting to asking.'
   };
 
-  let discContext = '';
+  // Build multi-layer profile context
+  let profileContext = '';
+
   if (discProfile && discProfile.primary) {
-    discContext = `\n\nDISC PROFILE CONTEXT:\nThis rep's primary DISC style is ${discProfile.primary} (${discNames[discProfile.primary]}).\n${discPersonas[discProfile.primary]}\nSecondary style: ${discProfile.secondary} (${discNames[discProfile.secondary]}) — ${discProfile.pcts[discProfile.secondary]}%.\nAdapt your coaching feedback, tone, and language accordingly.`;
+    profileContext += `\n\nDISC STYLE: ${discProfile.primary} (${discNames[discProfile.primary]})\n${discPersonas[discProfile.primary]}`;
+  }
+
+  const motNames = { T:'Theoretical', U:'Utilitarian', A:'Aesthetic', S:'Social', I:'Individualistic', TR:'Traditional' };
+  const motPersonas = {
+    T: 'Motivated by mastery and understanding. Coach them on the gap between explaining well and asking for the decision.',
+    U: 'Driven by results, efficiency, and financial return. Connect every coaching point to a tangible outcome.',
+    A: 'Cares deeply about quality and doing things right. Acknowledge their standards. Praise exceptional customer experiences.',
+    S: 'Driven by genuine impact on people. Reframe closing as the most caring thing they can do.',
+    I: 'Driven by status, autonomy, and being exceptional. Challenge them by appealing to competitive pride.',
+    TR: 'Driven by structure, consistency, and doing things the right way. Reference process and standards.'
+  };
+
+  if (motivatorsProfile && motivatorsProfile.primary) {
+    profileContext += `\n\nCORE MOTIVATOR: ${motivatorsProfile.primary} (${motNames[motivatorsProfile.primary]})\n${motPersonas[motivatorsProfile.primary]}`;
+  }
+
+  const eqCompNames = { SA:'Self-Awareness', SR:'Self-Regulation', EM:'Empathy', SS:'Social Skills', MO:'Motivation' };
+  const eqWeakPersonas = {
+    SA: 'This rep has low Self-Awareness. Surface moments where their emotional state affected their response. Ask what they were feeling.',
+    SR: 'This rep has low Self-Regulation. They leak emotional state into appointments. Call out defensive or rushed moments.',
+    EM: 'This rep has low Empathy. They respond to words but miss feelings. Coach them to ask what is really going on.',
+    SS: 'This rep has underdeveloped Social Skills. They run one approach regardless of audience. Coach specific style adjustments.',
+    MO: 'This rep has low Motivation. Call out when they go through the motions versus genuinely engaging.'
+  };
+
+  if (eqProfile && eqProfile.weakest) {
+    profileContext += `\n\nEQ PROFILE: Overall ${eqProfile.overall}/100 (${eqProfile.overallTier})\nStrongest: ${eqCompNames[eqProfile.strongest]} (${eqProfile.scores[eqProfile.strongest]}/100)\nWeakest: ${eqCompNames[eqProfile.weakest]} (${eqProfile.scores[eqProfile.weakest]}/100)\n${eqWeakPersonas[eqProfile.weakest]}`;
+  }
+
+  if (profileContext) {
+    profileContext = '\n\nFULL BEHAVIORAL PROFILE:' + profileContext + '\n\nAdapt your coaching feedback, tone, and language to this profile.';
   }
 
   const userMessage = `SCENARIO: ${scenario}
 
 CATEGORY: ${category || 'General'}
 
-REP'S RESPONSE: "${repResponse}"${discContext}
+REP'S RESPONSE: "${repResponse}"${profileContext}
 
 Evaluate this response and provide coaching feedback.`;
 
