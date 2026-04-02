@@ -2,3 +2,11 @@ node_modules/
 *.zip
 .DS_Store
 Thumbs.db
+extracted/
+scenario_pdfs/
+quiz_part*.js
+assessments_code.js
+parse_scenarios.mjs
+extract_pdfs.mjs
+api/fix-quiz.js
+.claude/
