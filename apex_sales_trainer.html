@@ -3090,7 +3090,18 @@ function renderDrillScenario(){
 function answerDrill(idx,correct,explanation){
   if(drillState.answered)return;
   drillState.answered=true;
+
+  // Highlight selected answer
   document.getElementById('dopt-'+idx).classList.add(correct?'correct':'wrong');
+
+  // If wrong, also highlight the correct answer
+  if(!correct){
+    document.querySelectorAll('.quiz-opt').forEach((b,i)=>{
+      const onclick=b.getAttribute('onclick')||'';
+      if(onclick.includes(',true,'))b.classList.add('correct');
+    });
+  }
+
   document.getElementById('drillExplain').textContent=explanation;
   document.getElementById('drillExplain').classList.add('show');
   document.querySelectorAll('.quiz-opt').forEach(b=>b.style.pointerEvents='none');
@@ -3105,13 +3116,12 @@ function answerDrill(idx,correct,explanation){
     trackAssignmentProgress('drill',drillState.drill.cat);
   }
 
-  setTimeout(()=>{
-    const pg=document.getElementById('pg-drills');
-    pg.innerHTML+=`<div style="text-align:center;margin-top:20px;">
-      <button class="mv-complete-btn" style="margin:8px;" onclick="startDrill()">Next Drill</button>
-      <button class="mv-nav-btn mv-prev" style="margin:8px;" onclick="renderDrills()">Back to Drills</button>
-    </div>`;
-  },1000);
+  // Add Next buttons using DOM insertion (not innerHTML+=)
+  const btns=document.createElement('div');
+  btns.style.cssText='text-align:center;margin-top:20px;';
+  btns.innerHTML=`<button class="mv-complete-btn" style="margin:8px;" onclick="startDrill()">Next Drill</button>
+    <button class="mv-nav-btn mv-prev" style="margin:8px;" onclick="renderDrills()">Back to Drills</button>`;
+  document.getElementById('pg-drills').appendChild(btns);
 }
 
 // ---- ROLE-PLAY ----
