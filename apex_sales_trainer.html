@@ -287,6 +287,26 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
 .disc-section-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:10px;}
 .disc-tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:.5px;}
 
+/* WELCOME FLOW */
+#welcomeFlow{position:fixed;inset:0;z-index:250;background:var(--dark);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto;}
+#welcomeFlow.on{display:flex;}
+.wf-card{max-width:480px;width:100%;background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:32px;text-align:center;}
+.wf-title{font-family:Georgia,serif;font-size:28px;color:var(--white);margin-bottom:8px;}
+.wf-sub{font-size:14px;color:var(--gray);margin-bottom:24px;line-height:1.6;}
+.wf-opt{display:block;width:100%;padding:16px;background:var(--dark3);border:2px solid var(--border);border-radius:10px;color:var(--gray-l);font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all .2s;text-align:left;}
+.wf-opt:hover{border-color:var(--red);color:var(--white);}
+.wf-opt.selected{border-color:var(--red);background:rgba(192,57,43,.1);color:var(--white);}
+.wf-step{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:16px;}
+.wf-next{width:100%;padding:14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;}
+.wf-next:disabled{background:var(--gray-d);cursor:not-allowed;}
+.wf-list{text-align:left;margin:16px 0;font-size:13px;color:var(--gray-l);line-height:2;}
+.wf-list li{padding-left:4px;}
+
+/* LEVEL PROGRESS */
+.level-progress{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.level-bar{flex:1;height:8px;background:var(--dark4);border-radius:4px;overflow:hidden;}
+.level-fill{height:100%;border-radius:4px;transition:width .4s var(--ease);}
+
 /* EMPTY STATE */
 .empty{text-align:center;padding:40px 20px;color:var(--gray);}
 .empty-icon{font-size:48px;margin-bottom:12px;opacity:.4;}
@@ -328,6 +348,11 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
 
 <!-- TOAST NOTIFICATION -->
 <div id="toast" class="toast"></div>
+
+<!-- WELCOME FLOW -->
+<div id="welcomeFlow">
+  <div class="wf-card" id="wfContent"></div>
+</div>
 
 <!-- APP SHELL -->
 <div id="app">
@@ -2033,11 +2058,11 @@ const BADGES = [
 
 // ---- LEVEL DEFINITIONS ----
 const LEVELS = [
-  {name:'Rookie',min:0,max:200,cls:'lvl-rookie'},
-  {name:'Apprentice',min:201,max:500,cls:'lvl-apprentice'},
-  {name:'Pro',min:501,max:1000,cls:'lvl-pro'},
-  {name:'Closer',min:1001,max:2000,cls:'lvl-closer'},
-  {name:'Elite',min:2001,max:Infinity,cls:'lvl-elite'}
+  {name:'Rookie',min:0,max:499,cls:'lvl-rookie'},
+  {name:'Apprentice',min:500,max:1499,cls:'lvl-apprentice'},
+  {name:'Pro',min:1500,max:3499,cls:'lvl-pro'},
+  {name:'Closer',min:3500,max:6499,cls:'lvl-closer'},
+  {name:'Apex Elite',min:6500,max:Infinity,cls:'lvl-elite'}
 ];
 
 // ---- APP STATE ----
@@ -2108,7 +2133,8 @@ async function loadUserData(uid){
       badges:d.badges||[], activityLog:d.activityLog||[],
       discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
       eqResult:d.eqResult||null, certificates:d.certificates||[],
-      roleplayHistory:d.roleplayHistory||[]
+      roleplayHistory:d.roleplayHistory||[],
+      welcomeCompleted:d.welcomeCompleted||false, experience:d.experience||null
     };
     return d.role||'rep';
   }
@@ -2224,7 +2250,8 @@ auth.onAuthStateChanged(async user=>{
       reps[user.uid]={
         name:user.displayName||user.email, points:0, streak:0,
         lastActive:null, completedModules:[], quizScores:{},
-        fcReviews:0, drillsCompleted:0, drillsPerfect:0, badges:[], activityLog:[]
+        fcReviews:0, drillsCompleted:0, drillsPerfect:0, badges:[], activityLog:[],
+        welcomeCompleted:false, experience:null
       };
     }
     // Load all users and assignments for leaderboard/manager
@@ -2252,6 +2279,8 @@ auth.onAuthStateChanged(async user=>{
       renderBoard();
       renderAssessment();
       if(isManager)renderManager();
+      // Show welcome flow for first-time users
+      if(!reps[user.uid].welcomeCompleted)setTimeout(()=>showWelcomeFlow(),600);
     },500);
   }else{
     // Signed out — show splash
@@ -2262,6 +2291,92 @@ auth.onAuthStateChanged(async user=>{
     document.getElementById('authButtons').style.display='flex';
   }
 });
+
+// ---- WELCOME FLOW (First-time users) ----
+let wfStep=0;
+let wfData={};
+
+function showWelcomeFlow(){
+  wfStep=0;wfData={};
+  document.getElementById('welcomeFlow').classList.add('on');
+  renderWelcomeStep();
+}
+
+function renderWelcomeStep(){
+  const el=document.getElementById('wfContent');
+
+  if(wfStep===0){
+    // Welcome intro
+    el.innerHTML=`<div style="font-size:48px;margin-bottom:12px;">&#128075;</div>
+      <div class="wf-title">Welcome to Apex</div>
+      <div class="wf-sub">You're about to start the most comprehensive sales training program in the foundation repair industry. Here's what's inside:</div>
+      <ul class="wf-list">
+        <li>&#128218; <strong>12 Training Modules</strong> with embedded slide decks and study notes</li>
+        <li>&#10068; <strong>360 Quiz Questions</strong> across 3 difficulty tiers</li>
+        <li>&#127183; <strong>235 Flashcards</strong> with spaced repetition</li>
+        <li>&#9889; <strong>50 Objection Drills</strong> — pick the best response</li>
+        <li>&#127908; <strong>126 AI Role-Play Scenarios</strong> with personalized coaching</li>
+        <li>&#128202; <strong>3 Behavioral Assessments</strong> (DISC, Motivators, EQ)</li>
+        <li>&#127942; <strong>Badges, Certificates & Leaderboard</strong></li>
+      </ul>
+      <button class="wf-next" onclick="wfStep=1;renderWelcomeStep()">Let's Go &#8594;</button>`;
+
+  }else if(wfStep===1){
+    // How it works
+    el.innerHTML=`<div class="wf-step">How It Works</div>
+      <div class="wf-title">Your Training Path</div>
+      <div class="wf-sub">Work through the program at your pace. Here's the structure:</div>
+      <div style="text-align:left;margin:16px 0;">
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">
+          <div style="font-size:20px;flex-shrink:0;">1&#65039;&#8419;</div>
+          <div><strong style="color:var(--white);">Study the Module</strong><br><span style="font-size:13px;color:var(--gray);">Watch the slide deck, read the notes. Minimum study time is tracked.</span></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">
+          <div style="font-size:20px;flex-shrink:0;">2&#65039;&#8419;</div>
+          <div><strong style="color:var(--white);">Pass the Quiz</strong><br><span style="font-size:13px;color:var(--gray);">Score 80%+ to unlock module completion. Fail and you go back to study.</span></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">
+          <div style="font-size:20px;flex-shrink:0;">3&#65039;&#8419;</div>
+          <div><strong style="color:var(--white);">Practice with Drills & Role-Play</strong><br><span style="font-size:13px;color:var(--gray);">Objection drills test your instincts. AI role-play coaches your technique.</span></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;">
+          <div style="font-size:20px;flex-shrink:0;">4&#65039;&#8419;</div>
+          <div><strong style="color:var(--white);">Level Up</strong><br><span style="font-size:13px;color:var(--gray);">Earn points, unlock badges, climb the leaderboard, earn certificates.</span></div>
+        </div>
+      </div>
+      <button class="wf-next" onclick="wfStep=2;renderWelcomeStep()">Next &#8594;</button>`;
+
+  }else if(wfStep===2){
+    // New or veteran
+    el.innerHTML=`<div class="wf-step">About You</div>
+      <div class="wf-title">What's Your Experience?</div>
+      <div class="wf-sub">This helps us personalize your starting point.</div>
+      <button class="wf-opt ${wfData.experience==='new'?'selected':''}" onclick="wfData.experience='new';renderWelcomeStep()">
+        &#127793; <strong>I'm New to Apex</strong><br>
+        <span style="font-size:12px;color:var(--gray);">First time in foundation repair sales, or just joined the team. Start with the full onboarding roadmap.</span>
+      </button>
+      <button class="wf-opt ${wfData.experience==='veteran'?'selected':''}" onclick="wfData.experience='veteran';renderWelcomeStep()">
+        &#128170; <strong>I'm an Experienced Rep</strong><br>
+        <span style="font-size:12px;color:var(--gray);">I have foundation repair sales experience. Skip the beginner onboarding and go straight to training.</span>
+      </button>
+      <button class="wf-next" ${!wfData.experience?'disabled':''} onclick="finishWelcomeFlow()">Start Training &#8594;</button>`;
+  }
+}
+
+async function finishWelcomeFlow(){
+  // Save experience level
+  if(currentRep&&currentUid){
+    reps[currentRep].experience=wfData.experience;
+    reps[currentRep].welcomeCompleted=true;
+    await db.collection('users').doc(currentUid).update({
+      experience:wfData.experience,
+      welcomeCompleted:true
+    }).catch(e=>console.warn(e));
+  }
+  document.getElementById('welcomeFlow').classList.remove('on');
+  // Re-render home to show/hide onboarding based on experience
+  renderHome();
+}
 
 function switchRep(){
   stopRealtimeSync();
@@ -2363,22 +2478,42 @@ function renderHome(){
   // Assigned training
   const myAssignments=Object.entries(assignments).filter(([_,a])=>a.repId===currentRep&&a.status!=='completed');
 
+  // Level progress calculation
+  const lvlPct=nextLvl?Math.round(((r.points||0)-lvl.min)/(nextLvl.min-lvl.min)*100):100;
+  const earnedBadges=(r.badges||[]).length;
+  const totalBadges=BADGES.length;
+
   let html=`
     <div class="card" style="background:linear-gradient(135deg,#1a0905,#200c08);border-color:rgba(192,57,43,.25);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div>
           <div style="font-size:22px;font-weight:700;">Welcome back, ${r.name}</div>
-          <div style="font-size:13px;color:var(--gray);">${lvl.name} &middot; ${r.points||0} points</div>
+          <div style="font-size:13px;color:var(--gray);">${r.points||0} points &middot; ${r.streak||0} day streak</div>
         </div>
         <div style="font-size:48px;">${completed===total?'&#127942;':'&#128170;'}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
         <div style="flex:1;">
           <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:var(--red);"></div></div>
         </div>
         <div style="font-size:13px;color:var(--gray-l);">${completed}/${total} modules</div>
       </div>
-      ${nextLvl?`<div style="font-size:12px;color:var(--gray);">${nextLvl.min-r.points} points to ${nextLvl.name}</div>`:'<div style="font-size:12px;color:var(--gold);">Max level reached!</div>'}
+
+      <div style="margin-top:12px;padding:12px;background:var(--dark3);border-radius:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span class="topbar-level ${lvl.cls}" style="font-size:12px;padding:4px 12px;">${lvl.name}</span>
+          ${nextLvl?`<span style="font-size:11px;color:var(--gray);">${nextLvl.min-(r.points||0)} pts to <strong>${nextLvl.name}</strong></span>`:'<span style="font-size:11px;color:var(--gold);">Max Rank!</span>'}
+        </div>
+        <div class="level-progress">
+          <div class="level-bar"><div class="level-fill" style="width:${lvlPct}%;background:var(--red);"></div></div>
+          <span style="font-size:11px;color:var(--gray);">${lvlPct}%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--gray-d);">
+          <span>${lvl.name} (${lvl.min} pts)</span>
+          ${nextLvl?`<span>${nextLvl.name} (${nextLvl.min} pts)</span>`:''}
+        </div>
+      </div>
     </div>`;
 
   if(myAssignments.length){
@@ -2456,6 +2591,18 @@ function renderHome(){
       </div>`;
     });
   }
+  // Badge showcase
+  html+=`<div class="sec-header">Badges (${earnedBadges}/${totalBadges})</div><div class="badge-grid">`;
+  BADGES.forEach(b=>{
+    const earned=(r.badges||[]).includes(b.id);
+    html+=`<div class="badge ${earned?'earned':''}" title="${b.desc}">
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-name">${b.name}</div>
+      <div style="font-size:10px;color:${earned?'var(--green)':'var(--gray-d)'};margin-top:2px;">${earned?'&#9989; Earned':b.desc}</div>
+    </div>`;
+  });
+  html+=`</div>`;
+
   html+=getCertificatesHTML();
   document.getElementById('pg-home').innerHTML=html;
 }
@@ -4330,6 +4477,8 @@ const ONBOARDING_STEPS = [
 function getOnboardingHTML(){
   if(!currentRep)return '';
   const r=reps[currentRep];
+  // Hide for veterans
+  if(r.experience==='veteran')return '';
   const completed=ONBOARDING_STEPS.filter(s=>s.check(r)).length;
   const total=ONBOARDING_STEPS.length;
   if(completed>=total)return '';
