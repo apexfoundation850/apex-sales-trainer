@@ -2279,8 +2279,10 @@ auth.onAuthStateChanged(async user=>{
       renderBoard();
       renderAssessment();
       if(isManager)renderManager();
-      // Show welcome flow for first-time users
-      if(!reps[user.uid].welcomeCompleted)setTimeout(()=>showWelcomeFlow(),600);
+      // Show welcome flow for first-time users (skip if they have any activity)
+      const _r=reps[user.uid];
+      const isNewUser=!_r.welcomeCompleted&&!_r.lastActive&&(_r.points||0)===0;
+      if(isNewUser)setTimeout(()=>showWelcomeFlow(),600);
     },500);
   }else{
     // Signed out — show splash
