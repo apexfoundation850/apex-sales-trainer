@@ -1013,7 +1013,23 @@ const FLASHCARD_DECKS = [
   {f:'Second Ask After Objection',b:'"I understand your concern about [X], and I think we\'ve addressed that. Given what we\'ve discussed, would you like to go ahead and get this scheduled?"'},
   {f:'Referral Ask',b:'"Now that you\'ve seen the work, is there anyone you know - a neighbor, family member, coworker - who might be dealing with something similar? I\'d love to take just as good care of them."'},
   {f:'Financing Seed (2-Day Call)',b:'"Also - we do work with some great financing options if that ever comes in handy. Just something to keep in mind."'},
-  {f:'Post-Inspection Transition',b:'"I found some things I want to show you. Give me about 15 minutes to get organized and put some numbers together, and then I\'d like to sit back down with you."'}
+  {f:'Post-Inspection Transition',b:'"I found some things I want to show you. Give me about 15 minutes to get organized and put some numbers together, and then I\'d like to sit back down with you."'},
+  {f:'Scope Verification Question (2-Day Call)',b:'"Can you tell me a little more about what you\'re seeing? That way I can make sure I bring the right tools and give you the most thorough inspection possible."'},
+  {f:'Walk-Around Question 1: History',b:'"How long have you lived here, and when did you first start noticing this?"'},
+  {f:'Walk-Around Question 2: Progression',b:'"Has it gotten worse over time, or has it stayed about the same?"'},
+  {f:'Walk-Around Question 3: Previous Work',b:'"Has anyone looked at this before, or have you had any work done on it?"'},
+  {f:'Walk-Around Question 4: Water Patterns',b:'"Do you notice water issues during heavy rains, or does it seem to happen all the time?"'},
+  {f:'Walk-Around Question 5: Interior Symptoms',b:'"Have you noticed any doors sticking, cracks in walls, or uneven floors inside?"'},
+  {f:'Walk-Around Question 6: Other Concerns',b:'"Is there anything else about the house that concerns you that you\'d like me to look at while I\'m here?"'},
+  {f:'Post-Inspection Transition (Variation - Serious)',b:'"I want to be straightforward with you - I found some things that need attention. Let me get organized and I\'ll walk you through exactly what I saw and what I recommend."'},
+  {f:'Post-Inspection Transition (Variation - Moderate)',b:'"Good news is I have a clear picture now. Give me a few minutes to put together my findings and a recommendation, and then let\'s sit down and go through it together."'},
+  {f:'Financing Presentation Script',b:'"Let me show you how this looks monthly. We work with Upgrade and GoodLeap - depending on your approval, this could be as low as $[Y]/month. It takes about five minutes to check, no obligation, and it doesn\'t affect your credit score for a soft pull."'},
+  {f:'Objection Response: "Too Expensive" Script',b:'"I hear you - it\'s a significant investment. Can I ask: is it the total amount that\'s the concern, or is it more about timing and monthly cash flow? Because those are two very different conversations."'},
+  {f:'Objection Response: "Need to Think" Script',b:'"Absolutely - I wouldn\'t want you to rush into anything. Can you help me understand what part you\'re still working through? That way I can make sure I\'ve given you everything you need."'},
+  {f:'Neighborhood Marketing Script',b:'"We\'re going to be doing some work in the neighborhood soon. I wanted to introduce myself - if you\'ve ever noticed [common symptom], I\'d be happy to take a look at no charge."'},
+  {f:'Referral Follow-Up Call Script',b:'"Hi [Name], this is [Your Name] with Apex. [Referrer] suggested I reach out - they mentioned you might be seeing some [issue] at your place. I\'d love to come take a look if you\'re interested."'},
+  {f:'Time Commitment Framing Script',b:'"The whole process takes about two to three hours. I spend the first part inspecting, then we sit down together and I walk you through everything I found with photos. I want to make sure you have all the information."'},
+  {f:'Warm-Up / Rapport Sequence',b:'Start with a genuine compliment about the home or yard. Ask about how long they\'ve owned it. Let them talk first. The goal is to make them feel heard before you ever pick up a tool.'}
 ]},
 {id:'numbers',title:'Key Numbers',icon:'&#128290;',cards:[
   {f:'Normal wood moisture content',b:'10-12% (16%+ = elevated, 20% = losing structural integrity, 28%+ = active rot)'},
@@ -1035,7 +1051,22 @@ const FLASHCARD_DECKS = [
   {f:'Self-generated lead close rate',b:'40-65%'},
   {f:'Purchased lead close rate',b:'15-25%'},
   {f:'Financing programs available',b:'2: Upgrade and GoodLeap'},
-  {f:'Battery backup replacement interval',b:'Every 3-5 years'}
+  {f:'Battery backup replacement interval',b:'Every 3-5 years'},
+  {f:'Hydrostatic pressure per foot of depth',b:'0.43 psi per foot'},
+  {f:'Weight of water per cubic foot',b:'62 lbs/ft3'},
+  {f:'Polyurethane foam cure time',b:'15 minutes'},
+  {f:'Poly injection hole size',b:'5/8 inch'},
+  {f:'Mudjacking hole size',b:'1-2 inches'},
+  {f:'Drain pipe slope requirement',b:'1/8 inch per foot minimum'},
+  {f:'Drain trench width',b:'12-18 inches'},
+  {f:'Sump basin size',b:'18-24 inches diameter'},
+  {f:'Minimum dehumidifier capacity',b:'70-pint (for crawl space applications)'},
+  {f:'Minimum vapor barrier liner thickness',b:'12-mil reinforced polyethylene'},
+  {f:'Clean-out port service interval',b:'Every 3-5 years'},
+  {f:'Trip hazard threshold at slab joint',b:'1/2 inch differential'},
+  {f:'Annual outdoor relative humidity (Panhandle)',b:'70-80% average'},
+  {f:'Minimum inspection time',b:'45-60 minutes (rushed inspections miss findings)'},
+  {f:'Top earner self-gen pipeline target',b:'30-50% of pipeline is self-generated leads'}
 ]},
 {id:'objections',title:'Objection Responses',icon:'&#9889;',cards:[
   {f:'"It\'s too expensive"',b:'Don\'t defend price - expand value first. Connect cost to what it prevents. Ask: "Is it the total that concerns you, or is it more about timing and cash flow?"'},
@@ -1053,7 +1084,21 @@ const FLASHCARD_DECKS = [
   {f:'"Will this actually last?"',b:'Explain the mechanism: "Repairs fail when root cause isn\'t addressed or scope is incomplete. In your proposal, [cause] is addressed by [component]."'},
   {f:'"Finances are tight right now"',b:'Present financing: "We offer Upgrade and GoodLeap. Depending on approval, monthly payments are often far more manageable. Would it be worth checking? Five minutes, no obligation."'},
   {f:'"Had it done before - came back"',b:'Acknowledge frustration genuinely. Ask what was installed. Explain the specific gap in the previous work and how your proposal closes it.'},
-  {f:'"Competitor doesn\'t recommend your approach"',b:'Engage directly: "What did they recommend instead? Their approach works when [condition]. What I found in your home is [finding] - here\'s the specific reason for my recommendation."'}
+  {f:'"Competitor doesn\'t recommend your approach"',b:'Engage directly: "What did they recommend instead? Their approach works when [condition]. What I found in your home is [finding] - here\'s the specific reason for my recommendation."'},
+  {f:'"We\'re selling the house"',b:'Reframe as protection: "That\'s actually one of the best reasons to address this now. Buyers will find it in inspection, and an unresolved issue gives them leverage to renegotiate or walk. A transferable warranty becomes a selling point."'},
+  {f:'"My husband/wife isn\'t here"',b:'This is why DM confirmation matters on the 2-day call. If it happens: "I understand. Let me leave you with all the documentation and photos. When can the three of us connect so I can answer their questions too?"'},
+  {f:'"Can you just email the quote?"',b:'Resist the urge to comply. "I could, but the numbers won\'t mean much without the context. It\'ll take 15 minutes to walk through. The photos and evidence are what make the proposal make sense."'},
+  {f:'"Insurance should cover this"',b:'"I wish it did. Unfortunately, homeowners insurance typically excludes foundation settlement, ground water intrusion, and gradual deterioration. It covers sudden events like burst pipes, not long-term soil movement."'},
+  {f:'"I\'ll do it myself"',b:'Respect the instinct, redirect to complexity: "I admire the initiative. The challenge with [specific job type] is [specific technical factor]. The warranty also requires certified installation. Happy to answer any questions either way."'},
+  {f:'"This seems like overkill"',b:'"I hear that. Let me walk back through each component and connect it to a specific finding. If something doesn\'t tie to evidence, I\'ll take it out. But I think you\'ll see each piece has a reason."'},
+  {f:'"Your warranty doesn\'t matter if you go out of business"',b:'"That\'s a fair concern. Here\'s how we back it: [company history, number of jobs completed, service area stability]. Our warranty is also transferable, which adds resale value regardless."'},
+  {f:'"I don\'t want someone in my crawl space"',b:'"I completely understand - it\'s your home. The crew works quickly and professionally, and everything is documented with photos before and after. Most homeowners tell us they wish they\'d done it sooner."'},
+  {f:'"The inspector said it was fine"',b:'"Home inspectors do a valuable general overview, but they typically spend 10-15 minutes in a crawl space without moisture meters or specialized tools. Our inspection is 45-60 minutes with documented measurements at multiple points."'},
+  {f:'"It\'s just cosmetic"',b:'"That\'s the key question - is it cosmetic or structural? The measurements I took today show [specific reading]. Cosmetic cracks don\'t produce [specific symptom]. Let me show you the difference."'},
+  {f:'"I\'m on a fixed income"',b:'Show genuine empathy first. Then: "That\'s exactly why I want to show you the monthly financing option. Many of our customers on fixed incomes find that $[Y]/month is manageable, and it prevents a much larger emergency expense later."'},
+  {f:'"We just moved in"',b:'"That\'s actually great timing. Addressing this now means you\'re starting fresh with a protected home instead of inheriting a growing problem. And if the seller didn\'t disclose it, you may have recourse."'},
+  {f:'"I want to see how the winter goes"',b:'"I understand wanting to observe. The risk is that freeze-thaw cycles accelerate the exact issues I documented today. Water expands 9% when it freezes. What\'s a [X] reading now could be significantly worse by spring."'},
+  {f:'"I already called the city/county"',b:'"That\'s good to check. Typically, municipalities handle public infrastructure - streets, sidewalks, sewer lines. Foundation and drainage on private property falls to the homeowner. What did they tell you?"'}
 ]},
 {id:'jobtypes',title:'Job Type Key Facts',icon:'&#128736;',cards:[
   {f:'Basement Drainage: Most common water entry point',b:'Cove joint - where basement floor meets foundation wall'},
@@ -1065,69 +1110,597 @@ const FLASHCARD_DECKS = [
   {f:'Push Piers: How depth is confirmed',b:'Driven until refusal - when soil physically cannot be overcome - using structure weight as resistance'},
   {f:'Helical Piers: How capacity is verified',b:'Torque correlation during installation - hydraulic torque motor measurements confirm bearing capacity'},
   {f:'Horizontal cracks mean:',b:'LATERAL SOIL PRESSURE - NOT settlement. Requires wall reinforcement evaluation. Never propose only piers or drainage.'},
-  {f:'When to install drainage vs encapsulation first',b:'Drainage FIRST when bulk water is present. Installing liner before drainage traps water beneath it.'}
+  {f:'When to install drainage vs encapsulation first',b:'Drainage FIRST when bulk water is present. Installing liner before drainage traps water beneath it.'},
+  {f:'Basement: Wall gap / conduit purpose',b:'The gap between the wall and floor slab allows water to flow from behind the wall into the interior drain system. The conduit channels water to the sump basin without it surfacing on the floor.'},
+  {f:'Basement: What does efflorescence indicate?',b:'White mineral deposits on basement walls. It means water has been migrating through the concrete, carrying salts to the surface. It confirms moisture intrusion even when walls appear dry.'},
+  {f:'Basement: Window well water entry',b:'Window wells collect surface water and direct it against the foundation. Proper drainage, covers, and weep systems prevent entry. Always check window wells during exterior inspection.'},
+  {f:'Basement: FEMA sealed window well cover recommendation',b:'FEMA recommends sealed, clear polycarbonate covers to prevent water entry while allowing egress-code light. Unsealed metal grates do not prevent water intrusion.'},
+  {f:'Crawl Space Drainage: Geotextile wrap purpose',b:'Filter fabric wrapped around drain pipe and gravel prevents soil fines from clogging the drainage system over time. Without it, the system silts up and fails within years.'},
+  {f:'Crawl Space Drainage: Clean-out port spacing',b:'Clean-out ports installed at intervals allow flushing the drain line during maintenance. Recommended service every 3-5 years to maintain flow.'},
+  {f:'Crawl Space Drainage: Primary pump GPH range',b:'Primary sump pump should be rated at 2,000-3,000+ GPH (gallons per hour) depending on water volume. Undersized pumps run continuously and burn out prematurely.'},
+  {f:'Crawl Space Drainage: Discharge path requirements',b:'Discharge must exit minimum 6 feet from foundation, directed downhill away from the structure. Discharge into a splash block or buried line to prevent re-entry.'},
+  {f:'Encapsulation: Penetration sealing importance',b:'Every pipe, wire, and duct that passes through the crawl space barrier is a failure point. Unsealed penetrations allow soil vapor to bypass the entire encapsulation system.'},
+  {f:'Encapsulation: Vent sealing method',b:'Vents are sealed with rigid foam board cut to fit, then sealed with spray foam at edges. Open vents defeat the entire conditioned crawl space concept by introducing outside humidity.'},
+  {f:'Encapsulation: Termination bar use',b:'Mechanical termination bars fasten the liner to the wall at a consistent height above the floor. They prevent the liner from peeling away over time due to gravity or moisture.'},
+  {f:'Encapsulation: Stack effect mechanics',b:'Warm air rises in the home, creating negative pressure at the lowest level. This draws crawl space air upward through floor penetrations. 40-50% of first-floor air originates from below.'},
+  {f:'Encapsulation: 3 most common competitor gaps',b:'1) No dehumidifier (liner alone does not control humidity). 2) Unsealed penetrations (vapor bypasses liner). 3) Thin liner under 12-mil (tears, punctures, short lifespan).'},
+  {f:'Poly: Settlement pattern - Garage slabs',b:'Garage slabs typically settle at the front (apron area) due to poor compaction at the driveway transition. Look for separation between garage floor and driveway.'},
+  {f:'Poly: Settlement pattern - Driveways',b:'Driveways settle at joints and where they meet the garage apron or street. Voids form from water erosion along edges and beneath control joints.'},
+  {f:'Poly: Settlement pattern - Pool decks',b:'Pool decks settle toward the pool due to backfill settlement around the pool shell. This creates trip hazards and directs surface water into the pool area.'},
+  {f:'Poly: Settlement pattern - Sidewalks',b:'Sidewalk panels settle individually, creating trip hazards at joints. Tree roots, poor base compaction, and water erosion are the primary causes. Trip hazard threshold: 1/2 inch.'},
+  {f:'Poly: Settlement pattern - Stoops',b:'Stoops settle away from the home because the backfill against the foundation was not properly compacted. This creates a gap between the stoop and the home and a tripping hazard at the door.'},
+  {f:'Poly: Root cause evaluation',b:'Always identify WHY the slab settled before lifting. If the root cause (water erosion, poor compaction, organic fill decomposition) is not addressed, the slab will settle again.'},
+  {f:'Poly: Slab-on-grade vs flatwork distinction',b:'Slab-on-grade is the structural floor of the home (garage, basement). Flatwork is non-structural exterior concrete (sidewalks, driveways, patios). Structural slabs require more careful evaluation.'},
+  {f:'Structural Piers: Stair-step cracks meaning',b:'Stair-step cracks in block or brick follow mortar joints and indicate DIFFERENTIAL SETTLEMENT - one part of the foundation is moving more than another.'},
+  {f:'Structural Piers: Diagonal cracks meaning',b:'Diagonal cracks radiating from window/door corners indicate the wall is racking due to foundation movement. The crack points toward the area of greatest settlement.'},
+  {f:'Structural Piers: Rotation indicators',b:'Walls leaning inward or outward, gaps at the top of walls, separation between wall and ceiling, and doors that swing open or closed on their own all indicate rotational movement.'},
+  {f:'Structural Piers: Push vs helical selection criteria',b:'Push piers: heavy structures (full basements, 2+ stories) that provide enough dead load for resistance. Helical piers: lighter structures (crawl spaces, additions, stoops) where structure weight is insufficient for push pier installation.'},
+  {f:'Structural Piers: False refusal risk',b:'Push piers can hit a hard layer (rock, dense clay) above true load-bearing strata. If the pier stops too shallow, it may resume settling. Proper installation protocol tests for sustained resistance, not just initial refusal.'}
+]},
+{id:'preinspection',title:'Pre-Inspection Mastery',icon:'&#128204;',cards:[
+  {f:'What are the 3 phases of pre-inspection?',b:'1) 2-Day Out Call (confirm, qualify, seed financing). 2) 30-Minute Out Call (parking, sit-down commitment). 3) At-the-Door Warm-Up (rapport, agenda, trust unlock).'},
+  {f:'Why confirm decision-makers on the 2-day call?',b:'If only one DM is present, you will almost always hear "I need to talk to my spouse." Confirming both parties prevents the most common stall and avoids a wasted 2-3 hour appointment.'},
+  {f:'DM confirmation technique - direct approach',b:'"Will everyone who is part of making decisions about the home be able to be there?" Direct, non-assumptive, and lets them volunteer the answer without feeling pressured.'},
+  {f:'DM confirmation technique - soft approach',b:'"I want to make sure I can answer everyone\'s questions in one visit - will your [spouse/partner] be available too?" Frames it as service, not sales pressure.'},
+  {f:'Scope verification question purpose',b:'Asking "Can you tell me more about what you\'re seeing?" on the 2-day call ensures you bring the right tools, set proper expectations, and arrive prepared. It also starts the customer talking about their problem early.'},
+  {f:'How to frame the time commitment',b:'"The whole process takes about two to three hours." State it matter-of-factly. If they push back, explain: "I spend the first part inspecting, then we review findings together. I want you to have a complete picture."'},
+  {f:'When and how to seed financing',b:'On the 2-day call, casually mention: "We do work with some great financing options if that ever comes in handy. Just something to keep in mind." This plants the idea without pressure.'},
+  {f:'Why ask about parking on the 30-min call?',b:'It\'s a micro-commitment question. It gets them saying yes to a small request, which psychologically primes them to continue saying yes. It also shows professionalism and respect for their property.'},
+  {f:'Sit-down pre-commitment script',b:'"Can we sit down for a few minutes before I start?" This establishes that the appointment includes a sit-down conversation - not just a drive-by inspection. It sets the stage for the presentation.'},
+  {f:'At-the-door warm-up sequence',b:'1) Genuine compliment about home/yard. 2) Ask how long they\'ve owned it. 3) Let them talk. 4) Transition to agenda. The goal: make them feel heard before you pick up a single tool.'},
+  {f:'Agenda delivery at the door',b:'"Here\'s what today looks like: First, I want to hear from you. Then I\'ll do a thorough inspection. After that, I\'ll organize my findings and walk you through everything with photos. Sound good?"'},
+  {f:'What is "normal" for wood moisture?',b:'10-12%. State this benchmark BEFORE sharing their reading. Establishing what normal looks like gives context to every elevated number you present.'},
+  {f:'What is "normal" crawl space RH?',b:'Below 60% (55% preferred). Present this benchmark during the agenda or warm-up so the customer has a reference point for your findings.'},
+  {f:'What is "normal" floor slope?',b:'Essentially level. 1/4 inch per 8 feet is a significant flag. 1+ inch per 8 feet is urgent. Presenting the scale before the measurement builds credibility.'},
+  {f:'Trust Unlocking Moment - delivery tips',b:'Deliver it sincerely, with eye contact, early in the conversation. "If I get in there and this isn\'t something we can help with, I\'ll tell you honestly." This single moment builds more trust than any credential.'},
+  {f:'How to handle "just give me a number" at the door',b:'"I understand you want to get to the bottom line. To give you an accurate number, I need to see what\'s going on first. Otherwise I\'d just be guessing, and that\'s not fair to you."'},
+  {f:'Pre-inspection goal summary',b:'By the time you start inspecting, the customer should: know the agenda, feel heard, trust your honesty, expect a sit-down review, and be aware financing exists. All before you touch a tool.'},
+  {f:'What if the customer wants to follow you during inspection?',b:'Welcome it: "Absolutely, come with me. I\'ll show you exactly what I\'m looking at." Having them see conditions firsthand makes your presentation far more credible.'},
+  {f:'Mistake: Skipping the pre-inspection',b:'Jumping straight into the crawl space or basement means you present findings to someone who has no context, no rapport with you, and no reason to trust your recommendations. Close rates drop dramatically.'},
+  {f:'Pre-inspection checklist items',b:'DM confirmed, scope understood, time commitment set, financing seeded, parking arranged, sit-down committed, tools and documentation ready, benchmarks for normal prepared.'}
+]},
+{id:'inspection',title:'Inspection Mastery',icon:'&#128269;',cards:[
+  {f:'Walk-around protocol: What to do first',b:'Start OUTSIDE. Walk the full perimeter of the home before going inside or underneath. Document grading, gutters, downspout discharge, cracks, window wells, and vegetation against the foundation.'},
+  {f:'Walk-around question 1: History',b:'"How long have you lived here, and when did you first start noticing this?" Establishes timeline and helps distinguish new vs long-standing issues.'},
+  {f:'Walk-around question 2: Progression',b:'"Has it gotten worse over time, or has it stayed about the same?" Determines velocity of the problem and urgency level.'},
+  {f:'Walk-around question 3: Previous work',b:'"Has anyone looked at this before, or have you had any work done on it?" Identifies prior failed repairs and competitor involvement.'},
+  {f:'Walk-around question 4: Water patterns',b:'"Do you notice water issues during heavy rains, or does it seem to happen all the time?" Distinguishes between event-driven and chronic moisture issues.'},
+  {f:'Walk-around question 5: Interior symptoms',b:'"Have you noticed any doors sticking, cracks in walls, or uneven floors inside?" Connects exterior findings to interior symptoms the homeowner experiences daily.'},
+  {f:'Walk-around question 6: Other concerns',b:'"Is there anything else about the house that concerns you?" Opens the door for additional scope and shows you care about the whole home, not just the lead complaint.'},
+  {f:'Documentation standard: Photo count',b:'Minimum 12-20 photos per appointment. Every finding must be documented. Photos are your evidence during the presentation - if you didn\'t photograph it, it didn\'t happen.'},
+  {f:'Exterior inspection checklist',b:'Grading direction, gutter condition, downspout discharge distance (6 ft min), foundation cracks, window wells, vegetation contact, slab settlement, stoop separation, driveway condition.'},
+  {f:'Interior inspection checklist',b:'Door operation (sticking/swinging), wall cracks (location/direction/width), floor slope measurement, baseboard separation, ceiling cracks, window frame gaps, drywall nail pops.'},
+  {f:'Crawl space inspection checklist',b:'Moisture meter readings (3+ locations), standing water, vapor barrier condition, insulation condition, wood damage/rot, mold/mildew, structural member condition, plumbing leaks, HVAC ductwork, pest evidence.'},
+  {f:'Moisture meter usage protocol',b:'Take 3+ readings at different locations. Read structural wood (joists, sills, posts), not just subfloor. Record each reading with its location. Compare to benchmark: 10-12% normal, 16%+ elevated, 28%+ active rot.'},
+  {f:'Crack measurement technique',b:'Use a crack monitor card or ruler. Measure width at the widest point. Note direction (horizontal, vertical, diagonal, stair-step). Photograph with the measuring tool visible in frame.'},
+  {f:'Floor slope measurement technique',b:'Use a 4-foot level or laser level. Measure from a reference point (typically an exterior wall) toward the center or opposite wall. Record inches of drop per distance. 1/4" per 8 ft = flag, 1+" per 8 ft = urgent.'},
+  {f:'Photo requirements for credibility',b:'Include a reference object (tape measure, moisture meter display, crack card) in every diagnostic photo. Wide shots for context, close-ups for detail. Label or narrate each photo during presentation.'},
+  {f:'Door knock execution during inspection',b:'If the homeowner is not with you, knock before entering any room or space. Announce yourself: "Just heading into the crawl space now." This builds trust through respect and professionalism.'},
+  {f:'Effort display psychology',b:'Customers need to SEE the work you do. Emerge from the crawl space with documentation. Show dirty knees. Display the moisture meter. Effort visibility directly correlates with perceived value of your recommendation.'},
+  {f:'What to do when you find nothing wrong',b:'Tell them honestly: "I checked everything and your home looks solid. Here\'s what I looked at and why I can say that with confidence." Honesty when there\'s no sale builds referrals and long-term reputation.'},
+  {f:'Mistake: Rushing the inspection',b:'A thorough inspection takes 45-60 minutes minimum. Rushing means missing findings, fewer photos, and a weaker presentation. The inspection IS the sale - it builds the evidence your proposal is based on.'}
+]},
+{id:'presentation',title:'Presentation Mastery',icon:'&#127912;',cards:[
+  {f:'Photo review sequence: What to show first',b:'Show NORMAL readings first. "This joist measured 11% - that\'s healthy." Establishing the baseline makes elevated readings more impactful by contrast. Normal first, then abnormal.'},
+  {f:'Education framework during presentation',b:'For each finding: 1) Show the photo. 2) Explain what normal looks like. 3) Show what you found. 4) Explain why it matters. 5) Connect it to the solution component. Evidence drives the recommendation.'},
+  {f:'Moisture benchmark presentation',b:'"Normal wood moisture is 10-12%. Anything above 16% is elevated. At 28%, the wood is actively rotting. Here\'s what I found in your crawl space..." Always establish the scale before revealing the number.'},
+  {f:'Progression framework',b:'Show where they are on the deterioration timeline. "You\'re at [X reading]. The next stage is [Y]. This doesn\'t reverse on its own because [mechanism]." Make the trajectory specific, not vague.'},
+  {f:'How to connect proposal to evidence',b:'Every component in the proposal must tie to a documented finding. "The dehumidifier is in the proposal because your RH reading was 72%. The drain is here because of the standing water I photographed."'},
+  {f:'Financing introduction timing',b:'Introduce financing AFTER presenting the total investment, not before. "The total investment is $[X]. Now, let me show you how this looks monthly." Presenting financing first makes the price feel like a problem.'},
+  {f:'Monthly payment framing',b:'Always convert the total to a monthly figure: "That\'s about $[Y] per month - less than most car payments." Monthly framing makes large investments feel manageable and comparable to everyday expenses.'},
+  {f:'Why to avoid "What do you think?"',b:'"What do you think?" is a vague, passive question that invites vague, passive answers. Instead ask: "Based on everything we\'ve gone through, how would you like to move forward?" Direct and assumptive.'},
+  {f:'Value framing vs price defense',b:'Never defend price directly. Instead, expand value: "This system protects your home from [X], prevents [Y], and includes [Z warranty]. The investment covers all of that." Let the scope justify the number.'},
+  {f:'Evidence-based vs opinion-based selling',b:'Opinion: "I think you need this." Evidence: "Your reading was 24%. The rot threshold is 28%." Evidence-based recommendations are harder to argue with and build more trust than personal assertions.'},
+  {f:'How to present the proposal document',b:'Walk through it line by line. Don\'t hand it over and wait. "Here\'s what I recommend and why: [Component] addresses [finding]. [Next component] addresses [next finding]." You control the narrative.'},
+  {f:'Handling the "silent treatment" during presentation',b:'If the customer goes quiet, don\'t fill the silence with talking. Pause, then ask: "What questions do you have so far?" Silence often means they\'re processing, not disengaged.'},
+  {f:'Presenting multiple options',b:'If appropriate, offer a primary recommendation and a reduced alternative: "Here\'s the complete solution. If budget is a factor, here\'s a phased approach that addresses the most urgent items first."'},
+  {f:'Mistake: Presenting without photos',b:'A verbal description of findings is an opinion. Photos with measurements are evidence. Customers buy evidence, not opinions. If you didn\'t document it, it doesn\'t exist in the presentation.'},
+  {f:'Mistake: Skipping the education step',b:'Jumping from findings to price skips the "why it matters" step. Without understanding the mechanism and progression, the customer sees the proposal as arbitrary, not necessary.'},
+  {f:'Presenting warranty as value',b:'"This warranty is transferable to the next owner. It\'s not just protection for you - it adds documented value to your home. It\'s something a buyer will see during their inspection."'},
+  {f:'Using before/after photos from past jobs',b:'Show relevant before/after photos from completed projects similar to theirs. "Here\'s a home with conditions just like yours. Here\'s what it looked like after." Social proof is more powerful than any script.'},
+  {f:'Reading the room during presentation',b:'Watch for: leaning in (engaged), crossed arms (resistant), looking at spouse (checking in), checking phone (disengaged). Adjust pace and engagement based on body language cues.'},
+  {f:'Transition from presentation to close',b:'"So that\'s everything I found and what I recommend to address it. The total investment is $[X]. With financing, that\'s about $[Y] per month. How would you like to move forward?"'},
+  {f:'Handling technical questions during presentation',b:'Welcome them: "Great question." Answer with evidence, not jargon. If you don\'t know, say so: "I want to give you the right answer - let me check on that and get back to you today."'}
+]},
+{id:'closing',title:'Close & Follow-Up',icon:'&#127919;',cards:[
+  {f:'First ask technique',b:'"Based on everything we\'ve gone through today, I believe this is the right solution. The total investment is $[X], or about $[Y] per month with financing. How would you like to move forward?" Direct, confident, not pushy.'},
+  {f:'Second ask timing',b:'After addressing the first objection, circle back: "I understand your concern about [X], and I think we\'ve addressed that. Would you like to go ahead and get this scheduled?" Don\'t wait - ask again after resolving the concern.'},
+  {f:'Objection diagnosis questions',b:'When you hear an objection, diagnose before responding: "Can you help me understand - is it the scope, the timing, or something else?" The answer tells you exactly what to address.'},
+  {f:'Right-sizing with trade-offs',b:'If the full scope is too much, offer a phased approach: "We can start with the drainage system now and add encapsulation next year. The trade-off is you\'ll continue to have elevated humidity until phase two."'},
+  {f:'Leave-behind components',b:'Every appointment should leave behind: 1) Written proposal with scope details. 2) Inspection photos (printed or emailed). 3) Your business card. 4) Financing pre-approval info if applicable. 5) Warranty documentation.'},
+  {f:'5-Touch Follow-Up: Touch 1',b:'Same-day thank you text or call: "Thanks for your time today, [Name]. I enjoyed meeting you. If any questions come up, don\'t hesitate to reach out." Within hours of leaving.'},
+  {f:'5-Touch Follow-Up: Touch 2',b:'24-48 hour follow-up call: "Hey [Name], I wanted to check in and see if you\'ve had a chance to think things over. Any questions I can answer?" Reference a specific finding from your inspection.'},
+  {f:'5-Touch Follow-Up: Touch 3',b:'5-7 day value-add: Share a relevant article, case study, or before/after photo similar to their situation. "Saw this and thought of your home - similar conditions to what we discussed."'},
+  {f:'5-Touch Follow-Up: Touch 4',b:'14-day check-in: "Hi [Name], just circling back. Wanted to make sure you had everything you needed to make your decision. Is there anything else I can provide?" Keep it helpful, not pushy.'},
+  {f:'5-Touch Follow-Up: Touch 5',b:'30-day final touch: "Hey [Name], I know life gets busy. I wanted to reach out one more time - if the timing isn\'t right now, I completely understand. My offer stands whenever you\'re ready."'},
+  {f:'Pending job conversion strategy',b:'Treat every pending proposal as an active opportunity. Each follow-up should add value - new information, a relevant photo, an answer to a question they raised. Never just "checking in" with nothing to offer.'},
+  {f:'Referral capture timing',b:'Ask for referrals at the POINT OF SALE or immediately after the job is complete - when satisfaction and trust are highest. Don\'t wait weeks. "Is there anyone you know who might be dealing with something similar?"'},
+  {f:'Referral ask script',b:'"Now that you\'ve seen what we do, is there anyone you know - a neighbor, family member, coworker - who might be dealing with something similar? I\'d love to take just as good care of them."'},
+  {f:'Neighborhood marketing approach',b:'When you have a job scheduled in a neighborhood: knock 5-10 nearby doors. "We\'re going to be doing some work nearby. If you\'ve ever noticed [common symptom], I\'d be happy to take a quick look at no charge."'},
+  {f:'Why the first ask fails (common reasons)',b:'1) Asked too passively ("What do you think?"). 2) Didn\'t connect price to evidence. 3) Didn\'t present financing. 4) Skipped the education step. 5) DM not present. Diagnose which one before making the second ask.'},
+  {f:'Handling "Let me sleep on it"',b:'Agree, then set a specific next step: "Absolutely. Can I call you tomorrow at [time] to answer any questions that come up?" Never leave without a scheduled follow-up. Vague next steps die.'},
+  {f:'When to stop following up',b:'After 5 touches with no engagement, move them to a long-term nurture list. Don\'t burn the relationship. A short note every 3-6 months keeps the door open without being annoying.'},
+  {f:'Closing mistake: Abandoning the close',b:'Saying "Okay, take your time" and leaving without a next step is the abandoned close. You\'ll spend weeks chasing a lead that\'s already gone. Always leave with a scheduled follow-up.'},
+  {f:'Closing mistake: Discounting to close',b:'Offering a discount before diagnosing the objection tells the customer your price was arbitrary. Discount only as a last resort, and only with a scope trade-off - never for free.'},
+  {f:'Post-close: Setting expectations',b:'After the sale, clearly explain: timeline to installation, what to expect on install day, how the warranty works, and who to call with questions. Managing expectations prevents cancellations.'}
+]},
+{id:'psychology',title:'Customer Psychology',icon:'&#129504;',cards:[
+  {f:'Emotional vs rational decisions',b:'Customers decide emotionally, then justify rationally. Your evidence gives them the rational justification, but the decision is driven by fear of damage, desire for peace of mind, and protecting their family.'},
+  {f:'Loss aversion principle (2x rule)',b:'People feel the pain of losing something roughly 2x more than the pleasure of gaining something equal. Frame solutions as preventing loss ("protect your home") rather than gaining benefit ("improve your home").'},
+  {f:'Buyer Type 1: Analytical',b:'Recognition: Asks detailed questions, wants data, compares specs. Approach: Lead with numbers, measurements, and documentation. Give them time to process. Don\'t rush. Evidence-heavy presentation.'},
+  {f:'Buyer Type 2: Driver',b:'Recognition: Direct, time-conscious, bottom-line focused. Approach: Be concise, get to the point, present the recommendation confidently. Don\'t over-explain. Respect their time.'},
+  {f:'Buyer Type 3: Expressive',b:'Recognition: Talkative, emotional, relationship-focused. Approach: Build rapport first, share stories, connect on a personal level. Show enthusiasm. Use before/after photos and testimonials.'},
+  {f:'Buyer Type 4: Amiable',b:'Recognition: Agreeable, avoids conflict, seeks reassurance. Approach: Be warm and patient. Reduce perceived risk. Emphasize warranty and support. Don\'t pressure - they need to feel safe.'},
+  {f:'Identifying buyer type in first 10 minutes',b:'Watch for: How they greet you (formal vs casual). Questions they ask (data vs feelings). How they make decisions (fast vs deliberate). Who they reference (spouse, neighbor, expert). Adapt your approach accordingly.'},
+  {f:'Mismatch consequences',b:'Using a Driver approach on an Amiable buyer feels aggressive. Using an Amiable approach on a Driver wastes their time. Mismatched selling style is the #1 reason technically correct presentations fail to close.'},
+  {f:'Four emotional drivers in home repair',b:'1) Fear: "What happens if I don\'t fix this?" 2) Peace of mind: "I want this handled." 3) Pride: "I take care of my home." 4) Protection: "I need to keep my family safe." Identify which one is dominant.'},
+  {f:'Anchoring effect in pricing',b:'The first number a customer hears becomes their anchor. Present the total investment before the monthly payment. The large number makes the monthly figure feel small by comparison.'},
+  {f:'Social proof in sales',b:'Customers trust other customers more than they trust salespeople. Use: before/after photos of similar local jobs, review counts, referral stories. "Your neighbor on [Street] had the same issue - here\'s what we did."'},
+  {f:'Reciprocity principle in sales',b:'When you give value first (thorough inspection, honest assessment, education), customers feel a natural pull to reciprocate. The trust unlocking moment and free education create reciprocity before you ask for the sale.'},
+  {f:'Why "trust me" doesn\'t work',b:'Saying "trust me" or leading with credentials tells the customer to rely on your authority. Evidence-based selling lets them reach their own conclusion. People trust what they see more than what they\'re told.'},
+  {f:'Cognitive dissonance after the sale',b:'Buyers often feel doubt after committing (buyer\'s remorse). Counter this with immediate reassurance: recap the evidence, confirm the timeline, and reinforce that they made a well-informed decision.'},
+  {f:'The power of silence after the ask',b:'After you ask "How would you like to move forward?" - stop talking. The first person to speak loses leverage. Silence feels uncomfortable, but it gives the customer space to process and respond honestly.'}
+]},
+{id:'competitive',title:'Competitive Positioning',icon:'&#9878;',cards:[
+  {f:'How to ask to see a competitor\'s scope',b:'"Do you mind if I take a look at what they proposed? I\'m not here to bash anyone - I just want to make sure you can compare apples to apples." Position it as helping them, not attacking the competitor.'},
+  {f:'Component-by-component comparison approach',b:'Go line by line: "They included [X] - great. Do they include [Y]? What about [Z]?" Let the customer discover the gaps themselves. Questions are more persuasive than statements.'},
+  {f:'Competitor gap 1: Missing dehumidifier',b:'Many competitors skip the dehumidifier in encapsulation bids. Without it, the sealed space traps humidity instead of controlling it. The liner alone does not remove moisture from the air.'},
+  {f:'Competitor gap 2: Unsealed penetrations',b:'Competitors often install liner but don\'t seal around pipes, wires, and ducts. Every unsealed penetration allows soil vapor to bypass the entire encapsulation system. It\'s the most common installation shortcut.'},
+  {f:'Competitor gap 3: Thin liner (under 12-mil)',b:'Budget competitors use 6-mil liner. It tears during installation, punctures from foot traffic, and degrades faster. 12-mil reinforced polyethylene is the minimum for a durable, long-lasting installation.'},
+  {f:'Never attack competitors',b:'Criticizing other companies makes you look insecure and defensive. Instead, ask questions that let the customer see the scope gaps on their own. "What components did they include?" is more powerful than "They do bad work."'},
+  {f:'Scope gap identification technique',b:'Ask these 3 questions about any competitor bid: 1) "What specific components are included?" 2) "What does their warranty cover and for how long?" 3) "Did they do a full inspection with documentation?"'},
+  {f:'Warranty comparison approach',b:'"Their warranty covers [X] for [Y] years. Our warranty covers [A] for [B] years and is transferable to the next homeowner. Let me show you exactly what\'s included." Let the comparison speak for itself.'},
+  {f:'Why to avoid "you get what you pay for"',b:'This phrase sounds defensive and implies the customer is being cheap. Instead, let the scope comparison do the work: "The price difference almost always comes down to what\'s included. Let me show you."'},
+  {f:'Evidence over rhetoric',b:'Never argue about quality in abstract terms. Show specific evidence: documented measurements, installation photos, product specifications, warranty documents. Evidence beats opinions every time.'},
+  {f:'When a competitor price is genuinely lower for same scope',b:'Rare, but possible. Acknowledge it: "Their price is competitive. Here\'s what differentiates us: [specific factor - installation team experience, warranty terms, documentation standard]." Don\'t pretend gaps exist when they don\'t.'},
+  {f:'Handling "the other guy said you\'re overpriced"',b:'"I appreciate them sharing their opinion. Rather than talking about their company, let me walk you through exactly what\'s in our scope and why. Then you can make the comparison yourself."'},
+  {f:'Competitor uses different method objection',b:'"Different approaches work for different situations. Their method works well when [condition]. What I found in your home is [finding], which is why I recommend [approach]. Here\'s the specific reason..."'},
+  {f:'How to compete on inspection quality',b:'"Ask the other company how long their inspection took, how many moisture readings they took, and how many photos they documented. Our inspection is 45-60 minutes with 12-20+ documented photos and 3+ moisture readings."'},
+  {f:'Positioning when you are the higher bid',b:'Own it: "We\'re probably not the cheapest option. Here\'s why: [specific scope items, warranty, documentation, installation standards]. The question is whether the difference in scope is worth the difference in price."'}
 ]}
 ];
 
+
 // ---- OBJECTION DRILL DATA ----
+// expanded_drills.js — 50 Apex Foundation Specialists objection-handling drills
+// Replace the existing DRILLS array in index.html with this expanded set.
+
 const DRILLS = [
-  {cat:'Price & Budget',obj:'"That\'s more than I expected."',ctx:'The customer has seen the full proposal and is experiencing sticker shock.',
+
+  // ============================================================
+  // CATEGORY 1: PRICE & BUDGET (8 scenarios)
+  // ============================================================
+
+  {cat:'Price & Budget',obj:'"That\'s more than I expected."',ctx:'The customer has seen the full proposal and is experiencing sticker shock. They haven\'t objected to the scope or findings, just the total.',
    opts:[
-    {t:'Immediately offer a discount to close the deal',correct:false,e:'Discounting before understanding tells the customer the price was arbitrary and destroys credibility.'},
-    {t:'Expand value by connecting cost to what it prevents, then ask if it\'s the total or the cash flow',correct:true,e:'Correct. Connect cost to prevention, then diagnose whether it\'s a value gap or a financing need.'},
-    {t:'Compare your price to competitors and explain why you\'re worth more',correct:false,e:'Comparing to competitors before establishing value makes the conversation about price instead of scope.'},
-    {t:'Tell them this is the best price you can offer and they should act today',correct:false,e:'Pressure tactics destroy the trust you\'ve built throughout the appointment.'}
+    {t:'Offer an immediate discount to take the sting out of the number and keep momentum going',correct:false,e:'Discounting before understanding the concern tells the customer the price was arbitrary. It destroys credibility and trains them to push harder.'},
+    {t:'Connect the cost to what it prevents, then ask whether it\'s the total or the monthly cash flow that concerns them',correct:true,e:'Correct. Expanding value before diagnosing the real barrier follows Apex methodology: evidence first, then determine if it\'s a value gap or a financing need.'},
+    {t:'Compare your price to competitors and explain why Apex charges more for superior quality work',correct:false,e:'Jumping to competitor comparison before establishing value turns the conversation into a price debate instead of a scope discussion.'},
+    {t:'Tell them this is your best price and that acting today locks it in before costs increase',correct:false,e:'Pressure tactics and artificial urgency destroy the trust you built during the inspection. Price anchoring should come from value, not deadlines.'}
   ]},
-  {cat:'Price & Budget',obj:'"I need to think about it."',ctx:'You\'ve presented the proposal and the customer says they need time.',
+
+  {cat:'Price & Budget',obj:'"I need to think about it."',ctx:'You\'ve presented the proposal and the customer says they need time. Their tone is polite but noncommittal.',
    opts:[
-    {t:'Say "Okay, take your time" and leave',correct:false,e:'This is the abandoned close. You\'ll spend weeks following up on a job likely already lost.'},
-    {t:'Apply heavy pressure to close today since urgency is critical',correct:false,e:'Pressure destroys trust. The goal is to diagnose what they\'re processing, not force a decision.'},
-    {t:'Ask what specifically they\'re still working through - scope, timing, or something else',correct:true,e:'Correct. Diagnose before responding. The answer tells you exactly what to address.'},
-    {t:'Offer a bigger discount if they sign today',correct:false,e:'Discounting in response to "I need to think about it" communicates desperation, not value.'}
+    {t:'Say "Absolutely, take your time" and leave your card so they can reach out when ready',correct:false,e:'This is the abandoned close. You will spend weeks chasing a lead that is likely already lost because you never identified the real hesitation.'},
+    {t:'Apply firm pressure to close today because the problem will only get more expensive over time',correct:false,e:'Pressure destroys trust. The goal is to diagnose what they are still processing, not to force a decision they are not ready for.'},
+    {t:'Ask what specifically they are still working through, whether it is scope, timing, budget, or something else entirely',correct:true,e:'Correct. Diagnose before responding. Their answer tells you exactly which conversation to have next. "Think about it" is a symptom, not a diagnosis.'},
+    {t:'Offer a significant discount if they sign the agreement today to create a reason to commit now',correct:false,e:'Discounting in response to hesitation communicates desperation. It signals that the original price was inflated and undermines everything presented.'}
   ]},
-  {cat:'Urgency & Timing',obj:'"I want to wait and see if it gets worse."',ctx:'The customer acknowledges the findings but doesn\'t see urgency to act.',
+
+  {cat:'Price & Budget',obj:'"Can you do it for less? What\'s your best price?"',ctx:'The customer is directly asking for a discount. They haven\'t disputed the scope or the findings.',
    opts:[
-    {t:'Tell them "These things always get worse" and urge immediate action',correct:false,e:'Vague urgency statements are unconvincing. Effective urgency comes from specific documented mechanisms.'},
-    {t:'Make the waiting cost specific with documented measurements and progression mechanism',correct:true,e:'Correct. "Your reading was 24%. Rot threshold is 28%. This doesn\'t self-correct." Specific evidence creates honest urgency.'},
-    {t:'Agree it might be fine and offer to come back in 6 months',correct:false,e:'Downplaying findings fails the customer. Document what you find, explain it accurately, let them decide.'},
-    {t:'Warn them their house could collapse if they wait',correct:false,e:'Scare tactics destroy credibility. Evidence-based progression is the only honest and effective approach.'}
+    {t:'Immediately offer 5-10% off to show flexibility and keep the deal moving forward today',correct:false,e:'Discounting on request teaches the customer that your prices are negotiable. It also signals that the original proposal was padded.'},
+    {t:'Ask which component they feel isn\'t necessary, so you can understand what they would like to adjust',correct:true,e:'Correct. Redirect from price to scope. If nothing can be removed without compromising the system, the scope justifies itself. Let the evidence hold the price.'},
+    {t:'Explain that Apex pricing is set by corporate and you have no authority to change it at all',correct:false,e:'Hiding behind policy sounds evasive. It avoids the real conversation about value and leaves the customer feeling unheard.'},
+    {t:'Tell them this is already the best price and that waiting will only cost them more money later',correct:false,e:'Artificial urgency paired with a firm no feels like a pressure tactic. Address the value question before discussing price flexibility.'}
   ]},
-  {cat:'Trust & Credibility',obj:'"I want to get an engineer to look at it."',ctx:'Customer takes the issue seriously but wants independent verification.',
+
+  {cat:'Price & Budget',obj:'"I\'m on a fixed income. I just don\'t have that kind of money."',ctx:'The customer is elderly or retired and has a genuine financial constraint. They acknowledge the problem is real.',
    opts:[
-    {t:'Tell them an engineer isn\'t necessary for this type of work',correct:false,e:'Any resistance to independent review communicates that Apex is afraid of scrutiny. This destroys trust.'},
-    {t:'Encourage it genuinely and offer your inspection documentation for the engineer to review',correct:true,e:'Correct. Welcoming scrutiny is itself the most powerful credibility signal available.'},
-    {t:'Suggest they\'re wasting money on an engineer since your assessment is thorough',correct:false,e:'This sounds defensive and implies you don\'t want anyone checking your work.'},
-    {t:'Agree but warn that engineers take weeks and the problem could worsen',correct:false,e:'Using urgency to discourage a second opinion is manipulative and destroys trust.'}
+    {t:'Reduce the scope to the bare minimum to get the price down to something they can handle',correct:false,e:'Cutting scope reactively may leave critical components out. An incomplete system can fail and cost the customer more in the long run.'},
+    {t:'Express empathy, then present financing options with specific monthly payment figures they can evaluate',correct:true,e:'Correct. Many fixed-income customers assume they must pay cash. Presenting a monthly figure with "five minutes, no obligation to apply" changes the entire conversation.'},
+    {t:'Tell them you understand and offer to come back when their financial situation improves',correct:false,e:'Walking away without presenting financing means the customer never learns it is available. Many customers on fixed income qualify and prefer monthly payments.'},
+    {t:'Warn them that the damage will get worse and cost significantly more if they wait to address it',correct:false,e:'Using cost escalation on a financially constrained customer is tone-deaf. It creates anxiety without offering a path forward.'}
   ]},
-  {cat:'Technical Doubt',obj:'"Do I really need all of this, or is it a sales pitch?"',ctx:'The customer directly challenges whether the scope is needs-driven or commission-driven.',
+
+  {cat:'Price & Budget',obj:'"We just spent thirty thousand on the kitchen. We can\'t do another big project right now."',ctx:'The customer has recently completed a major renovation and is experiencing budget fatigue. They understand the problem but feel tapped out.',
    opts:[
-    {t:'Cite your years of experience and company credentials',correct:false,e:'Leading with credentials before evidence confirms the suspicion that you\'re selling, not solving.'},
-    {t:'Walk through each component connecting it to a specific documented finding',correct:true,e:'Correct. The evidence is the answer. "Component A is here because of finding X." Evidence, not assertion.'},
-    {t:'Reduce the scope to show you\'re not trying to oversell',correct:false,e:'Reducing scope reactively suggests the original recommendation wasn\'t honest.'},
-    {t:'Tell them you\'d recommend the same thing for your own home',correct:false,e:'Personal assurances sound like "trust me" which is exactly what the skeptical customer distrusts.'}
+    {t:'Point out that the kitchen investment is at risk if the foundation underneath it fails',correct:false,e:'While technically true, leading with fear about their recent investment feels manipulative and puts them on the defensive immediately.'},
+    {t:'Acknowledge the investment, then reframe foundation work as protecting everything above it, and present monthly financing',correct:true,e:'Correct. Validate their spending, connect foundation health to protecting that investment, and show them a monthly figure that makes it manageable alongside existing obligations.'},
+    {t:'Suggest waiting six months until they have recovered financially from the kitchen project',correct:false,e:'Deferring without presenting financing assumes cash is the only option. You also lose the momentum of documented findings sitting in front of them.'},
+    {t:'Offer to break the project into two phases so they can spread the cost over several months',correct:false,e:'Phasing structural work can compromise system integrity. Present the full scope with financing before fragmenting the solution.'}
   ]},
-  {cat:'Competitor & Comparison',obj:'"Another company quoted me significantly less."',ctx:'The customer has a competing proposal at a lower price.',
+
+  {cat:'Price & Budget',obj:'"What if I just do the minimum? What\'s the cheapest option?"',ctx:'The customer wants to reduce scope to lower the price. They are focused on cost rather than completeness of the solution.',
    opts:[
-    {t:'Say "you get what you pay for" and emphasize Apex quality',correct:false,e:'Without understanding their scope, this is rhetoric, not evidence. It makes Apex look defensive.'},
-    {t:'Offer to match or beat their price',correct:false,e:'Matching without seeing their scope communicates that your original price was inflated.'},
-    {t:'Ask to see their scope and compare component by component',correct:true,e:'Correct. The price difference almost always comes down to scope. Let the component comparison do the work.'},
-    {t:'Criticize the competitor\'s reputation or work quality',correct:false,e:'Attacking competitors looks insecure. Focus on scope content, not company criticism.'}
+    {t:'Walk through the system as designed and explain what each component does and what happens if it is removed',correct:true,e:'Correct. Let the evidence justify the scope. When each component connects to a documented finding, the customer sees that "minimum" means "incomplete" rather than "affordable."'},
+    {t:'Create a reduced scope option on the spot to give them a lower number and keep the conversation going',correct:false,e:'Reducing scope reactively suggests the original recommendation was padded. It undermines credibility and may produce an incomplete repair.'},
+    {t:'Tell them the system is engineered as a whole and cannot be broken apart under any circumstances',correct:false,e:'Rigid refusal without explanation sounds like you are protecting your commission rather than solving their problem. Educate, don\'t dictate.'},
+    {t:'Agree to remove some components and note that the warranty may not apply to a partial installation',correct:false,e:'Using warranty exclusions as a threat to maintain scope is manipulative. Educate on system interdependence instead.'}
   ]},
-  {cat:'Trust & Credibility',obj:'"My neighbor said it wasn\'t that serious."',ctx:'The customer has received conflicting information from someone they trust.',
+
+  {cat:'Price & Budget',obj:'"That\'s twice what the other company quoted me for the same thing."',ctx:'The customer has a competing bid that appears to be half the price. They assume both proposals cover the same work.',
    opts:[
-    {t:'Explain why the neighbor is wrong and doesn\'t know what they\'re talking about',correct:false,e:'Arguing with a trusted person forces the customer to choose sides. They will choose their neighbor.'},
-    {t:'Redirect to your specific measurements without arguing the neighbor\'s assessment',correct:true,e:'Correct. "Your conditions may differ. The reading I got was [X]. The threshold is [Y]." Let evidence create the frame.'},
-    {t:'Ask if the neighbor is a foundation professional',correct:false,e:'This comes across as dismissive and passive-aggressive. It creates conflict, not understanding.'},
-    {t:'Suggest the neighbor may have had a different (lesser) problem',correct:false,e:'Speculating about the neighbor\'s situation sounds like you\'re making excuses for your findings.'}
+    {t:'Tell them you get what you pay for and that cheaper contractors cut corners on quality',correct:false,e:'Without reviewing their scope, this is rhetoric. Attacking an unknown competitor makes Apex look defensive rather than confident.'},
+    {t:'Ask to see their other proposal so you can compare the scope line by line with your documented findings',correct:true,e:'Correct. A two-times price difference almost always comes from a scope difference. Let the component-by-component comparison reveal what is included versus what is missing.'},
+    {t:'Offer to match their price to win the job and prevent the customer from going with the competitor',correct:false,e:'Matching without reviewing scope signals that your original price was inflated. It destroys credibility and sets a precedent for future discounting.'},
+    {t:'Explain that Apex uses higher-quality materials and that accounts for the difference in pricing',correct:false,e:'Leading with materials before understanding scope is guessing. The gap is almost certainly in what is included, not just what brand of product is used.'}
   ]},
-  {cat:'Urgency & Timing',obj:'"My finances are tight right now."',ctx:'The customer acknowledges the problem but has a genuine financial constraint.',
+
+  {cat:'Price & Budget',obj:'"Can I just save up and pay cash in a few months?"',ctx:'The customer wants to delay the project to avoid financing. They plan to save and pay cash later.',
    opts:[
-    {t:'Offer a smaller, cheaper scope of work',correct:false,e:'Reducing scope to reduce price may leave critical components out and lead to an incomplete repair.'},
-    {t:'Say you understand and offer to come back when they\'re in a better position',correct:false,e:'Leaving without presenting financing means many customers never learn it\'s available.'},
-    {t:'Present financing options with monthly payment figures - Upgrade and GoodLeap',correct:true,e:'Correct. "Five minutes, no obligation." Always present the monthly figure. Many customers assume they must pay cash.'},
-    {t:'Warn them the price will only go up if they wait',correct:false,e:'Price pressure on a financially constrained customer is tone-deaf and destroys trust.'}
+    {t:'Agree and schedule a follow-up appointment in three months to revisit the project with them',correct:false,e:'Deferring without discussing progression risk or financing options means you leave without the customer having full information to decide.'},
+    {t:'Show them what the documented conditions could look like in three to six months, then present the monthly payment as an alternative to waiting',correct:true,e:'Correct. Make the cost of waiting specific with documented evidence, then present financing so they can compare: pay monthly now, or pay more later. Let them choose with full information.'},
+    {t:'Tell them the price is only guaranteed for thirty days and it will be higher if they wait',correct:false,e:'Artificial price deadlines feel like pressure tactics. Honest urgency comes from documented progression, not expiring quotes.'},
+    {t:'Encourage them to save up since paying cash avoids interest and is always the smarter financial move',correct:false,e:'While cash avoids interest, it ignores documented progression risk. The customer deserves to weigh both the financial cost of financing and the structural cost of waiting.'}
+  ]},
+
+  // ============================================================
+  // CATEGORY 2: URGENCY & TIMING (7 scenarios)
+  // ============================================================
+
+  {cat:'Urgency & Timing',obj:'"I want to wait and see if it gets worse."',ctx:'The customer acknowledges the findings but does not feel urgency. They believe the current condition is manageable.',
+   opts:[
+    {t:'Tell them these problems always get worse and urge them to act immediately before it is too late',correct:false,e:'Vague urgency is unconvincing. Effective urgency comes from specific documented measurements and progression mechanisms, not general warnings.'},
+    {t:'Make the waiting cost specific using your documented measurements, thresholds, and the mechanism that drives progression',correct:true,e:'Correct. "Your reading was 24 percent. Rot threshold is 28 percent. Water intrusion does not self-correct." Specific evidence creates honest urgency without pressure.'},
+    {t:'Agree it might be fine and offer to come back in six months to re-evaluate at no charge',correct:false,e:'Downplaying documented findings fails the customer. Present what you found accurately and let them make an informed decision.'},
+    {t:'Warn them that their home could suffer catastrophic structural failure if they delay the repair',correct:false,e:'Scare tactics destroy credibility instantly. Evidence-based progression is the only honest and effective approach to creating urgency.'}
+  ]},
+
+  {cat:'Urgency & Timing',obj:'"We\'re thinking about selling in two years. Can this wait until then?"',ctx:'The customer plans to sell and does not want to invest in a home they will not keep long-term.',
+   opts:[
+    {t:'Tell them they are legally required to disclose known foundation issues and it will kill their sale',correct:false,e:'Leading with legal threats is aggressive and positions you as an adversary rather than an advisor. The information may be relevant but the delivery matters.'},
+    {t:'Explain how documented issues affect resale, then show how a transferable warranty turns the repair into a selling advantage',correct:true,e:'Correct. Reframe the repair as resale protection. A completed repair with a transferable warranty removes buyer objections and can actually increase the sale price.'},
+    {t:'Agree that it makes sense to wait and let the next homeowner handle it after the sale closes',correct:false,e:'This ignores disclosure obligations and progression risk. The customer deserves to understand how waiting affects their sale position.'},
+    {t:'Suggest they do a partial repair now to minimize cost and deal with the rest after the sale',correct:false,e:'Partial repairs can create more questions during inspection than a fully documented and warrantied solution. Present the complete picture first.'}
+  ]},
+
+  {cat:'Urgency & Timing',obj:'"It\'s been like this for years and nothing bad has happened yet."',ctx:'The customer has lived with the condition for a long time and uses that history as evidence that it is not urgent.',
+   opts:[
+    {t:'Acknowledge their experience, then show how your documented measurements indicate where things stand relative to failure thresholds',correct:true,e:'Correct. Validate their observation, then add the data they do not have. "You are right that it has been slow. Your current reading is X. The threshold where damage accelerates is Y." Evidence reframes their experience.'},
+    {t:'Explain that structural problems are like a ticking time bomb and they have just been lucky so far',correct:false,e:'Dramatic metaphors undermine credibility. Data and documented progression are more convincing than fear-based analogies.'},
+    {t:'Tell them that past stability does not guarantee future stability and they need to act before it fails',correct:false,e:'While true, this is a generic statement that does not leverage your specific findings. Connect your measurements to specific progression mechanisms.'},
+    {t:'Agree that it has been stable and suggest monitoring it for another year before making a decision',correct:false,e:'You have documented findings in front of you. Suggesting monitoring without presenting those findings fails the customer and wastes the inspection.'}
+  ]},
+
+  {cat:'Urgency & Timing',obj:'"I want to see how this winter goes first."',ctx:'The customer wants to wait through another season to see if conditions change. You have documented current conditions.',
+   opts:[
+    {t:'Explain that winter freeze-thaw cycles will accelerate the damage and they cannot afford to wait',correct:false,e:'While freeze-thaw is real, leading with a warning feels like pressure. Start with their specific measurements and let the data make the seasonal argument.'},
+    {t:'Walk through how seasonal cycles interact with their specific documented conditions and what one more cycle could produce',correct:true,e:'Correct. Connect their specific readings to seasonal mechanisms. "Your gap measurement is X now. Each freeze-thaw cycle expands it. After one winter, we typically see Y." Specific, not hypothetical.'},
+    {t:'Agree to wait and schedule a spring appointment to reassess the situation after winter passes',correct:false,e:'Agreeing to wait without presenting your findings means the customer makes a decision without full information. Present the data, then let them choose.'},
+    {t:'Offer a winter discount to incentivize them to commit before the season starts creating problems',correct:false,e:'Seasonal discounts undermine value-based selling. The reason to act now should be the documented conditions, not a promotional price.'}
+  ]},
+
+  {cat:'Urgency & Timing',obj:'"We just moved in. Let us get settled first before we take on a big project."',ctx:'New homeowners who discovered issues during or after purchase. They feel overwhelmed with the transition.',
+   opts:[
+    {t:'Emphasize that they should have caught this before buying and now they need to fix it immediately',correct:false,e:'Blaming their purchase decision is adversarial. They are already stressed from moving. Meet them where they are emotionally.'},
+    {t:'Validate the transition, confirm the documented findings are not emergency-level, and present a timeline that works with their settling-in period',correct:true,e:'Correct. Show empathy for their situation, clarify the severity level honestly, and give them a realistic window. This builds trust and keeps the door open without pressure.'},
+    {t:'Tell them the previous owner should have fixed this and they should pursue legal action right away',correct:false,e:'Redirecting to legal action does not address the structural issue. Stay in your lane: document, educate, recommend. Legal advice is not your role.'},
+    {t:'Agree to check back in six months and let them enjoy their new home in the meantime',correct:false,e:'Walking away without presenting findings means they lack information to prioritize. Present the data, give them a timeline, and let them decide.'}
+  ]},
+
+  {cat:'Urgency & Timing',obj:'"Can you come back in the spring? That works better for our schedule."',ctx:'The customer is not objecting to the work itself but wants to defer to a more convenient season.',
+   opts:[
+    {t:'Tell them spring is your busiest season and they might not be able to get on the schedule at all',correct:false,e:'Using scheduling scarcity as pressure is a tactic, not a service. If spring really is busy, you can mention it, but it should not be your leading argument.'},
+    {t:'Review the documented conditions, explain what one more season means for their specific situation, and present scheduling options',correct:true,e:'Correct. Respect their preference while giving them the information to make a fully informed timing decision. If the data supports waiting, say so. If it does not, show them why.'},
+    {t:'Agree and set a spring appointment since the customer knows their own schedule best',correct:false,e:'Agreeing without presenting your findings means the customer decides without full information. Your job is to educate, not just accommodate.'},
+    {t:'Offer a discount for scheduling now since it saves them money compared to spring pricing rates',correct:false,e:'Seasonal pricing incentives undermine value-based selling. The reason to act should be the documented conditions, not a discount.'}
+  ]},
+
+  {cat:'Urgency & Timing',obj:'"My other project needs to finish first. I\'ve got a contractor here for the next two months."',ctx:'The customer has an active renovation project and feels they cannot manage two contractors simultaneously.',
+   opts:[
+    {t:'Explain that foundation work should always come first because it affects everything above it structurally',correct:false,e:'While structurally true, bulldozing their current project plan feels dismissive. Work with their reality, not against it.'},
+    {t:'Understand their timeline, confirm whether your documented conditions can wait that long, and propose coordination or sequencing that respects both projects',correct:true,e:'Correct. Diagnose compatibility first. Some conditions can wait eight weeks; some cannot. Give them an honest assessment and a plan that fits their situation.'},
+    {t:'Tell them to pause their other project because foundation issues are more important and more urgent',correct:false,e:'Telling a customer to stop a project in progress is overstepping. Provide the information and let them prioritize with full understanding.'},
+    {t:'Agree to come back in two months and let them focus on their current renovation without distraction',correct:false,e:'Deferring without presenting your findings means they lack information to decide priority. Present the data, give an honest timeline assessment, then let them choose.'}
+  ]},
+
+  // ============================================================
+  // CATEGORY 3: TRUST & CREDIBILITY (7 scenarios)
+  // ============================================================
+
+  {cat:'Trust & Credibility',obj:'"I want to get an engineer to look at it first."',ctx:'The customer takes the issue seriously but wants independent professional verification before committing.',
+   opts:[
+    {t:'Tell them an engineer is unnecessary for this type of work since your training covers everything needed',correct:false,e:'Resisting independent review communicates that you are afraid of scrutiny. This destroys trust faster than any other response.'},
+    {t:'Encourage it genuinely and offer your full inspection documentation for the engineer to review alongside their assessment',correct:true,e:'Correct. Welcoming scrutiny is itself the most powerful credibility signal. "Absolutely, here is everything I documented. I would love for them to review it." Confidence, not defensiveness.'},
+    {t:'Suggest they are wasting money on an engineer since your company assessment is just as thorough',correct:false,e:'Discouraging a second opinion sounds defensive and implies you do not want anyone checking your work. It confirms their hesitation.'},
+    {t:'Agree but caution that engineers take weeks to schedule and the problem could worsen during that delay',correct:false,e:'Using urgency to discourage a second opinion is manipulative. It signals that your recommendation cannot withstand independent review.'}
+  ]},
+
+  {cat:'Trust & Credibility',obj:'"I\'ve never heard of your company before."',ctx:'The customer is unfamiliar with Apex and is uncertain about trusting an unknown company with a major project.',
+   opts:[
+    {t:'List all of your awards, years in business, and national rankings to establish credibility immediately',correct:false,e:'Credential dumping feels like a sales pitch. The customer wants proof they can trust you, not a resume recitation.'},
+    {t:'Acknowledge that is fair, share a few local references they can verify, and let your documented inspection speak to your thoroughness',correct:true,e:'Correct. Verifiable local proof plus the quality of the inspection itself builds trust. "That is fair. Here are three homeowners in your area. And here is what I documented today." Evidence over assertion.'},
+    {t:'Tell them to Google the company and read the reviews since the reputation speaks for itself online',correct:false,e:'Sending them to search online is risky and lazy. You lose control of the narrative and some reviews may be negative or misleading.'},
+    {t:'Explain that the company has been in business for many years and would not be here if they were not reputable',correct:false,e:'Longevity alone does not build trust. The customer needs specific, verifiable proof, not general claims about survival in the market.'}
+  ]},
+
+  {cat:'Trust & Credibility',obj:'"The last contractor we hired ripped us off. How do I know you\'re different?"',ctx:'The customer has been burned before and is carrying distrust from a past bad experience with another company.',
+   opts:[
+    {t:'Promise them that Apex is different and would never do that because customer service is the top priority',correct:false,e:'Promises and assurances are exactly what the last contractor probably said. Words alone cannot overcome experiential distrust.'},
+    {t:'Acknowledge their experience, then show how your process creates transparency and accountability they can verify themselves',correct:true,e:'Correct. "I understand that concern completely. Let me show you what I documented and how our process works so you can verify everything independently." Process and evidence, not promises.'},
+    {t:'Ask what happened with the last contractor so you can explain why Apex would have handled it differently',correct:false,e:'While empathy is good, turning it into a comparison with an unknown contractor feels opportunistic. Focus on your verifiable process instead.'},
+    {t:'Show them your license, insurance, and warranty documentation to prove Apex is a legitimate operation',correct:false,e:'Paperwork proves legitimacy, not trustworthiness. The burned customer needs to see a transparent process, not just credentials.'}
+  ]},
+
+  {cat:'Trust & Credibility',obj:'"How do I know you\'re not just trying to sell me stuff I don\'t need?"',ctx:'The customer directly challenges your motives. They suspect the recommendation is commission-driven rather than needs-driven.',
+   opts:[
+    {t:'Assure them you would never recommend something unnecessary and that your integrity is important to you',correct:false,e:'Personal assurances sound like "trust me," which is exactly what a skeptical customer does not trust. Assertions without evidence confirm their suspicion.'},
+    {t:'Walk through each component of the proposal, connecting every item to a specific documented finding from the inspection',correct:true,e:'Correct. The evidence is the answer. "This component addresses finding X. This one addresses finding Y." When every line item traces to documentation, the scope justifies itself.'},
+    {t:'Reduce the scope to show you are flexible and not trying to oversell them on work they might not need',correct:false,e:'Reducing scope reactively suggests the original recommendation was not honest. If it was right before the objection, it should be right after.'},
+    {t:'Explain your company compensation structure to prove you do not earn more by recommending more work',correct:false,e:'Discussing your pay structure is awkward and irrelevant. The customer wants evidence that the scope matches their problem, not your paycheck details.'}
+  ]},
+
+  {cat:'Trust & Credibility',obj:'"My contractor friend looked at it and says this is overkill."',ctx:'The customer has received conflicting advice from someone they trust personally. Their friend is not a foundation specialist.',
+   opts:[
+    {t:'Explain that their friend is probably a general contractor and does not specialize in foundation work',correct:false,e:'Questioning their friend\'s qualifications feels dismissive and forces the customer to choose sides. They will choose their friend.'},
+    {t:'Redirect to your specific documented measurements without arguing their friend\'s assessment, and invite the friend to review your findings',correct:true,e:'Correct. "I respect their opinion. Here is what I measured today and what each component addresses. They are welcome to review my documentation." Let evidence create the frame without creating conflict.'},
+    {t:'Ask if their friend has foundation-specific training and certifications to make that kind of assessment',correct:false,e:'Challenging qualifications is passive-aggressive. It creates a personal conflict that makes the customer defensive rather than informed.'},
+    {t:'Agree to remove some components since their friend may have a point about the overall scope',correct:false,e:'Reducing scope to appease a third party who has not done a documented inspection undermines your professional assessment and may produce an incomplete repair.'}
+  ]},
+
+  {cat:'Trust & Credibility',obj:'"The home inspector said the foundation was fine when we bought the house."',ctx:'The customer is referencing a previous inspection report that conflicts with your current findings.',
+   opts:[
+    {t:'Tell them home inspectors are generalists who miss foundation issues all the time and cannot be trusted',correct:false,e:'Attacking another professional damages your credibility. It sounds like you are trying to override their trusted source rather than add to it.'},
+    {t:'Acknowledge the previous report, then show how your documented findings compare and explain what may have changed since that inspection',correct:true,e:'Correct. "That report was accurate for that point in time. Here is what I am measuring today, and here is how conditions have progressed since then." Time-stamped evidence, not competing opinions.'},
+    {t:'Suggest the home inspector may have been incompetent or missed obvious signs during their evaluation',correct:false,e:'Calling another professional incompetent makes you look petty and insecure. Focus on your current findings rather than discrediting past assessments.'},
+    {t:'Show them photos of what the home inspector could not have seen without specialized foundation equipment',correct:false,e:'While showing additional evidence is good, framing it as something the inspector "could not see" still undermines the other professional. Lead with your data, not their limitations.'}
+  ]},
+
+  {cat:'Trust & Credibility',obj:'"Your online reviews are mixed. I saw some negative ones."',ctx:'The customer has researched your company online and found reviews that concern them. They are raising it directly.',
+   opts:[
+    {t:'Dismiss the negative reviews as fake or from competitors who are trying to damage your reputation',correct:false,e:'Dismissing negative reviews sounds evasive and dishonest. Every company has some negative reviews. Transparency is more credible than denial.'},
+    {t:'Acknowledge the concern, share how the company addresses issues when they arise, and offer verifiable local references they can contact',correct:true,e:'Correct. "Every company has some reviews that did not go well. Here is how we handle those situations, and here are three local customers you can call." Transparency and verifiable proof build trust.'},
+    {t:'Point out that you have hundreds of positive reviews and the negative ones are a tiny minority percentage',correct:false,e:'Minimizing their concern with statistics feels dismissive. The customer raised a specific worry; address it specifically rather than diluting it with volume.'},
+    {t:'Explain that unhappy customers are more likely to leave reviews and it skews the perception unfairly',correct:false,e:'This is a generic excuse that every business uses. It does not address the customer\'s specific concern or provide verifiable reassurance.'}
+  ]},
+
+  // ============================================================
+  // CATEGORY 4: TECHNICAL DOUBT (7 scenarios)
+  // ============================================================
+
+  {cat:'Technical Doubt',obj:'"Do I really need all of this? It seems like a lot."',ctx:'The customer is looking at the full proposal and questions whether every component is truly necessary or if some are upsells.',
+   opts:[
+    {t:'Cite your years of experience and explain that you would not recommend anything unnecessary',correct:false,e:'Leading with credentials before evidence confirms the suspicion that you are selling rather than solving. Assertions without proof do not overcome doubt.'},
+    {t:'Walk through each component, connecting it directly to a specific documented finding from the inspection',correct:true,e:'Correct. "Component A addresses finding X. Component B addresses finding Y." When every item traces to documentation, the scope justifies itself through evidence.'},
+    {t:'Reduce the scope immediately to show good faith and prove you are not padding the proposal',correct:false,e:'Reducing scope reactively suggests the original recommendation was dishonest. If it was right before the question, it should be right after.'},
+    {t:'Tell them you would recommend the exact same thing for your own home and mean it sincerely',correct:false,e:'Personal assurances sound like "trust me," which is exactly what a doubting customer does not find convincing. Evidence is the answer.'}
+  ]},
+
+  {cat:'Technical Doubt',obj:'"Can\'t I just seal the cracks myself? I saw products at the hardware store."',ctx:'The customer has seen DIY crack repair products and believes they can handle the issue themselves at a fraction of the cost.',
+   opts:[
+    {t:'Tell them DIY products do not work and they will just waste their money trying to fix it themselves',correct:false,e:'Dismissing their idea without explanation sounds self-serving. Educate them on why surface treatments differ from structural solutions.'},
+    {t:'Explain the difference between surface sealing and addressing the water source, using their documented conditions to illustrate why sealing alone will not solve their specific situation',correct:true,e:'Correct. "Sealing addresses the symptom. Your documented condition shows water is entering from X source at Y rate. Until that source is managed, surface seals will continue to fail." Educate with their data.'},
+    {t:'Say that they can try it and call you when it fails since you will still be here to do the real repair',correct:false,e:'This sounds condescending and dismissive. It also allows further damage to occur while the customer experiments with inadequate solutions.'},
+    {t:'Warn them that improper sealing can trap moisture and create far worse problems than they have now',correct:false,e:'While potentially true, leading with worst-case warnings feels like a scare tactic. Start with education about how their specific water source works.'}
+  ]},
+
+  {cat:'Technical Doubt',obj:'"Why can\'t I just put a dehumidifier down there instead of all this?"',ctx:'The customer believes a dehumidifier can solve their moisture problem without the expense of a waterproofing system.',
+   opts:[
+    {t:'Tell them a dehumidifier is a band-aid that treats the symptom while ignoring the underlying cause entirely',correct:false,e:'While directionally correct, this dismisses their idea without using their specific data. Connect the explanation to their documented water source and volume.'},
+    {t:'Show them where the water is entering using your documentation, explain the volume involved, and clarify why removing humidity does not stop the source',correct:true,e:'Correct. "Your water is entering here at this rate. A dehumidifier processes moisture in the air, but it does not stop the source. Here is the volume we documented." Specific data makes the case.'},
+    {t:'Recommend they try a dehumidifier first and call you if it does not work since you want them to be satisfied',correct:false,e:'Allowing a customer to invest in an inadequate solution when you have documented evidence of the real problem is a disservice to them.'},
+    {t:'Explain that dehumidifiers cost hundreds per year in electricity and will not actually solve the moisture issue',correct:false,e:'Leading with operating cost is weak. The real issue is that a dehumidifier does not address the water source. Lead with the mechanism, not the utility bill.'}
+  ]},
+
+  {cat:'Technical Doubt',obj:'"My neighbor just put plastic sheeting down and said it solved their moisture problem."',ctx:'The customer is referencing a neighbor\'s DIY approach and questioning why they need a more comprehensive solution.',
+   opts:[
+    {t:'Explain that the neighbor probably has different conditions and their situation may not be comparable at all',correct:false,e:'Speculating about the neighbor\'s situation without evidence sounds like you are making excuses. Focus on the customer\'s documented conditions instead.'},
+    {t:'Redirect to the customer\'s specific documented measurements and show why their conditions require more than a vapor barrier alone',correct:true,e:'Correct. "Your conditions may differ from theirs. Here is what I measured today: X humidity, Y water volume, Z soil conditions. Based on these specific readings, here is what is needed." Their data, not the neighbor\'s story.'},
+    {t:'Warn them that plastic sheeting traps moisture underneath and will eventually cause mold and structural damage',correct:false,e:'Blanket warnings about the neighbor\'s approach feel like scare tactics. Keep the conversation focused on the customer\'s documented conditions.'},
+    {t:'Ask if the neighbor is a waterproofing professional or just a homeowner sharing their personal experience',correct:false,e:'Questioning the neighbor\'s expertise is passive-aggressive and creates a personal conflict rather than an evidence-based conversation.'}
+  ]},
+
+  {cat:'Technical Doubt',obj:'"Why interior drainage instead of exterior? Shouldn\'t you fix it from the outside?"',ctx:'The customer questions why the recommended approach is interior rather than exterior excavation.',
+   opts:[
+    {t:'Tell them exterior excavation is outdated and interior drainage is the modern standard that every company uses',correct:false,e:'Dismissing exterior approaches as outdated is inaccurate and oversimplified. Some conditions genuinely benefit from exterior work. Address their specific case.'},
+    {t:'Explain why interior drainage is recommended for their specific conditions, including cost, disruption, landscaping impact, and long-term effectiveness',correct:true,e:'Correct. "For your specific situation, interior drainage is recommended because..." then walk through the factors. When the recommendation connects to their conditions, it stops being a preference and becomes a prescription.'},
+    {t:'Say that exterior work costs three to four times more and is not worth the additional expense for most homes',correct:false,e:'Leading with cost comparison sidesteps the technical question. The customer wants to understand the engineering reason, not just the price difference.'},
+    {t:'Admit that exterior would be ideal but it is just not practical for most residential applications today',correct:false,e:'Positioning your recommendation as a compromise rather than the right solution undermines confidence. If interior is right for their case, explain why confidently.'}
+  ]},
+
+  {cat:'Technical Doubt',obj:'"Won\'t the spray foam just break down over time? Nothing lasts forever."',ctx:'The customer doubts the longevity of spray foam insulation or encapsulation materials used in the recommended system.',
+   opts:[
+    {t:'Guarantee them it will last a lifetime because the materials are specifically engineered to be permanent',correct:false,e:'Absolute lifetime claims are hard to substantiate and sound like sales talk. Provide specific material data and warranty terms instead.'},
+    {t:'Explain the material science behind the product, reference its documented performance characteristics, and show what the warranty specifically covers',correct:true,e:'Correct. "This closed-cell foam has a documented R-value retention of X over Y years. Here is what the warranty covers." Material data and warranty specifics are more convincing than absolute claims.'},
+    {t:'Tell them nothing lasts forever but this is the best option available on the market right now',correct:false,e:'Agreeing that it will eventually fail does not inspire confidence. Provide data on expected performance life and warranty coverage instead.'},
+    {t:'Explain that if it ever fails the warranty will cover full replacement at absolutely no cost to them',correct:false,e:'Over-promising on warranty coverage without specifics can create future disputes. Be precise about what the warranty covers and for how long.'}
+  ]},
+
+  {cat:'Technical Doubt',obj:'"How are steel piers better than concrete piers? Concrete seems stronger."',ctx:'The customer questions the material choice for underpinning and has an intuitive sense that concrete is inherently stronger.',
+   opts:[
+    {t:'Tell them concrete piers are outdated technology that no reputable company uses anymore today',correct:false,e:'Dismissing concrete piers entirely is inaccurate. Some applications suit concrete. Address their specific case and explain why steel is recommended here.'},
+    {t:'Explain how steel piers reach load-bearing strata that concrete cannot, connect it to their soil conditions, and clarify the installation and testing process',correct:true,e:'Correct. "Steel piers are driven to refusal in load-bearing soil at X depth. Your soil boring shows Y conditions. Each pier is load-tested to Z capacity." Specific data for their specific case.'},
+    {t:'Agree that concrete seems strong but explain that steel is just what Apex uses because it is their standard system',correct:false,e:'Framing it as company preference rather than engineering rationale misses the chance to educate. Explain why steel is right for their conditions.'},
+    {t:'Show them photos of failed concrete piers to demonstrate why steel is the superior choice visually',correct:false,e:'Showing failure photos feels like scare tactics. Lead with the engineering rationale for their specific soil conditions and the testing process that verifies capacity.'}
+  ]},
+
+  // ============================================================
+  // CATEGORY 5: COMPETITOR & COMPARISON (6 scenarios)
+  // ============================================================
+
+  {cat:'Competitor & Comparison',obj:'"Another company quoted me significantly less for the same job."',ctx:'The customer has a competing proposal at a meaningfully lower price and assumes both proposals cover the same scope.',
+   opts:[
+    {t:'Say "you get what you pay for" and emphasize that Apex quality is worth the premium investment',correct:false,e:'Without reviewing their scope, this is rhetoric. It makes Apex look defensive rather than confident in the value of the documented solution.'},
+    {t:'Offer to match or beat their price so you can win the job and keep the customer from going elsewhere',correct:false,e:'Price matching without reviewing scope signals that your original price was inflated. It destroys credibility and invites future negotiations.'},
+    {t:'Ask to see their scope and compare the two proposals component by component against your documented findings',correct:true,e:'Correct. The price difference almost always comes from a scope difference. "Let me see what they included. I will show you exactly where the two proposals differ and why." Let the comparison do the work.'},
+    {t:'Criticize the competitor\'s reputation, materials, and work quality to justify the price difference',correct:false,e:'Attacking competitors looks insecure and unprofessional. Focus on scope differences and documented findings, not company criticism.'}
+  ]},
+
+  {cat:'Competitor & Comparison',obj:'"The other company includes a lifetime warranty. Why doesn\'t yours?"',ctx:'The customer is comparing warranty terms between two proposals and perceives the competitor as offering better coverage.',
+   opts:[
+    {t:'Warn them that lifetime warranties from competitors are marketing gimmicks with fine print that voids coverage',correct:false,e:'Attacking competitor warranties without specifics sounds like sour grapes. Help the customer evaluate warranty quality without disparaging the other company.'},
+    {t:'Walk them through what your warranty specifically covers, how claims are handled, and what questions to ask when comparing any warranty terms',correct:true,e:'Correct. "Here is exactly what our warranty covers, what the process looks like if you need to use it, and here are the questions I would ask about any warranty: What is excluded? Who handles claims?" Educate, do not attack.'},
+    {t:'Offer to extend your warranty to match the competitor so the customer feels they are getting equal coverage',correct:false,e:'Extending warranty terms to match competition cheapens your existing coverage and may create obligations the company cannot honor long-term.'},
+    {t:'Explain that Apex does not need a lifetime warranty because the work is done right the first time around',correct:false,e:'Dismissing warranty value sounds arrogant. Customers want protection regardless of quality. Address the warranty comparison directly and educationally.'}
+  ]},
+
+  {cat:'Competitor & Comparison',obj:'"My neighbor used another company and they were really happy with the work."',ctx:'The customer has social proof for a competitor from someone they trust personally.',
+   opts:[
+    {t:'Ask what company they used and explain why Apex does it better based on your knowledge of their methods',correct:false,e:'Comparing yourself to a company the customer\'s neighbor already trusts puts you in a defensive position. You cannot win by arguing against personal experience.'},
+    {t:'Acknowledge that is great to hear, then redirect to how your documented findings apply specifically to their home and conditions',correct:true,e:'Correct. "I am glad they had a good experience. Every home is different though. Here is what I found specific to your property." Focus on their unique situation, not the competitor comparison.'},
+    {t:'Point out that the neighbor may have had a simpler problem that required a less comprehensive solution',correct:false,e:'Speculating about the neighbor\'s situation feels dismissive. Keep the conversation focused on the customer\'s documented conditions.'},
+    {t:'Offer to match whatever the neighbor paid since you want to be competitive with other companies in the area',correct:false,e:'Matching an unknown price for unknown scope is reckless. It abandons value-based selling and signals that your pricing is arbitrary.'}
+  ]},
+
+  {cat:'Competitor & Comparison',obj:'"The other company says they can do it in one day. Your estimate says three."',ctx:'The customer perceives a competitor as more efficient based on a shorter timeline. They may view longer timelines as a negative.',
+   opts:[
+    {t:'Warn them that one-day jobs are rushed and cutting corners which will lead to problems down the road',correct:false,e:'Attacking the competitor\'s timeline without specifics sounds like an excuse for being slower. Explain what your timeline includes and why.'},
+    {t:'Walk through your process step by step, explaining what happens each day and why each phase matters for a lasting result',correct:true,e:'Correct. "Day one covers X, day two covers Y, day three covers Z including quality verification." When each day has a clear purpose, the timeline becomes a feature, not a drawback.'},
+    {t:'Tell them you could also do it in one day if they want but the quality will not be the same level',correct:false,e:'Offering a compressed timeline implies your standard process has unnecessary padding. Stand behind your process and explain its value.'},
+    {t:'Agree that the competitor is faster and suggest they go with them if speed is the most important factor',correct:false,e:'Conceding and redirecting to a competitor gives up the conversation. Educate on why your timeline exists before accepting that speed is their only priority.'}
+  ]},
+
+  {cat:'Competitor & Comparison',obj:'"Why don\'t you use the same system as the other company? Theirs seems simpler."',ctx:'The customer is comparing technical approaches and finds the competitor\'s system easier to understand or less invasive.',
+   opts:[
+    {t:'Explain that the competitor\'s system is inferior and outdated compared to what Apex installs for customers',correct:false,e:'Calling competitor systems inferior without specifics sounds biased. Explain why your system is right for their conditions, not why theirs is wrong.'},
+    {t:'Explain how your recommended system was selected specifically for their documented conditions and what advantages it provides in their situation',correct:true,e:'Correct. "The system I recommended is based on your specific conditions: X soil type, Y water volume, Z structural load. Here is why this approach addresses those factors." Prescription, not preference.'},
+    {t:'Admit that both systems work and offer to install whichever one the customer feels more comfortable with',correct:false,e:'Offering to switch systems to accommodate preference abandons your professional recommendation. If your system is right for their conditions, explain why.'},
+    {t:'Tell them simpler is not always better and that complex problems require comprehensive solutions to work',correct:false,e:'This is a generic response that does not leverage your documented findings. Connect your system choice to their specific conditions.'}
+  ]},
+
+  {cat:'Competitor & Comparison',obj:'"I want to get three quotes before I make any decisions."',ctx:'The customer wants multiple bids as part of their due diligence process. They have not rejected your proposal.',
+   opts:[
+    {t:'Discourage them by saying more quotes just lead to confusion and delay without adding real value',correct:false,e:'Discouraging due diligence sounds like you are afraid of comparison. Confident professionals welcome it because their work stands on its own.'},
+    {t:'Support their diligence, offer your documented findings as a comparison baseline, and suggest specific questions to ask other contractors',correct:true,e:'Correct. "That is smart. Use my documentation as a baseline when comparing. Ask each company these questions about scope, warranty, and process." Positioning yourself as the standard earns trust.'},
+    {t:'Offer your best discount now since it expires before they have time to get two more quotes from competitors',correct:false,e:'Using expiring discounts to prevent comparison shopping is a pressure tactic that undermines trust and signals fear of competition.'},
+    {t:'Agree and step back completely, telling them to call when they have all their quotes and are ready to decide',correct:false,e:'Disengaging completely loses the opportunity to position Apex as the comparison standard. Stay helpful and involved without being pushy.'}
+  ]},
+
+  // ============================================================
+  // CATEGORY 6: DECISION-MAKER & FAMILY (5 scenarios)
+  // ============================================================
+
+  {cat:'Decision-Maker & Family',obj:'"I need to talk to my spouse first. I can\'t make this decision alone."',ctx:'The customer is interested but their spouse was not present for the inspection and proposal presentation.',
+   opts:[
+    {t:'Tell them you understand and ask when would be a good time to come back and present to both of them together',correct:false,e:'While respectful, simply rescheduling misses the opportunity to equip the present spouse to effectively share the findings. They need tools, not just another appointment.'},
+    {t:'Equip them with your documentation and key findings so they can walk their spouse through the evidence, and offer to answer questions by phone',correct:true,e:'Correct. "Here is everything I documented. These are the key findings and what they mean. I am available by phone if your spouse has questions." Empower the present spouse to be your advocate.'},
+    {t:'Apply subtle pressure by explaining that the problem will get worse the longer they wait to make a decision',correct:false,e:'Pressuring someone to bypass their spouse creates resentment and distrust. It also undermines the relationship dynamic you need to respect.'},
+    {t:'Offer a special discount that is only available today to motivate them to make the decision independently',correct:false,e:'Using expiring discounts to bypass the absent spouse is manipulative. It creates pressure to circumvent their decision-making process.'}
+  ]},
+
+  {cat:'Decision-Maker & Family',obj:'"My son is in construction and he says we don\'t need this."',ctx:'The customer has received advice from a family member in a related trade who disagrees with your recommendation.',
+   opts:[
+    {t:'Explain that general construction experience does not qualify someone to assess foundation-specific conditions',correct:false,e:'Questioning a family member\'s qualifications creates a personal conflict. The customer will side with family over a contractor every time.'},
+    {t:'Respect the family input, then offer to share your documented findings with their son so he can review the specific measurements and conditions',correct:true,e:'Correct. "I respect his experience. I would love for him to review what I documented. Here are the specific measurements and findings." Inviting expert review signals confidence and avoids family conflict.'},
+    {t:'Ask if the son has specifically inspected the property or if he is offering general advice without seeing it',correct:false,e:'This challenges whether the son actually visited, which puts the customer in an uncomfortable position and sounds dismissive of family input.'},
+    {t:'Agree that their son may be right and offer to reduce the scope based on his assessment and recommendation',correct:false,e:'Reducing scope based on a third party who has not done a documented inspection undermines your professional assessment without cause.'}
+  ]},
+
+  {cat:'Decision-Maker & Family',obj:'"My spouse handles all the finances. I can\'t approve anything."',ctx:'The present homeowner defers financial decisions entirely to their absent spouse. They may or may not be interested in the work itself.',
+   opts:[
+    {t:'Ask them to call their spouse right now so you can present the findings and pricing over the phone together',correct:false,e:'Pushing for an immediate phone call can feel intrusive and pressuring. The absent spouse may not appreciate being put on the spot.'},
+    {t:'Focus on thoroughly educating the present homeowner on the findings, leave comprehensive documentation, and schedule a time when both can be present',correct:true,e:'Correct. Make the present homeowner your informed advocate. "Let me make sure you understand everything so you can share it confidently. Here is the documentation, and I am available to answer questions when you both are ready."'},
+    {t:'Explain that the problem is urgent enough that they should make the decision themselves without waiting',correct:false,e:'Encouraging someone to bypass their family\'s decision process is disrespectful and creates problems even if they agree in the moment.'},
+    {t:'Leave a brief summary and your contact information since the financial decision-maker will want the details',correct:false,e:'Leaving a summary without educating the present homeowner means your findings get filtered through someone who does not understand them. Invest in their understanding.'}
+  ]},
+
+  {cat:'Decision-Maker & Family',obj:'"We never make big decisions without sleeping on it. That\'s just how we operate."',ctx:'The customer has a genuine decision-making process that requires time. This is not a stall tactic but a real preference.',
+   opts:[
+    {t:'Respect their process but point out that every day they wait increases the risk of further damage occurring',correct:false,e:'Using progression risk to override their process feels like pressure disguised as concern. Respect their timeline and trust your evidence.'},
+    {t:'Honor their process, confirm they have everything they need to make a fully informed decision, and set a specific time to follow up',correct:true,e:'Correct. "I respect that completely. Do you have everything you need to make a fully informed decision? I will follow up on Tuesday. Feel free to call me with questions before then." Professional and respectful.'},
+    {t:'Tell them that is completely fine and you will check back in a week or two when they have had time to discuss',correct:false,e:'A vague follow-up timeline loses urgency. Set a specific date and confirm they have all the information needed to make their decision.'},
+    {t:'Offer a discount that expires tomorrow to create a reason for them to accelerate their decision process',correct:false,e:'Expiring discounts to override a customer\'s stated decision process is manipulative and damages the trust you have built during the appointment.'}
+  ]},
+
+  {cat:'Decision-Maker & Family',obj:'"My spouse is really skeptical of contractors. This is going to be a hard sell."',ctx:'The customer is interested but warns you that their spouse has a strong negative bias toward contractors in general.',
+   opts:[
+    {t:'Ask to schedule a time to meet the spouse in person so you can address their concerns directly face to face',correct:false,e:'While meeting the spouse could help, the customer just told you their spouse is skeptical. Pushing for a meeting may feel like you are trying to pressure the other decision-maker.'},
+    {t:'Provide the present homeowner with documented evidence, specific references, and clear answers to the objections a skeptical spouse is likely to raise',correct:true,e:'Correct. Arm the advocate. "Here are the documented findings, here are local references they can call, and here are the most common questions a skeptical person would ask with answers." Let evidence do the persuading.'},
+    {t:'Suggest they present it as an emergency so the spouse understands the urgency and is more receptive',correct:false,e:'Coaching a customer to misrepresent urgency to their spouse is dishonest and will backfire when the spouse investigates and finds no emergency.'},
+    {t:'Tell them that if the spouse has concerns they can call you directly and you will handle the objections',correct:false,e:'Bypassing the present homeowner to directly handle the spouse can feel like going around them. Empower the person in front of you instead.'}
+  ]},
+
+  // ============================================================
+  // CATEGORY 7: SCOPE & PROCESS (5 scenarios)
+  // ============================================================
+
+  {cat:'Scope & Process',obj:'"Can you just email me the quote? I\'ll review it later."',ctx:'The customer wants to avoid the in-person proposal review. This often signals avoidance or discomfort with the sales process.',
+   opts:[
+    {t:'Agree and email the quote immediately since the customer should be able to review it on their own time',correct:false,e:'Emailing a quote without context means the customer evaluates price without understanding value. Numbers without narrative almost always lose.'},
+    {t:'Explain that the proposal is built around specific findings that need context, and walk through it together so the numbers make sense',correct:true,e:'Correct. "The numbers on the page only make sense when connected to what I found. Let me walk through it so everything is clear, and then I will send you a copy." Context makes the investment understandable.'},
+    {t:'Refuse to email quotes because company policy requires in-person presentations for all proposals',correct:false,e:'Hiding behind policy sounds inflexible and controlling. Explain the value of the walkthrough rather than citing rules.'},
+    {t:'Email the quote but include a note that it expires in 48 hours to create urgency for a faster review',correct:false,e:'Artificial expiration dates on emailed quotes feel manipulative. They create pressure without adding value or context to the proposal.'}
+  ]},
+
+  {cat:'Scope & Process',obj:'"I don\'t want you tearing up my floor. There has to be a less invasive way."',ctx:'The customer is concerned about disruption and damage to their finished space during installation.',
+   opts:[
+    {t:'Tell them there is no way around it and floor disruption is unavoidable for this type of repair work',correct:false,e:'A flat refusal to address their concern feels dismissive. Even if disruption is necessary, walk them through the process and restoration.'},
+    {t:'Walk through the installation process step by step, including how the floor is opened, what the restored area looks like, and show before-and-after examples',correct:true,e:'Correct. "Here is exactly what happens: we open this section, install the system, and restore it like this. Here are photos of completed projects." Process transparency turns fear into understanding.'},
+    {t:'Offer to do the work in a less effective way to avoid floor disruption since the customer comfort matters most',correct:false,e:'Compromising the engineering solution to avoid disruption can lead to system failure. Educate on the process before modifying the approach.'},
+    {t:'Suggest they are overreacting since the floor will be patched and they probably will not even notice it',correct:false,e:'Minimizing a homeowner\'s concern about their property is dismissive. Take their worry seriously and address it with process detail and visual proof.'}
+  ]},
+
+  {cat:'Scope & Process',obj:'"How long does this actually take? I work from home and can\'t have chaos for weeks."',ctx:'The customer works from home and is concerned about extended disruption to their daily routine and work environment.',
+   opts:[
+    {t:'Tell them it will be done before they know it and they will barely notice the crew is there working',correct:false,e:'Vague reassurances do not address a specific concern about timeline and disruption. Provide concrete details about duration and daily impact.'},
+    {t:'Provide a specific day-by-day timeline, explain which areas are affected each day, and describe noise levels and work hours',correct:true,e:'Correct. "Day one we work in X area from 8 to 4. Day two we move to Y area. You will have full access to Z throughout." Specific details replace anxiety with predictability.'},
+    {t:'Say it depends on conditions and you cannot give an exact timeline until the crew actually starts the project',correct:false,e:'Refusing to estimate timeline increases anxiety. Even with variables, provide a realistic range and explain what could affect it.'},
+    {t:'Recommend they work somewhere else for the duration of the project to avoid any disruption to their routine',correct:false,e:'Asking a customer to leave their home feels presumptuous. Many customers can coexist with work crews when given specific scheduling information.'}
+  ]},
+
+  {cat:'Scope & Process',obj:'"What about the mess and disruption? I have young kids and pets."',ctx:'The customer is concerned about safety and cleanliness during the installation with children and animals in the home.',
+   opts:[
+    {t:'Tell them the crew is very clean and professional so they have nothing to worry about during the job',correct:false,e:'Generic assurances do not address specific safety concerns about children and pets. Provide concrete details about how the work area is managed.'},
+    {t:'Explain the specific containment, safety, and cleanup protocols your crew follows, and address how they handle occupied homes with families',correct:true,e:'Correct. "We set up containment barriers here, the work area is secured from foot traffic, we clean up daily, and here is how we handle homes with kids and pets." Specific protocols build confidence.'},
+    {t:'Suggest they send the kids and pets to a relative\'s house for the duration of the project for safety',correct:false,e:'Asking a family to leave their home is presumptuous and may not be feasible. Explain your safety protocols first.'},
+    {t:'Warn them that construction is inherently messy and they should prepare for some disruption and inconvenience',correct:false,e:'Setting negative expectations without offering solutions increases anxiety. Lead with your containment and safety protocols.'}
+  ]},
+
+  {cat:'Scope & Process',obj:'"Will this affect my home\'s resale value? I don\'t want buyers seeing foundation work."',ctx:'The customer is concerned that visible signs of foundation repair could stigmatize their home or lower its value when they sell.',
+   opts:[
+    {t:'Tell them buyers will never know because the work is completely hidden once the project is finished',correct:false,e:'Encouraging concealment from future buyers raises ethical concerns. Be transparent about how the work is documented and disclosed.'},
+    {t:'Explain how a documented repair with a transferable warranty actually removes buyer objections and can protect or increase resale value',correct:true,e:'Correct. "A documented, warrantied repair is better than an unknown problem. Buyers see a transferable warranty and know the issue was professionally addressed." Reframe repair as resale protection.'},
+    {t:'Suggest they not disclose the work since it is standard maintenance and does not require special disclosure',correct:false,e:'Advising non-disclosure is ethically problematic and potentially illegal. Many jurisdictions require disclosure of known structural repairs.'},
+    {t:'Admit that foundation repair can lower resale value but explain that the alternative of unrepaired damage is worse',correct:false,e:'Conceding a value reduction is inaccurate. Properly documented repairs with transferable warranties typically protect or enhance value. Lead with that truth.'}
+  ]},
+
+  // ============================================================
+  // CATEGORY 8: INSURANCE & WARRANTY (5 scenarios)
+  // ============================================================
+
+  {cat:'Insurance & Warranty',obj:'"Shouldn\'t my homeowner\'s insurance cover this? That\'s what I pay premiums for."',ctx:'The customer believes their insurance should cover foundation or waterproofing repair and is frustrated that it may not.',
+   opts:[
+    {t:'Tell them insurance never covers foundation work and they should not waste time calling their agent about it',correct:false,e:'Blanket statements about coverage are sometimes inaccurate and sound dismissive. Help them understand what insurance typically covers and encourage them to verify.'},
+    {t:'Explain what homeowner\'s insurance typically does and does not cover for foundation issues, encourage them to call their agent, and present financing as a parallel option',correct:true,e:'Correct. "Most policies cover sudden events but not gradual deterioration. I encourage you to call your agent to check. In the meantime, here is a financing option so you have a path forward either way." Educate and provide options.'},
+    {t:'Offer to call the insurance company on their behalf to help expedite the process and save them time',correct:false,e:'Calling the insurance company on the customer\'s behalf crosses a boundary. That is a conversation between the homeowner and their insurer.'},
+    {t:'Tell them to file a claim and wait for the denial before moving forward with the repair at their expense',correct:false,e:'Advising them to wait for a denial introduces unnecessary delay. Present financing alongside the insurance inquiry so they have options regardless.'}
+  ]},
+
+  {cat:'Insurance & Warranty',obj:'"What does the warranty actually cover? I want to understand the fine print."',ctx:'The customer is detail-oriented and wants to understand exactly what protection the warranty provides before committing.',
+   opts:[
+    {t:'Give them a general overview and tell them all the details are in the warranty document they receive after signing',correct:false,e:'Deferring specifics to a post-signature document feels evasive. A customer asking about fine print deserves a thorough answer before they commit.'},
+    {t:'Walk through the warranty terms in detail, including what is covered, what is excluded, and how the claims process works if they ever need to use it',correct:true,e:'Correct. "Here is exactly what is covered, here is what is not, and here is the claims process step by step." Transparency about warranty terms builds trust and demonstrates confidence in the product.'},
+    {t:'Tell them the warranty covers everything and they have nothing to worry about once the work is completed',correct:false,e:'Over-promising on warranty coverage creates future disputes. Be precise about what is covered, what is excluded, and for how long.'},
+    {t:'Suggest they have their attorney review the warranty document if they want to understand all the legal details',correct:false,e:'Redirecting to an attorney feels like you are avoiding the question. A competent professional should be able to explain their own warranty terms clearly.'}
+  ]},
+
+  {cat:'Insurance & Warranty',obj:'"What if your company goes out of business? Then what happens to my warranty?"',ctx:'The customer is concerned about long-term warranty fulfillment if the company does not survive.',
+   opts:[
+    {t:'Assure them the company is financially strong and has been around for years so they have nothing to worry about',correct:false,e:'Corporate stability claims do not address the underlying concern. The customer wants to know what happens to their protection if the worst case occurs.'},
+    {t:'Explain the specific warranty backing structure, whether manufacturer-backed or otherwise insured, and what protections exist independent of the company',correct:true,e:'Correct. "The warranty is backed by [specific structure]. Even if the company changed form, your coverage is protected through [mechanism]." Address the concern directly with the specific protection structure.'},
+    {t:'Tell them that thinking about a company going out of business is negative and they should focus on the quality of the work',correct:false,e:'Dismissing a legitimate concern as negative thinking is condescending. The customer deserves a direct answer about warranty protection.'},
+    {t:'Point out that any company could go out of business so this concern applies equally to every contractor',correct:false,e:'While true, this normalizes the concern without addressing it. Tell them specifically how their warranty is protected regardless of company status.'}
+  ]},
+
+  {cat:'Insurance & Warranty',obj:'"I want a money-back guarantee. If this doesn\'t work, I want a full refund."',ctx:'The customer wants assurance that they are not taking a risk on an expensive project that might not solve the problem.',
+   opts:[
+    {t:'Agree to a money-back guarantee verbally to close the deal and worry about the details later if needed',correct:false,e:'Making verbal guarantees outside of official warranty terms creates legal exposure and false expectations. Be honest about what you can offer.'},
+    {t:'Explain the performance guarantee structure, what it covers, the quality assurance process that prevents failures, and the remediation process if something is not right',correct:true,e:'Correct. "Here is our performance guarantee. Here is the QA process we follow to ensure it works right. And here is what happens if something is not meeting spec." Structured protection is more credible than a vague promise.'},
+    {t:'Tell them no contractor offers money-back guarantees because construction projects do not work that way',correct:false,e:'A flat refusal without explanation sounds dismissive. Explain what protections are available and why the QA process minimizes the risk they are worried about.'},
+    {t:'Offer a partial money-back guarantee covering materials but not labor to meet them halfway on the request',correct:false,e:'Creating custom guarantee terms on the spot is risky and unsustainable. Explain the existing warranty and performance guarantee structure instead.'}
+  ]},
+
+  {cat:'Insurance & Warranty',obj:'"The other company offers a longer warranty. Why should I go with a shorter one?"',ctx:'The customer is comparing warranty duration between proposals and perceives a longer warranty as better value.',
+   opts:[
+    {t:'Extend your warranty to match the competitor so the customer does not see a gap in coverage terms',correct:false,e:'Extending warranty terms to match competition cheapens your existing coverage and may create obligations the company cannot honor long-term.'},
+    {t:'Help them evaluate warranty quality beyond duration by asking what is covered, what is excluded, and how claims are processed under each warranty',correct:true,e:'Correct. "Duration is one factor. Let me also show you what is covered, what is excluded, and how claims work. Ask the other company the same questions." A 20-year warranty with exclusions may cover less than a 10-year warranty without them.'},
+    {t:'Warn them that companies offering long warranties often go out of business before the warranty expires',correct:false,e:'Predicting competitor failure is speculative and sounds like a scare tactic. Focus on warranty quality and coverage details, not competitor viability.'},
+    {t:'Explain that your warranty is shorter because it is more honest and realistic about what can be guaranteed',correct:false,e:'Framing a shorter warranty as more honest implies the competitor is dishonest. Compare coverage quality, not company character.'}
   ]}
+
 ];
+
 
 // ---- BADGE DEFINITIONS ----
 // ---- ROLE-PLAY SCENARIOS ----
