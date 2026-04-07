@@ -2125,6 +2125,7 @@ async function loadUserData(uid){
   const doc=await db.collection('users').doc(uid).get();
   if(doc.exists){
     const d=doc.data();
+    if(d.deleted){return 'deleted';}
     reps[uid]={
       name:d.name||'Unknown', points:d.points||0, streak:d.streak||0,
       lastActive:d.lastActive||null, completedModules:d.completedModules||[],
@@ -2146,6 +2147,7 @@ async function loadAllUsers(){
   reps={};
   snap.forEach(doc=>{
     const d=doc.data();
+    if(d.deleted)return;
     reps[doc.id]={
       name:d.name||'Unknown', points:d.points||0, streak:d.streak||0,
       lastActive:d.lastActive||null, completedModules:d.completedModules||[],
@@ -2174,7 +2176,7 @@ function startRealtimeSync(){
     snap.docChanges().forEach(change=>{
       const d=change.doc.data();
       const uid=change.doc.id;
-      if(change.type==='removed'){
+      if(change.type==='removed'||d.deleted){
         delete reps[uid];
       }else{
         reps[uid]={
@@ -2236,6 +2238,12 @@ auth.onAuthStateChanged(async user=>{
     currentUid=user.uid;
     // Check if user exists in Firestore
     let role=await loadUserData(user.uid);
+    if(role==='deleted'){
+      alert('Your account has been removed by your manager.');
+      await auth.signOut();
+      location.reload();
+      return;
+    }
     if(!role){
       // First-time user — create profile
       const isFirst=(await db.collection('users').limit(1).get()).empty;
@@ -5172,27 +5180,38 @@ function resetRep(id){
   showToast(`Reset ${name}`,'toast-success');
 }
 
-function removeRep(id){
+async function removeRep(id){
   if(id===currentUid){return showToast('Cannot delete yourself','toast-streak');}
   const name=reps[id].name;
   if(!confirm('DELETE '+name+' permanently? This removes all their data and assignments. This cannot be undone.'))return;
   if(!confirm('Are you absolutely sure? Type-check: this will permanently delete '+name+'.'))return;
 
-  // Delete user doc
-  db.collection('users').doc(id).delete().catch(e=>console.warn(e));
+  showToast(`Deleting ${name}...`,'toast-success');
+  try{
+    // Delete all their assignments first
+    const assignmentDeletes=[];
+    Object.entries(assignments).forEach(([aid,a])=>{
+      if(a.repId===id){
+        assignmentDeletes.push(db.collection('assignments').doc(aid).delete());
+        delete assignments[aid];
+      }
+    });
+    await Promise.all(assignmentDeletes);
 
-  // Delete all their assignments
-  Object.entries(assignments).forEach(([aid,a])=>{
-    if(a.repId===id){
-      delete assignments[aid];
-      db.collection('assignments').doc(aid).delete().catch(e=>console.warn(e));
-    }
-  });
+    // Soft-delete: mark the user doc as deleted instead of removing it.
+    // This prevents the doc from being recreated if the rep is still signed in
+    // on another device (their onAuthStateChanged would otherwise recreate it).
+    await db.collection('users').doc(id).update({deleted:true,deletedAt:Date.now(),deletedBy:currentUid});
 
-  // Remove from local state
-  delete reps[id];
-  renderManager();
-  showToast(`Deleted ${name}`,'toast-success');
+    // Remove from local state
+    delete reps[id];
+    renderManager();
+    showToast(`Deleted ${name}`,'toast-success');
+  }catch(e){
+    console.error('Delete failed:',e);
+    alert('Failed to delete '+name+': '+(e.message||e)+'\n\nThis is likely a Firestore security rules issue. Check the browser console for details.');
+    renderManager();
+  }
 }
 
 // ---- UTILITIES ----
