@@ -4946,7 +4946,8 @@ function renderManager(){
         </div>
         <div>
           ${role==='rep'?`<span style="cursor:pointer;color:var(--purple);font-size:12px;margin-right:12px;" onclick="promoteToManager('${id}')">Make Manager</span>`:`<span style="cursor:pointer;color:var(--gray);font-size:12px;margin-right:12px;" onclick="demoteToRep('${id}')">Remove Manager</span>`}
-          <span style="cursor:pointer;color:var(--orange);font-size:12px;" onclick="resetRep('${id}')">Reset</span>
+          <span style="cursor:pointer;color:var(--orange);font-size:12px;margin-right:12px;" onclick="resetRep('${id}')">Reset</span>
+          <span style="cursor:pointer;color:var(--red);font-size:12px;" onclick="removeRep('${id}')">Delete</span>
         </div>
       </div>`;
     });
@@ -5169,6 +5170,29 @@ function resetRep(id){
   }).catch(e=>console.warn(e));
   renderManager();
   showToast(`Reset ${name}`,'toast-success');
+}
+
+function removeRep(id){
+  if(id===currentUid){return showToast('Cannot delete yourself','toast-streak');}
+  const name=reps[id].name;
+  if(!confirm('DELETE '+name+' permanently? This removes all their data and assignments. This cannot be undone.'))return;
+  if(!confirm('Are you absolutely sure? Type-check: this will permanently delete '+name+'.'))return;
+
+  // Delete user doc
+  db.collection('users').doc(id).delete().catch(e=>console.warn(e));
+
+  // Delete all their assignments
+  Object.entries(assignments).forEach(([aid,a])=>{
+    if(a.repId===id){
+      delete assignments[aid];
+      db.collection('assignments').doc(aid).delete().catch(e=>console.warn(e));
+    }
+  });
+
+  // Remove from local state
+  delete reps[id];
+  renderManager();
+  showToast(`Deleted ${name}`,'toast-success');
 }
 
 // ---- UTILITIES ----
