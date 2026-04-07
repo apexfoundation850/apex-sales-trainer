@@ -3766,25 +3766,20 @@ function viewMotivatorsResults() {
   renderMotivatorsResults(reps[currentRep].motivatorsResult);
 }
 
-function renderMotivatorsResults(result) {
+function buildMotivatorsDetailHTML(result){
   var p = motivatorProfiles[result.primary];
   var s = motivatorProfiles[result.secondary];
   var allKeys = ['T', 'U', 'A', 'S', 'I', 'TR'];
   var maxScore = 0;
   allKeys.forEach(function(k) { if (result.scores[k] > maxScore) maxScore = result.scores[k]; });
   if (maxScore === 0) maxScore = 1;
-
-  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>';
-
-  // Profile card
+  var html = '';
   html += '<div style="padding:24px;border-radius:12px;margin:0 0 20px;text-align:center;background:' + p.color + '15;border:1px solid ' + p.color + '30;">';
   html += '<div style="font-size:48px;margin-bottom:8px;">' + p.emoji + '</div>';
   html += '<div style="font-size:24px;font-weight:800;color:' + p.color + ';">' + p.name + '</div>';
   html += '<div style="font-size:14px;color:var(--gray-l);font-style:italic;margin-top:6px;">' + p.tagline + '</div>';
   html += '<div style="font-size:12px;color:var(--gray);margin-top:8px;">Secondary: ' + s.name + ' (' + result.secondary + ') \u2014 ' + result.pcts[result.secondary] + '%</div>';
   html += '</div>';
-
-  // Bar chart of all 6 motivators
   html += '<div class="card" style="padding:20px;">';
   html += '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--gray);margin-bottom:14px;">Motivator Scores</div>';
   allKeys.forEach(function(k) {
@@ -3800,36 +3795,32 @@ function renderMotivatorsResults(result) {
     html += '</div>';
   });
   html += '</div>';
-
-  // Description
   html += '<div class="card" style="border-left:3px solid ' + p.color + ';">';
   html += '<div style="font-size:14px;color:var(--gray-l);line-height:1.7;">' + p.desc + '</div>';
   html += '<div style="font-size:13px;color:var(--gray);margin-top:10px;line-height:1.6;"><strong style="color:var(--white);">In Sales:</strong> ' + p.inSales + '</div>';
   html += '</div>';
-
-  // Motivators
-  html += '<div class="disc-section"><div class="disc-section-title" style="color:var(--green);">&#11088; What Motivates You</div>';
+  html += '<div class="disc-section"><div class="disc-section-title" style="color:var(--green);">&#11088; Motivators</div>';
   html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">';
   p.motivators.forEach(function(m) { html += '<li>' + m + '</li>'; });
   html += '</ul></div>';
-
-  // Drains
-  html += '<div class="disc-section"><div class="disc-section-title" style="color:var(--red);">&#128547; What Drains You</div>';
+  html += '<div class="disc-section"><div class="disc-section-title" style="color:var(--red);">&#128547; Drains</div>';
   html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">';
   p.drains.forEach(function(d) { html += '<li>' + d + '</li>'; });
   html += '</ul></div>';
-
-  // Coaching
   html += '<div class="disc-section" style="background:rgba(201,168,76,.08);border-left:3px solid var(--gold);">';
-  html += '<div class="disc-section-title" style="color:var(--gold);">&#128218; For Your Manager</div>';
+  html += '<div class="disc-section-title" style="color:var(--gold);">&#128218; Coaching</div>';
   html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">';
   p.coaching.forEach(function(c) { html += '<li>' + c + '</li>'; });
   html += '</ul></div>';
+  return html;
+}
 
+function renderMotivatorsResults(result) {
+  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>';
+  html += buildMotivatorsDetailHTML(result);
   html += '<div style="text-align:center;margin-top:20px;">';
   html += '<button class="mv-nav-btn mv-prev" onclick="renderAssessment()">Back to Assessments</button>';
   html += '</div>';
-
   document.getElementById('pg-assess').innerHTML = html;
 }
 
@@ -4111,12 +4102,9 @@ function viewEqResults() {
   renderEqResults(reps[currentRep].eqResult);
 }
 
-function renderEqResults(result) {
+function buildEqDetailHTML(result){
   var compKeys = ['SA', 'SR', 'EM', 'SS', 'MO'];
-
-  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>';
-
-  // Overall score circle
+  var html = '';
   var tierColor = result.overall >= 80 ? '#22a358' : result.overall >= 60 ? '#b7770d' : '#c8390a';
   html += '<div style="text-align:center;margin-bottom:24px;">';
   html += '<div style="display:inline-block;width:120px;height:120px;border-radius:50%;border:4px solid ' + tierColor + ';display:flex;align-items:center;justify-content:center;flex-direction:column;margin:0 auto 12px;">';
@@ -4127,8 +4115,6 @@ function renderEqResults(result) {
   html += '</div>';
   html += '<div style="font-size:18px;font-weight:700;color:' + tierColor + ';">' + result.overallTier + '</div>';
   html += '</div>';
-
-  // Component bars
   html += '<div class="card" style="padding:20px;">';
   html += '<div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--gray);margin-bottom:14px;">EQ Components</div>';
   compKeys.forEach(function(k) {
@@ -4141,7 +4127,6 @@ function renderEqResults(result) {
     var barColor = score >= 85 ? '#22a358' : score >= 65 ? '#b7770d' : '#c8390a';
     var isStrongest = k === result.strongest;
     var isWeakest = k === result.weakest;
-
     html += '<div style="margin-bottom:12px;">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
     html += '<div style="font-size:13px;color:' + prof.color + ';font-weight:600;">' + prof.emoji + ' ' + prof.name;
@@ -4155,8 +4140,6 @@ function renderEqResults(result) {
     html += '</div>';
   });
   html += '</div>';
-
-  // Strongest component detail
   var strongProf = eqProfiles[result.strongest];
   html += '<div class="disc-section" style="border-left:3px solid var(--green);">';
   html += '<div class="disc-section-title" style="color:var(--green);">&#9989; Strongest: ' + strongProf.name + '</div>';
@@ -4166,8 +4149,6 @@ function renderEqResults(result) {
   html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:13px;line-height:1.8;">';
   strongProf.hiCoaching.forEach(function(c) { html += '<li>' + c + '</li>'; });
   html += '</ul></div>';
-
-  // Weakest component detail
   var weakProf = eqProfiles[result.weakest];
   html += '<div class="disc-section" style="border-left:3px solid var(--red);">';
   html += '<div class="disc-section-title" style="color:var(--red);">&#128680; Growth Area: ' + weakProf.name + '</div>';
@@ -4177,8 +4158,6 @@ function renderEqResults(result) {
   html += '<ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:13px;line-height:1.8;">';
   weakProf.loCoaching.forEach(function(c) { html += '<li>' + c + '</li>'; });
   html += '</ul></div>';
-
-  // All components breakdown
   html += '<div class="disc-section">';
   html += '<div class="disc-section-title" style="color:var(--gray-l);">&#128209; All Components</div>';
   compKeys.forEach(function(k) {
@@ -4192,11 +4171,15 @@ function renderEqResults(result) {
     html += '</div>';
   });
   html += '</div>';
+  return html;
+}
 
+function renderEqResults(result) {
+  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>';
+  html += buildEqDetailHTML(result);
   html += '<div style="text-align:center;margin-top:20px;">';
   html += '<button class="mv-nav-btn mv-prev" onclick="renderAssessment()">Back to Assessments</button>';
   html += '</div>';
-
   document.getElementById('pg-assess').innerHTML = html;
 }
 
@@ -4405,13 +4388,10 @@ function viewDiscResults(){
   renderDiscResultsScreen(reps[currentRep].discResult);
 }
 
-function renderDiscResultsScreen(result){
+function buildDiscDetailHTML(result){
   const p=discProfiles[result.primary];
   const s=discProfiles[result.secondary];
-
-  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>`;
-
-  // DISC Wheel
+  let html='';
   html+=`<div class="disc-wheel">
     <div class="disc-quad ${result.primary==='D'?'primary':''}" style="background:#d4461a${result.primary==='D'?'':'40'};">
       <div class="disc-quad-letter">D</div><div class="disc-quad-name">Dominance</div><div class="disc-quad-pct">${result.pcts.D}%</div>
@@ -4426,46 +4406,38 @@ function renderDiscResultsScreen(result){
       <div class="disc-quad-letter">C</div><div class="disc-quad-name">Conscientiousness</div><div class="disc-quad-pct">${result.pcts.C}%</div>
     </div>
   </div>`;
-
-  // Profile Card
   html+=`<div class="disc-profile-card" style="background:${p.color}15;border:1px solid ${p.color}30;">
     <div style="font-size:48px;margin-bottom:8px;">${p.emoji}</div>
     <div style="font-size:24px;font-weight:800;color:${p.color};">${p.name}</div>
     <div style="font-size:14px;color:var(--gray-l);font-style:italic;margin-top:6px;">${p.tagline}</div>
     <div style="font-size:12px;color:var(--gray);margin-top:8px;">Secondary: ${s.name} (${result.secondary}) — ${result.pcts[result.secondary]}%</div>
   </div>`;
-
-  // Strengths
-  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--green);">&#9989; Your Strengths</div>
+  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--green);">&#9989; Strengths</div>
     <ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">
       ${p.strengths.map(s=>`<li>${s}</li>`).join('')}
     </ul></div>`;
-
-  // Blind Spot
   html+=`<div class="disc-section" style="border-left:3px solid ${p.color};"><div class="disc-section-title" style="color:${p.color};">&#9888; Blind Spot</div>
     <div style="font-size:14px;color:var(--gray-l);line-height:1.7;">${p.blindspot}</div></div>`;
-
-  // Motivators
-  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--gold);">&#11088; What Motivates You</div>
+  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--gold);">&#11088; Motivators</div>
     <ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">
       ${p.motivators.map(m=>`<li>${m}</li>`).join('')}
     </ul></div>`;
-
-  // Drains
-  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--red);">&#128547; What Drains You</div>
+  html+=`<div class="disc-section"><div class="disc-section-title" style="color:var(--red);">&#128547; Drains</div>
     <ul style="margin:0;padding-left:20px;color:var(--gray-l);font-size:14px;line-height:1.8;">
       ${p.drains.map(d=>`<li>${d}</li>`).join('')}
     </ul></div>`;
-
-  // Coaching Style
   html+=`<div class="disc-section" style="background:rgba(201,168,76,.08);border-left:3px solid var(--gold);">
-    <div class="disc-section-title" style="color:var(--gold);">&#128218; For Your Manager</div>
+    <div class="disc-section-title" style="color:var(--gold);">&#128218; Coaching Style</div>
     <div style="font-size:14px;color:var(--gray-l);line-height:1.7;">${p.coachingStyle}</div></div>`;
+  return html;
+}
 
+function renderDiscResultsScreen(result){
+  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessment()">&#8592; Back</button>`;
+  html+=buildDiscDetailHTML(result);
   html+=`<div style="text-align:center;margin-top:20px;">
     <button class="mv-nav-btn mv-prev" onclick="renderAssessment()">Back to Assessments</button>
   </div>`;
-
   document.getElementById('pg-assess').innerHTML=html;
 }
 
@@ -4605,6 +4577,7 @@ function renderBoard(){
 
 // ---- MANAGER DASHBOARD ----
 let mgrTab='overview';
+let expandedProfileRepId=null;
 
 function renderManager(){
   let html=`<div class="sec-header">Manager Dashboard</div>
@@ -4879,6 +4852,7 @@ function renderManager(){
       const mr=r.motivatorsResult;
       const er=r.eqResult;
       const hasAny=dr||mr||er;
+      const isExpanded=expandedProfileRepId===id;
 
       html+=`<div class="card">
         <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px;">${r.name}</div>
@@ -4933,6 +4907,29 @@ function renderManager(){
           <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:4px;">Combined Coaching Read</div>
           <div style="font-size:12px;color:var(--gray-l);line-height:1.6;">Sells as a <strong>${dp.name}</strong> (${dr.primary}), motivated by <strong>${mp.name}</strong> values. EQ priority: develop <strong>${wp.name}</strong> (${er.scores[er.weakest]}/100).</div>
         </div>`;
+      }
+
+      // Expand/collapse button
+      if(hasAny){
+        html+=`<div style="margin-top:12px;"><button class="mv-nav-btn ${isExpanded?'mv-prev':'mv-next'}" style="width:100%;" onclick="toggleProfileExpand('${id}')">${isExpanded?'Collapse Full Profile':'View Full Profile'}</button></div>`;
+      }
+
+      // Expanded full detail view
+      if(isExpanded){
+        html+=`<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">`;
+        if(dr){
+          html+=`<div class="sec-header" style="margin-top:0;">DISC — Full Profile</div>`;
+          html+=buildDiscDetailHTML(dr);
+        }
+        if(mr){
+          html+=`<div class="sec-header">Motivators — Full Profile</div>`;
+          html+=buildMotivatorsDetailHTML(mr);
+        }
+        if(er){
+          html+=`<div class="sec-header">Emotional Intelligence — Full Profile</div>`;
+          html+=buildEqDetailHTML(er);
+        }
+        html+=`</div>`;
       }
 
       html+=`</div>`;
@@ -5178,6 +5175,11 @@ function resetRep(id){
   }).catch(e=>console.warn(e));
   renderManager();
   showToast(`Reset ${name}`,'toast-success');
+}
+
+function toggleProfileExpand(id){
+  expandedProfileRepId=(expandedProfileRepId===id)?null:id;
+  renderManager();
 }
 
 async function removeRep(id){
