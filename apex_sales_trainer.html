@@ -4581,8 +4581,18 @@ function renderBoard(){
 // ---- MANAGER DASHBOARD ----
 let mgrTab='overview';
 let expandedProfileRepId=null;
+let selectedRepId=null;
+
+function viewRep(id){selectedRepId=id;renderManager();}
+function backToManager(){selectedRepId=null;renderManager();}
 
 function renderManager(){
+  // Drill-in rep detail view
+  if(selectedRepId&&reps[selectedRepId]){
+    document.getElementById('pg-mgr').innerHTML=renderRepDetailHTML(selectedRepId);
+    return;
+  }
+
   let html=`<div class="sec-header">Manager Dashboard</div>
     <div class="mgr-tabs">
       <div class="mgr-tab ${mgrTab==='overview'?'on':''}" onclick="mgrTab='overview';renderManager()">Overview</div>
@@ -4608,13 +4618,14 @@ function renderManager(){
         <div class="card" style="text-align:center;"><div style="font-size:28px;font-weight:700;color:var(--blue);">${avgCompletion}%</div><div style="font-size:11px;color:var(--gray);">Avg Completion</div></div>
       </div>`;
 
-    // Rep summary
+    // Rep summary (click to drill in)
+    html+=`<div style="font-size:11px;color:var(--gray-d);margin-bottom:8px;">Tap any rep for full detail.</div>`;
     Object.entries(reps).forEach(([id,r])=>{
       const lvl=getLevel(r.points||0);
       const pct=Math.round((r.completedModules||[]).length/MODULES.length*100);
-      html+=`<div class="mgr-rep-row">
+      html+=`<div class="mgr-rep-row" style="cursor:pointer;" onclick="viewRep('${id}')">
         <div style="flex:1;">
-          <div style="font-size:14px;font-weight:600;color:var(--white);">${r.name}</div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">${r.name} <span style="font-size:10px;color:var(--gray-d);">&rsaquo;</span></div>
           <div style="font-size:12px;color:var(--gray);">${r.points||0} pts &middot; ${(r.completedModules||[]).length}/${MODULES.length} modules &middot; Streak: ${r.streak||0}</div>
           <div class="pbar" style="margin-top:6px;"><div class="pbar-fill" style="width:${pct}%;background:var(--blue);"></div></div>
         </div>
@@ -4639,12 +4650,13 @@ function renderManager(){
   }
 
   if(mgrTab==='reps'){
+    html+=`<div style="font-size:11px;color:var(--gray-d);margin-bottom:8px;">Tap any rep for full detail view.</div>`;
     Object.entries(reps).forEach(([id,r])=>{
       const lvl=getLevel(r.points||0);
       const lastAct=r.lastActive||'Never';
-      html+=`<div class="card">
+      html+=`<div class="card" style="cursor:pointer;" onclick="viewRep('${id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-size:16px;font-weight:700;">${r.name}</div>
+          <div style="font-size:16px;font-weight:700;">${r.name} <span style="font-size:11px;color:var(--gray-d);">&rsaquo;</span></div>
           <span class="lb-level ${lvl.cls}">${lvl.name}</span>
         </div>
         <div style="font-size:13px;color:var(--gray);margin-bottom:4px;">Points: ${r.points||0} &middot; Streak: ${r.streak||0} days</div>
@@ -4717,8 +4729,8 @@ function renderManager(){
       const qs=r.quizScores||{};
       const quizAvg=Object.keys(qs).length?Math.round(Object.values(qs).reduce((a,s)=>a+s.best,0)/Object.keys(qs).length):'-';
       const quizColor=quizAvg==='-'?'var(--gray)':quizAvg>=80?'var(--green)':quizAvg>=60?'var(--orange)':'var(--red)';
-      html+=`<tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:10px;font-weight:600;color:var(--white);">${r.name}</td>
+      html+=`<tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="viewRep('${id}')">
+        <td style="padding:10px;font-weight:600;color:var(--white);">${r.name} <span style="font-size:10px;color:var(--gray-d);">&rsaquo;</span></td>
         <td style="text-align:center;padding:10px;">${(r.completedModules||[]).length}/${MODULES.length}</td>
         <td style="text-align:center;padding:10px;color:${quizColor};font-weight:600;">${quizAvg}${quizAvg!=='-'?'%':''}</td>
         <td style="text-align:center;padding:10px;">${r.fcReviews||0}</td>
@@ -4792,11 +4804,11 @@ function renderManager(){
         }
       });
 
-      html+=`<div class="card">
+      html+=`<div class="card" style="cursor:pointer;" onclick="viewRep('${id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div>
-            <div style="font-size:16px;font-weight:700;color:var(--white);">${r.name}</div>
-            <div style="font-size:12px;color:var(--gray);">${h.length} sessions</div>
+            <div style="font-size:16px;font-weight:700;color:var(--white);">${r.name} <span style="font-size:11px;color:var(--gray-d);">&rsaquo;</span></div>
+            <div style="font-size:12px;color:var(--gray);">${h.length} sessions &middot; tap for full history</div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:24px;font-weight:700;color:${avgColor};">${avg}%</div>
@@ -4970,6 +4982,259 @@ function renderManager(){
   document.getElementById('pg-mgr').innerHTML=html;
   // Init assign options if on assign tab
   if(mgrTab==='assign'&&document.getElementById('assignOptions')){updateAssignOptions();}
+}
+
+// ---- REP DETAIL DRILL-IN ----
+function renderRepDetailHTML(id){
+  const r=reps[id];
+  if(!r)return '<div class="card">Rep not found.</div>';
+  const lvl=getLevel(r.points||0);
+  const completedMods=r.completedModules||[];
+  const pctComplete=Math.round(completedMods.length/MODULES.length*100);
+  const qs=r.quizScores||{};
+  const rpHist=r.roleplayHistory||[];
+  const log=r.activityLog||[];
+  const badgesEarned=r.badges||[];
+  const certs=r.certificates||[];
+
+  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="backToManager()">&#8592; Back to Dashboard</button>`;
+
+  // Header card
+  html+=`<div class="card" style="border-left:4px solid var(--gold);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div>
+        <div style="font-size:22px;font-weight:800;color:var(--white);">${r.name}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px;">${r.role==='manager'?'Manager':'Rep'} &middot; Last active: ${r.lastActive||'Never'}</div>
+      </div>
+      <span class="lb-level ${lvl.cls}">${lvl.name}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;">
+      <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:8px;">
+        <div style="font-size:20px;font-weight:700;color:var(--gold);">${r.points||0}</div>
+        <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;">Points</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:8px;">
+        <div style="font-size:20px;font-weight:700;color:var(--orange);">${r.streak||0}</div>
+        <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;">Streak</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:8px;">
+        <div style="font-size:20px;font-weight:700;color:var(--blue);">${pctComplete}%</div>
+        <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;">Complete</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:8px;">
+        <div style="font-size:20px;font-weight:700;color:var(--purple);">${badgesEarned.length}</div>
+        <div style="font-size:10px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;">Badges</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Activity cadence
+  const now=new Date();const weekAgo=new Date(now-7*86400000);const monthAgo=new Date(now-30*86400000);
+  const last7=log.filter(a=>new Date(a.time)>=weekAgo).length;
+  const last30=log.filter(a=>new Date(a.time)>=monthAgo).length;
+  const rp7=rpHist.filter(rp=>new Date(rp.date)>=weekAgo).length;
+  const rp30=rpHist.filter(rp=>new Date(rp.date)>=monthAgo).length;
+  html+=`<div class="card">
+    <div class="card-title" style="margin-bottom:8px;">Activity Cadence</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;">
+      <div><span style="color:var(--gray);">Last 7 days:</span> <span style="color:var(--white);font-weight:600;">${last7} actions</span> <span style="color:var(--purple);">(${rp7} role-plays)</span></div>
+      <div><span style="color:var(--gray);">Last 30 days:</span> <span style="color:var(--white);font-weight:600;">${last30} actions</span> <span style="color:var(--purple);">(${rp30} role-plays)</span></div>
+    </div>
+  </div>`;
+
+  // Modules progress
+  html+=`<div class="sec-header">Module Progress (${completedMods.length}/${MODULES.length})</div>
+  <div class="card">
+    <div class="pbar" style="margin-bottom:12px;"><div class="pbar-fill" style="width:${pctComplete}%;background:var(--blue);"></div></div>`;
+  MODULES.forEach(m=>{
+    const done=completedMods.includes(m.id);
+    html+=`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <span style="color:${done?'var(--gray-l)':'var(--gray)'};">${done?'&#9989;':'&#9711;'} ${m.title}</span>
+      <span style="color:${done?'var(--green)':'var(--gray-d)'};font-size:11px;">${done?'Complete':'Pending'}</span>
+    </div>`;
+  });
+  html+=`</div>`;
+
+  // Quiz performance by tier
+  const tierData={foundation:{scores:[],passed:0},advanced:{scores:[],passed:0},expert:{scores:[],passed:0}};
+  Object.entries(qs).forEach(([key,score])=>{
+    let tier='foundation';
+    if(key.endsWith('_advanced'))tier='advanced';
+    else if(key.endsWith('_expert'))tier='expert';
+    tierData[tier].scores.push(score.best);
+    if(score.best>=80)tierData[tier].passed++;
+  });
+  html+=`<div class="sec-header">Quiz Performance</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">`;
+  ['foundation','advanced','expert'].forEach(tier=>{
+    const d=tierData[tier];
+    const avg=d.scores.length?Math.round(d.scores.reduce((a,b)=>a+b,0)/d.scores.length):0;
+    const color=avg>=80?'var(--green)':avg>=60?'var(--orange)':avg>0?'var(--red)':'var(--gray-d)';
+    html+=`<div class="card" style="text-align:center;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);margin-bottom:4px;">${tier}</div>
+      <div style="font-size:22px;font-weight:700;color:${color};">${d.scores.length?avg+'%':'—'}</div>
+      <div style="font-size:10px;color:var(--gray);margin-top:2px;">${d.passed}/${d.scores.length} passed</div>
+    </div>`;
+  });
+  html+=`</div>`;
+  if(Object.keys(qs).length){
+    html+=`<div class="card">`;
+    Object.entries(qs).sort().forEach(([key,score])=>{
+      let modId=key,tier='F';
+      if(key.endsWith('_advanced')){modId=key.slice(0,-9);tier='A';}
+      else if(key.endsWith('_expert')){modId=key.slice(0,-7);tier='E';}
+      const mod=MODULES.find(m=>m.id===modId);
+      const color=score.best>=80?'var(--green)':score.best>=60?'var(--orange)':'var(--red)';
+      const tierColor=tier==='F'?'var(--blue)':tier==='A'?'var(--purple)':'var(--gold)';
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <span style="color:var(--gray-l);"><span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:${tierColor}30;color:${tierColor};font-size:10px;font-weight:700;text-align:center;line-height:20px;margin-right:8px;">${tier}</span>${mod?mod.title:modId}</span>
+        <span style="font-weight:700;color:${color};">${score.best}% <span style="color:var(--gray-d);font-size:11px;font-weight:400;">(${score.attempts||1} att)</span></span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Drill & Flashcard stats
+  html+=`<div class="sec-header">Practice Stats</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:22px;font-weight:700;color:var(--orange);">${r.drillsCompleted||0}</div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);">Drills Done</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:22px;font-weight:700;color:var(--green);">${r.drillsPerfect||0}</div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);">Perfect Drills</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:22px;font-weight:700;color:var(--blue);">${r.fcReviews||0}</div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);">Card Reviews</div>
+    </div>
+  </div>`;
+
+  // Role-play detail
+  if(rpHist.length){
+    const avg=Math.round(rpHist.reduce((a,rp)=>a+(rp.score||0),0)/rpHist.length);
+    const avgColor=avg>=80?'var(--green)':avg>=60?'var(--orange)':'var(--red)';
+    const subTotals={empathy:0,diagnosis:0,evidence:0,technique:0,close:0};
+    let subCount=0;
+    rpHist.forEach(rp=>{if(rp.scores){Object.entries(rp.scores).forEach(([k,v])=>{if(subTotals[k]!==undefined)subTotals[k]+=v;});subCount++;}});
+
+    html+=`<div class="sec-header">Role-Play Detail (${rpHist.length} sessions)</div>
+    <div class="card">
+      <div style="text-align:center;margin-bottom:12px;">
+        <div style="font-size:36px;font-weight:800;color:${avgColor};">${avg}%</div>
+        <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;">Average Score</div>
+      </div>`;
+    if(subCount){
+      html+=`<div style="display:flex;gap:6px;margin-bottom:12px;">`;
+      ['empathy','diagnosis','evidence','technique','close'].forEach(k=>{
+        const v=subTotals[k]/subCount;
+        const c=v>=4?'var(--green)':v>=3?'var(--orange)':'var(--red)';
+        html+=`<div style="flex:1;text-align:center;padding:8px 2px;background:var(--dark3);border-radius:6px;">
+          <div style="font-size:16px;font-weight:700;color:${c};">${v.toFixed(1)}</div>
+          <div style="font-size:9px;color:var(--gray);text-transform:uppercase;">${k}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+
+    // Full session history (all)
+    html+=`<div class="card"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);margin-bottom:8px;">All Sessions — Most Recent First</div>`;
+    rpHist.slice(0,20).forEach(rp=>{
+      const sc=rp.score>=80?'var(--green)':rp.score>=60?'var(--orange)':'var(--red)';
+      html+=`<div style="padding:10px;background:var(--dark3);border-radius:6px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--gray-l);font-weight:600;">${rp.cat}${rp.scenario?' &middot; '+rp.scenario:''}</span>
+          <span style="font-size:13px;font-weight:700;color:${sc};">${rp.score}%</span>
+        </div>
+        <div style="font-size:10px;color:var(--gray);margin-bottom:6px;">${new Date(rp.date).toLocaleString()}</div>
+        <div style="font-size:12px;color:var(--gray-l);line-height:1.5;">${rp.feedback||''}</div>
+        ${rp.tip?`<div style="font-size:11px;color:var(--gold);margin-top:6px;font-style:italic;">&#128161; ${rp.tip}</div>`:''}
+      </div>`;
+    });
+    if(rpHist.length>20){
+      html+=`<div style="text-align:center;font-size:11px;color:var(--gray);padding:6px;">Showing 20 most recent of ${rpHist.length}</div>`;
+    }
+    html+=`</div>`;
+  }else{
+    html+=`<div class="sec-header">Role-Play Detail</div>
+    <div class="card" style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">No role-play sessions yet.</div>`;
+  }
+
+  // Assessments snapshot
+  html+=`<div class="sec-header">Assessments</div>`;
+  const dr=r.discResult,mr=r.motivatorsResult,er=r.eqResult;
+  html+=`<div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">`;
+  if(dr){const p=discProfiles[dr.primary];html+=`<span class="disc-tag" style="background:${p.color}20;color:${p.color};">DISC: ${dr.primary} ${p.name}</span>`;}
+  else html+=`<span class="disc-tag" style="background:var(--dark4);color:var(--gray-d);">DISC: Not taken</span>`;
+  if(mr){const mp=motivatorProfiles[mr.primary];html+=`<span class="disc-tag" style="background:${mp.color}20;color:${mp.color};">Motivator: ${mp.name}</span>`;}
+  else html+=`<span class="disc-tag" style="background:var(--dark4);color:var(--gray-d);">Motivator: Not taken</span>`;
+  if(er){const eqColor=er.overall>=80?'var(--green)':er.overall>=60?'var(--orange)':'var(--red)';html+=`<span class="disc-tag" style="background:${eqColor}20;color:${eqColor};">EQ: ${er.overall}/100</span>`;}
+  else html+=`<span class="disc-tag" style="background:var(--dark4);color:var(--gray-d);">EQ: Not taken</span>`;
+  html+=`</div>`;
+  if(dr||mr||er){
+    html+=`<button class="mv-nav-btn mv-next" style="width:100%;margin-top:8px;" onclick="mgrTab='disc';expandedProfileRepId='${id}';selectedRepId=null;renderManager();">View Full Profile &rarr;</button>`;
+  }
+  html+=`</div>`;
+
+  // Assignments
+  const repAssignments=Object.entries(assignments).filter(([_,a])=>a.repId===id);
+  if(repAssignments.length){
+    html+=`<div class="sec-header">Assignments (${repAssignments.length})</div><div class="card">`;
+    repAssignments.forEach(([aid,a])=>{
+      const label=a.targetLabel||(MODULES.find(m=>m.id===a.moduleId)||{}).title||a.targetId||'Unknown';
+      const typeIcon=a.type==='quiz'?'&#10068;':a.type==='drill'?'&#9889;':a.type==='roleplay'?'&#127908;':a.type==='assessment'?'&#128202;':'&#128218;';
+      const progress=a.targetCount>1?` (${a.currentCount||0}/${a.targetCount})`:'';
+      const status=a.status==='completed'?'<span style="color:var(--green);">&#9989; Complete</span>':(a.dueDate?`<span style="color:var(--gray);">Due: ${a.dueDate}</span>`:'<span style="color:var(--orange);">Active</span>');
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+        <span>${typeIcon} ${label}${progress}</span>
+        <span style="font-size:11px;">${status}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Badges
+  if(badgesEarned.length){
+    html+=`<div class="sec-header">Badges (${badgesEarned.length}/${BADGES.length})</div>
+    <div class="card" style="display:flex;flex-wrap:wrap;gap:8px;">`;
+    badgesEarned.forEach(bid=>{
+      const b=BADGES.find(x=>x.id===bid);
+      if(!b)return;
+      html+=`<div style="padding:8px 12px;background:var(--dark3);border-radius:8px;font-size:12px;"><span style="font-size:16px;">${b.icon||'&#127942;'}</span> ${b.name}</div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Certificates
+  if(certs.length){
+    html+=`<div class="sec-header">Certificates (${certs.length})</div><div class="card">`;
+    certs.forEach(c=>{
+      html+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--gray-l);">&#127941; ${c.title||c.id} <span style="color:var(--gray);font-size:11px;margin-left:8px;">${c.date||''}</span></div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Activity timeline
+  if(log.length){
+    html+=`<div class="sec-header">Activity Timeline</div><div class="card">`;
+    log.slice(0,30).forEach(a=>{
+      const when=new Date(a.time);
+      const whenStr=when.toLocaleString();
+      const ptsStr=a.pts?`<span style="color:var(--gold);font-weight:700;margin-left:8px;">+${a.pts}</span>`:'';
+      html+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <div style="color:var(--gray-l);">${a.action}${ptsStr}</div>
+        <div style="color:var(--gray-d);font-size:10px;margin-top:2px;">${whenStr}</div>
+      </div>`;
+    });
+    if(log.length>30)html+=`<div style="text-align:center;font-size:11px;color:var(--gray);padding:6px;">Showing 30 most recent of ${log.length}</div>`;
+    html+=`</div>`;
+  }
+
+  html+=`<div style="height:40px;"></div>`;
+  return html;
 }
 
 function updateAssignOptions(){
