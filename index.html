@@ -2728,8 +2728,9 @@ function renderModuleSlides(mod){
 
   if(mod.slidesId && mvViewMode==='slides'){
     // Embedded Google Slides viewer
-    html+=`<div class="slides-embed">
+    html+=`<div class="slides-embed" id="slidesEmbed">
       <iframe src="https://docs.google.com/presentation/d/${mod.slidesId}/embed?start=false&loop=false&delayms=60000" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+      <button onclick="goFullscreen('slidesEmbed')" style="position:absolute;bottom:8px;right:8px;z-index:5;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;backdrop-filter:blur(4px);">&#x26F6; Fullscreen</button>
     </div>`;
     // Compact notes below the deck
     html+=`<div class="sec-header">Slide Notes</div>`;
@@ -2995,31 +2996,58 @@ function startQuiz(modId,tier){
   const qs=tiers[tier]||tiers.foundation||[];
   if(!qs.length)return;
   const mod=MODULES.find(m=>m.id===modId);
-  quizState={modId,tier,questions:shuffle([...qs]),current:0,correct:0,answered:[]};
+  quizState={modId,tier,questions:shuffle([...qs]),current:0,correct:0,answered:[],skipped:[]};
   renderQuizQuestion();
   switchTab('quiz');
 }
 
 function renderQuizQuestion(){
   const s=quizState;
-  if(s.current>=s.questions.length){return renderQuizResults();}
+  // If we've gone past the end, check for skipped questions
+  if(s.current>=s.questions.length){
+    if(s.skipped.length){
+      // Loop back to first skipped question
+      s.current=s.skipped.shift();
+      // Fall through to render it
+    }else{
+      return renderQuizResults();
+    }
+  }
   const q=s.questions[s.current];
   const mod=MODULES.find(m=>m.id===s.modId);
   const tierInfo=TIER_INFO[s.tier||'foundation'];
+  const totalAnswered=s.answered.length;
+  const totalRemaining=s.questions.length-totalAnswered-s.skipped.length;
+  const skippedCount=s.skipped.length;
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
     <button class="mv-nav-btn mv-prev" onclick="showQuizTiers('${s.modId}')">&#8592; Quit</button>
     <div style="font-size:12px;padding:3px 10px;border-radius:12px;background:${tierInfo.color}20;color:${tierInfo.color};font-weight:700;">${tierInfo.label}</div>
-    <div style="font-size:13px;color:var(--gray);">Q${s.current+1}/${s.questions.length}</div>
+    <div style="font-size:13px;color:var(--gray);">Q${totalAnswered+1}/${s.questions.length}</div>
   </div>
-  <div class="pbar" style="margin-bottom:20px;"><div class="pbar-fill" style="width:${(s.current/s.questions.length)*100}%;background:var(--blue);"></div></div>
-  <div class="quiz-card">
+  <div class="pbar" style="margin-bottom:20px;"><div class="pbar-fill" style="width:${(totalAnswered/s.questions.length)*100}%;background:var(--blue);"></div></div>`;
+  if(skippedCount){
+    html+=`<div style="font-size:11px;color:var(--orange);margin-bottom:8px;">${skippedCount} skipped — you'll come back to ${skippedCount===1?'it':'them'}</div>`;
+  }
+  html+=`<div class="quiz-card">
     <div class="quiz-q">${q.q}</div>
     <div id="quizOpts">`;
   q.o.forEach((opt,i)=>{
     html+=`<button class="quiz-opt" id="qopt-${i}" onclick="answerQuiz(${i})">${opt}</button>`;
   });
-  html+=`</div><div class="quiz-explain" id="quizExplain">${q.e}</div></div>`;
+  html+=`</div>
+  <div id="quizSkipWrap" style="text-align:center;margin-top:12px;">
+    <button style="background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;padding:8px 16px;" onclick="skipQuizQuestion()">Skip for now &rarr;</button>
+  </div>
+  <div class="quiz-explain" id="quizExplain">${q.e}</div></div>`;
   document.getElementById('pg-quiz').innerHTML=html;
+}
+
+function skipQuizQuestion(){
+  const s=quizState;
+  if(s.answered.includes(s.current))return;
+  s.skipped.push(s.current);
+  s.current++;
+  renderQuizQuestion();
 }
 
 function answerQuiz(idx){
@@ -3032,6 +3060,8 @@ function answerQuiz(idx){
   document.getElementById('qopt-'+idx).classList.add(correct?'correct':'wrong');
   if(!correct)document.getElementById('qopt-'+q.c).classList.add('correct');
   document.getElementById('quizExplain').classList.add('show');
+  const skipWrap=document.getElementById('quizSkipWrap');
+  if(skipWrap)skipWrap.style.display='none';
   document.querySelectorAll('.quiz-opt').forEach(b=>b.style.pointerEvents='none');
   // Show Next button instead of auto-advancing
   const nextBtn=document.createElement('button');
@@ -4598,13 +4628,24 @@ const MEDIA = [
 
 function getMediaForModule(modId){return MEDIA.filter(m=>m.moduleId===modId);}
 
+function goFullscreen(elId){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  if(el.requestFullscreen)el.requestFullscreen();
+  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+  else if(el.msRequestFullscreen)el.msRequestFullscreen();
+}
+
+let _mediaUid=0;
 function renderMediaPlayer(m){
   const embedUrl='https://drive.google.com/file/d/'+m.driveId+'/preview';
+  const uid='media-'+(++_mediaUid);
   if(m.type==='video'){
     return `<div style="margin-bottom:16px;">
       <div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:8px;">${m.icon} ${m.title}</div>
-      <div style="position:relative;width:100%;padding-bottom:56.25%;border-radius:8px;overflow:hidden;background:var(--dark3);">
+      <div id="${uid}" style="position:relative;width:100%;padding-bottom:56.25%;border-radius:8px;overflow:hidden;background:var(--dark3);">
         <iframe src="${embedUrl}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay;encrypted-media" allowfullscreen></iframe>
+        <button onclick="goFullscreen('${uid}')" style="position:absolute;bottom:8px;right:8px;z-index:5;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;backdrop-filter:blur(4px);">&#x26F6; Fullscreen</button>
       </div>
     </div>`;
   }
