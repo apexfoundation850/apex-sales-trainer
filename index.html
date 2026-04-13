@@ -2135,9 +2135,7 @@ db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
 // ---- DEBOUNCED SAVE ----
 let _saveTimer=null;
 function saveState(){
-  // Save to localStorage as fallback
-  localStorage.setItem('apex_trainer_reps',JSON.stringify(reps));
-  localStorage.setItem('apex_trainer_assignments',JSON.stringify(assignments));
+  // No localStorage caching — Firestore is source of truth
   // Debounced Firestore save
   if(!currentUid)return;
   clearTimeout(_saveTimer);
@@ -2166,7 +2164,7 @@ function saveState(){
 
 // ---- LOAD FROM FIRESTORE ----
 async function loadUserData(uid){
-  const doc=await db.collection('users').doc(uid).get();
+  const doc=await db.collection('users').doc(uid).get({source:'server'}).catch(()=>db.collection('users').doc(uid).get());
   if(doc.exists){
     const d=doc.data();
     if(d.deleted){return 'deleted';}
@@ -2190,7 +2188,7 @@ async function loadUserData(uid){
 }
 
 async function loadAllUsers(){
-  const snap=await db.collection('users').get();
+  const snap=await db.collection('users').get({source:'server'}).catch(()=>db.collection('users').get());
   reps={};
   snap.forEach(doc=>{
     const d=doc.data();
@@ -2208,7 +2206,7 @@ async function loadAllUsers(){
 }
 
 async function loadAssignments(){
-  const snap=await db.collection('assignments').get();
+  const snap=await db.collection('assignments').get({source:'server'}).catch(()=>db.collection('assignments').get());
   assignments={};
   snap.forEach(doc=>{assignments[doc.id]=doc.data();});
 }
@@ -4916,13 +4914,6 @@ function initOfflineDetection(){
   window.addEventListener('online',updateOnlineStatus);
   window.addEventListener('offline',updateOnlineStatus);
   updateOnlineStatus();
-  // Enable Firestore offline persistence
-  if(db&&db.enablePersistence){
-    db.enablePersistence({synchronizeTabs:true}).catch(e=>{
-      if(e.code==='failed-precondition')console.warn('Offline persistence: multiple tabs open');
-      else if(e.code==='unimplemented')console.warn('Offline persistence: browser not supported');
-    });
-  }
 }
 
 // ---- MEDIA LIBRARY ----
