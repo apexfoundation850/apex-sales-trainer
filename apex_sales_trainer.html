@@ -5795,6 +5795,13 @@ function renderManager(){
       <p style="font-size:13px;color:var(--gray);margin-bottom:8px;"><span style="color:var(--green);">&#9679; Connected to Firebase</span></p>
       <p style="font-size:12px;color:var(--gray-d);">All progress syncs automatically across devices. Reps sign in with Google to access their data anywhere.</p>
     </div>`;
+
+    html+=`<div class="sec-header" style="margin-top:24px;">Data Repair</div>
+    <div class="card">
+      <p style="font-size:12px;color:var(--gray);margin-bottom:12px;">Scans each rep's activity log and reconstructs missing data (completedModules, quizScores, points, lastActive). Use this to fix reps whose data didn't sync properly.</p>
+      <button class="mv-complete-btn" style="width:100%;background:var(--orange);" onclick="repairAllData()">&#128295; Repair All Rep Data</button>
+      <div id="repairLog" style="margin-top:12px;"></div>
+    </div>`;
   }
 
   document.getElementById('pg-more').innerHTML=html;
@@ -6262,6 +6269,126 @@ function resetRep(id){
   }).catch(e=>console.warn(e));
   renderManager();
   showToast(`Reset ${name}`,'toast-success');
+}
+
+// ---- DATA REPAIR ----
+async function repairAllData(){
+  if(!confirm('This will scan all reps\' activity logs and reconstruct missing data. Continue?'))return;
+  const logEl=document.getElementById('repairLog');
+  let logHtml='';
+  let totalFixed=0;
+
+  for(const [id,r] of Object.entries(reps)){
+    const log=r.activityLog||[];
+    if(!log.length)continue;
+    const fixes=[];
+    const updates={};
+
+    // 1. Reconstruct lastActive from most recent log entry
+    if(!r.lastActive&&log.length){
+      const latest=new Date(log[0].time);
+      updates.lastActive=latest.toDateString();
+      fixes.push('lastActive');
+    }
+
+    // 2. Reconstruct points from activity log
+    const logPoints=log.reduce((a,e)=>a+(e.pts||0),0);
+    if(logPoints>0&&(!r.points||r.points<logPoints)){
+      updates.points=logPoints;
+      fixes.push('points ('+r.points+'→'+logPoints+')');
+    }
+
+    // 3. Reconstruct quizScores from activity log
+    const qs=r.quizScores||{};
+    let qsChanged=false;
+    log.forEach(entry=>{
+      const a=entry.action||'';
+      // Match "Foundation quiz passed: Module Name" or "Advanced quiz passed: Module Name"
+      const passMatch=a.match(/^(Foundation|Advanced|Expert) quiz passed: (.+)$/);
+      if(passMatch){
+        const tier=passMatch[1].toLowerCase();
+        const modTitle=passMatch[2];
+        const mod=MODULES.find(m=>m.title===modTitle);
+        if(mod){
+          const key=tier==='foundation'?mod.id:mod.id+'_'+tier;
+          if(!qs[key]||!qs[key].best||qs[key].best<80){
+            qs[key]={best:80,last:80,date:entry.time};
+            qsChanged=true;
+          }
+        }
+      }
+    });
+    if(qsChanged){
+      updates.quizScores=qs;
+      fixes.push('quizScores');
+    }
+
+    // 4. Reconstruct completedModules from "Completed module" log entries
+    // Since the log says "Completed module" without the name, we infer from
+    // modules that were opened AND have a quiz pass (reasonable proxy)
+    const cm=r.completedModules||[];
+    let cmChanged=false;
+    const openedMods=new Set();
+    log.forEach(entry=>{
+      const m2=entry.action&&entry.action.match(/^Opened: (.+)$/);
+      if(m2){
+        const mod=MODULES.find(m=>m.title===m2[1]);
+        if(mod)openedMods.add(mod.id);
+      }
+    });
+    // If they passed a Foundation quiz for a module, they effectively completed it
+    Object.keys(qs).forEach(key=>{
+      // Foundation keys are just the modId (no suffix)
+      const mod=MODULES.find(m=>m.id===key);
+      if(mod&&qs[key].best>=80&&!cm.includes(key)){
+        cm.push(key);
+        cmChanged=true;
+      }
+    });
+    if(cmChanged){
+      updates.completedModules=cm;
+      fixes.push('completedModules (+'+cm.filter(m=>!(r.completedModules||[]).includes(m)).length+')');
+    }
+
+    // 5. Reconstruct drill/flashcard counts from log
+    let drillCount=0,fcCount=0;
+    log.forEach(entry=>{
+      if(entry.action&&entry.action.includes('drill'))drillCount++;
+      if(entry.action&&(entry.action.includes('card')||entry.action.includes('Flashcard')))fcCount++;
+    });
+    if(drillCount>(r.drillsCompleted||0)){
+      updates.drillsCompleted=drillCount;
+      fixes.push('drillsCompleted');
+    }
+
+    // Apply fixes to Firestore
+    if(Object.keys(updates).length){
+      try{
+        await db.collection('users').doc(id).update(updates);
+        // Update local state
+        Object.assign(reps[id],updates);
+        if(updates.completedModules)reps[id].completedModules=updates.completedModules;
+        if(updates.quizScores)reps[id].quizScores=updates.quizScores;
+        totalFixed++;
+        logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+          <span style="color:var(--green);">&#9989;</span> <strong>${r.name}</strong>: ${fixes.join(', ')}
+        </div>`;
+      }catch(e){
+        logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+          <span style="color:var(--red);">&#10060;</span> <strong>${r.name}</strong>: ${e.message}
+        </div>`;
+      }
+    }else{
+      logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <span style="color:var(--gray);">&#9644;</span> <strong>${r.name}</strong>: No repairs needed
+      </div>`;
+    }
+  }
+
+  logHtml=`<div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px;">${totalFixed} rep(s) repaired</div>`+logHtml;
+  if(logEl)logEl.innerHTML=logHtml;
+  showToast(`Repaired data for ${totalFixed} rep(s)`,'toast-success');
+  renderManager();
 }
 
 function toggleProfileExpand(id){
