@@ -6058,6 +6058,62 @@ function renderRepDetailHTML(id){
     html+=`</div>`;
   }
 
+  // Manager manual edit panel
+  if(isManager){
+    html+=`<div class="sec-header">&#9998; Edit Rep Data</div>
+    <div class="card" style="border-left:3px solid var(--orange);">
+      <div style="font-size:12px;color:var(--gray);margin-bottom:12px;">Manually fix this rep's data. Changes save directly to Firestore.</div>
+
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);font-weight:700;margin-bottom:8px;">Completed Modules</div>`;
+    MODULES.forEach(m=>{
+      const done=completedMods.includes(m.id);
+      html+=`<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer;">
+        <input type="checkbox" ${done?'checked':''} onchange="toggleRepModule('${id}','${m.id}',this.checked)" style="width:18px;height:18px;">
+        <span style="color:${done?'var(--green)':'var(--gray-l)'};">${m.title}</span>
+      </label>`;
+    });
+
+    html+=`<div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);font-weight:700;margin:16px 0 8px;">Quiz Scores</div>`;
+    const allTiers=['foundation','advanced','expert'];
+    MODULES.forEach(m=>{
+      if(!QUIZZES[m.id])return;
+      allTiers.forEach(tier=>{
+        const key=tier==='foundation'?m.id:m.id+'_'+tier;
+        const score=qs[key];
+        const tierLabel=tier.charAt(0).toUpperCase()+tier.slice(1);
+        const best=score?score.best:'—';
+        html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;">
+          <span style="color:var(--gray-l);">${m.title} (${tierLabel})</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="color:${best>=80?'var(--green)':best>=60?'var(--orange)':best!=='—'?'var(--red)':'var(--gray-d)'};font-weight:600;">${best}${best!=='—'?'%':''}</span>
+            <input type="number" min="0" max="100" value="${best!=='—'?best:''}" placeholder="—" style="width:50px;padding:4px;background:var(--dark3);border:1px solid var(--border);border-radius:4px;color:var(--white);font-size:12px;text-align:center;" onchange="setRepQuizScore('${id}','${key}',this.value)">
+          </div>
+        </div>`;
+      });
+    });
+
+    html+=`<div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);font-weight:700;margin:16px 0 8px;">Stats</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div>
+        <label style="font-size:11px;color:var(--gray);">Points</label>
+        <input type="number" value="${r.points||0}" style="width:100%;padding:8px;background:var(--dark3);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;" onchange="setRepField('${id}','points',parseInt(this.value)||0)">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);">Streak</label>
+        <input type="number" value="${r.streak||0}" style="width:100%;padding:8px;background:var(--dark3);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;" onchange="setRepField('${id}','streak',parseInt(this.value)||0)">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);">Drills Completed</label>
+        <input type="number" value="${r.drillsCompleted||0}" style="width:100%;padding:8px;background:var(--dark3);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;" onchange="setRepField('${id}','drillsCompleted',parseInt(this.value)||0)">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);">FC Reviews</label>
+        <input type="number" value="${r.fcReviews||0}" style="width:100%;padding:8px;background:var(--dark3);border:1px solid var(--border);border-radius:6px;color:var(--white);font-size:14px;" onchange="setRepField('${id}','fcReviews',parseInt(this.value)||0)">
+      </div>
+    </div>
+    </div>`;
+  }
+
   html+=`<div style="height:40px;"></div>`;
   return html;
 }
@@ -6403,6 +6459,48 @@ async function repairAllData(){
   // Reload fresh data
   await loadAllUsers();
   renderManager();
+}
+
+// ---- MANUAL REP EDIT FUNCTIONS ----
+function toggleRepModule(repId,modId,checked){
+  const r=reps[repId];
+  if(!r)return;
+  r.completedModules=r.completedModules||[];
+  if(checked&&!r.completedModules.includes(modId)){
+    r.completedModules.push(modId);
+  }else if(!checked){
+    r.completedModules=r.completedModules.filter(m=>m!==modId);
+  }
+  db.collection('users').doc(repId).update({completedModules:r.completedModules}).then(()=>{
+    showToast('Module updated','toast-success');
+  }).catch(e=>showToast('Save failed: '+e.message,'toast-streak'));
+}
+
+function setRepQuizScore(repId,key,val){
+  const r=reps[repId];
+  if(!r)return;
+  r.quizScores=r.quizScores||{};
+  const score=parseInt(val);
+  if(isNaN(score)||score<0||score>100){
+    // Clear the score
+    delete r.quizScores[key];
+  }else{
+    r.quizScores[key]={best:score,last:score,date:new Date().toISOString()};
+  }
+  db.collection('users').doc(repId).update({quizScores:r.quizScores}).then(()=>{
+    showToast('Quiz score updated','toast-success');
+  }).catch(e=>showToast('Save failed: '+e.message,'toast-streak'));
+}
+
+function setRepField(repId,field,value){
+  const r=reps[repId];
+  if(!r)return;
+  r[field]=value;
+  const update={};
+  update[field]=value;
+  db.collection('users').doc(repId).update(update).then(()=>{
+    showToast(field+' updated','toast-success');
+  }).catch(e=>showToast('Save failed: '+e.message,'toast-streak'));
 }
 
 function toggleProfileExpand(id){
