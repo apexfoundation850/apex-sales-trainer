@@ -3107,15 +3107,16 @@ function renderQuizHTML(){
     const best=bestScore?bestScore.best:null;
     const color=best!==null?(best>=80?'var(--green)':best>=60?'var(--orange)':'var(--red)'):'var(--gray)';
 
-    html+=`<div class="mod-item" onclick="showQuizTiers('${m.id}')">
-      <div class="mod-icon" style="background:${m.color}20;color:${m.color}">${m.icon}</div>
+    const modDone=currentRep&&(reps[currentRep].completedModules||[]).includes(m.id);
+    html+=`<div class="mod-item" onclick="showQuizTiers('${m.id}')" style="${modDone?'':'opacity:.6;'}">
+      <div class="mod-icon" style="background:${m.color}20;color:${m.color}">${modDone?m.icon:'&#128274;'}</div>
       <div class="mod-info">
         <div class="mod-name">${m.title}</div>
-        <div class="mod-desc">3 tiers &middot; 30 questions</div>
-        <div style="display:flex;gap:4px;margin-top:4px;">${tierDots}</div>
+        <div class="mod-desc">${modDone?'3 tiers &middot; 30 questions':'Complete module to unlock'}</div>
+        ${modDone?`<div style="display:flex;gap:4px;margin-top:4px;">${tierDots}</div>`:''}
       </div>
       <div style="text-align:right;">
-        ${highestPassed?`<div style="font-size:11px;padding:3px 8px;border-radius:10px;background:${TIER_INFO[highestPassed].color}20;color:${TIER_INFO[highestPassed].color};font-weight:700;">${TIER_INFO[highestPassed].label}</div>`:(best!==null?`<div style="font-size:14px;font-weight:700;color:${color};">${best}%</div>`:'<div style="font-size:12px;color:var(--gray);">Start</div>')}
+        ${modDone?(highestPassed?`<div style="font-size:11px;padding:3px 8px;border-radius:10px;background:${TIER_INFO[highestPassed].color}20;color:${TIER_INFO[highestPassed].color};font-weight:700;">${TIER_INFO[highestPassed].label}</div>`:(best!==null?`<div style="font-size:14px;font-weight:700;color:${color};">${best}%</div>`:'<div style="font-size:12px;color:var(--gray);">Start</div>')):'<div style="font-size:12px;color:var(--gray-d);">&#128274;</div>'}
       </div>
     </div>`;
   });
@@ -3128,9 +3129,17 @@ function showQuizTiers(modId){
   const tiers=QUIZZES[modId];
   if(!tiers)return;
 
+  const modComplete=currentRep&&(reps[currentRep].completedModules||[]).includes(modId);
   let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderQuiz()">&#8592; Back</button>
     <div style="font-size:18px;font-weight:700;margin-bottom:4px;">${mod.title}</div>
     <div style="font-size:13px;color:var(--gray);margin-bottom:20px;">Pass each tier at 80%+ to unlock the next level</div>`;
+  if(!modComplete){
+    html+=`<div class="card" style="border-left:3px solid var(--orange);margin-bottom:16px;padding:12px;">
+      <div style="font-size:13px;color:var(--orange);font-weight:600;">&#128274; Module not completed</div>
+      <div style="font-size:12px;color:var(--gray);margin-top:4px;">Complete the ${mod.title} module before taking quizzes.</div>
+      <button class="mv-nav-btn mv-next" style="margin-top:10px;width:100%;" onclick="openModule('${modId}')">Open Module &rarr;</button>
+    </div>`;
+  }
 
   ['foundation','advanced','expert'].forEach(tier=>{
     const info=TIER_INFO[tier];
@@ -3195,6 +3204,15 @@ function startQuiz(modId,tier){
   tier=tier||'foundation';
   const tiers=QUIZZES[modId];
   if(!tiers)return;
+  // Gate: must complete the module before taking any quiz
+  if(currentRep){
+    const r=reps[currentRep];
+    if(!(r.completedModules||[]).includes(modId)){
+      const mod=MODULES.find(m=>m.id===modId);
+      showToast('Complete the '+mod.title+' module first','toast-streak');
+      return;
+    }
+  }
   // Check lockout
   if(isQuizLocked(modId,tier)){
     const mod=MODULES.find(m=>m.id===modId);
