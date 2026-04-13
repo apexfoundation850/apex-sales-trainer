@@ -2487,7 +2487,7 @@ function updateTopBar(){
 
 // ---- NAVIGATION ----
 let learnTab='modules';
-let practiceTab='roleplay';
+let practiceTab='drills';
 
 function switchTab(tab){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
@@ -2508,7 +2508,6 @@ function renderLearn(){
     <div class="slides-toggle-btn ${learnTab==='modules'?'active':''}" onclick="learnTab='modules';renderLearn()">&#128218; Modules</div>
     <div class="slides-toggle-btn ${learnTab==='quizzes'?'active':''}" onclick="learnTab='quizzes';renderLearn()">&#10068; Quizzes</div>
     <div class="slides-toggle-btn ${learnTab==='cards'?'active':''}" onclick="learnTab='cards';renderLearn()">&#127183; Cards</div>
-    <div class="slides-toggle-btn ${learnTab==='drills'?'active':''}" onclick="learnTab='drills';renderLearn()">&#9889; Drills</div>
   </div>`;
   if(learnTab==='modules'){
     html+=renderTrainHTML();
@@ -2516,21 +2515,19 @@ function renderLearn(){
     html+=renderQuizHTML();
   }else if(learnTab==='cards'){
     html+=renderFlashcardsHTML();
-  }else if(learnTab==='drills'){
-    html+=renderDrillsHTML();
   }
   document.getElementById('pg-learn').innerHTML=html;
 }
 
 function renderPractice(){
   let html=`<div class="slides-toggle" style="margin-bottom:16px;">
+    <div class="slides-toggle-btn ${practiceTab==='drills'?'active':''}" onclick="practiceTab='drills';renderPractice()">&#9889; Drills</div>
     <div class="slides-toggle-btn ${practiceTab==='roleplay'?'active':''}" onclick="practiceTab='roleplay';renderPractice()">&#127908; Role-Play</div>
-    <div class="slides-toggle-btn ${practiceTab==='assess'?'active':''}" onclick="practiceTab=&quot;assess&quot;;renderPractice()">&#128202; Assessments</div>
   </div>`;
-  if(practiceTab==='roleplay'){
-    html+=renderRolePlayHTML();
+  if(practiceTab==='drills'){
+    html+=renderDrillsHTML();
   }else{
-    html+=renderAssessmentHTML();
+    html+=renderRolePlayHTML();
   }
   document.getElementById('pg-practice').innerHTML=html;
 }
@@ -2539,6 +2536,13 @@ function renderMore(){
   let html='';
   // Leaderboard
   html+=renderBoardHTML();
+  // Assessments
+  html+=`<div class="sec-header" style="margin-top:24px;">Assessments</div>
+  <div class="card" style="cursor:pointer;text-align:center;" onclick="renderAssessmentInMore()">
+    <div style="font-size:28px;">&#128202;</div>
+    <div style="font-size:14px;font-weight:700;margin-top:6px;">DISC / Motivators / EQ</div>
+    <div style="font-size:12px;color:var(--gray);margin-top:4px;">View or retake your behavioral assessments</div>
+  </div>`;
   // Manager dashboard access
   if(isManager){
     html+=`<div class="sec-header" style="margin-top:24px;">Management</div>
@@ -2549,6 +2553,10 @@ function renderMore(){
     </div>`;
   }
   document.getElementById('pg-more').innerHTML=html;
+}
+
+function renderAssessmentInMore(){
+  document.getElementById('pg-more').innerHTML=renderAssessmentHTML();
 }
 
 function renderManagerInMore(){
@@ -2634,11 +2642,11 @@ function renderHome(){
         const parts=(a.targetId||'').split('_');
         onclick=`showQuizTiers('${parts[0]}')`;
       }else if(type==='drill'){
-        icon='&#9889;';color='var(--orange)';onclick="learnTab='drills';switchTab('learn')";
+        icon='&#9889;';color='var(--orange)';onclick="practiceTab='drills';switchTab('practice')";
       }else if(type==='roleplay'){
         icon='&#127908;';color='var(--purple)';onclick="practiceTab='roleplay';switchTab('practice')";
       }else if(type==='assessment'){
-        icon='&#128202;';color='var(--teal)';onclick="practiceTab='assess';switchTab('practice')";
+        icon='&#128202;';color='var(--teal)';onclick="switchTab('more');renderAssessmentInMore()";
       }
 
       html+=`<div class="mod-item" onclick="${onclick}">
@@ -2669,7 +2677,7 @@ function renderHome(){
         <div style="font-size:28px;">&#127183;</div>
         <div style="font-size:13px;font-weight:600;margin-top:6px;">Flashcards</div>
       </div>
-      <div class="card" style="cursor:pointer;text-align:center;" onclick="learnTab='drills';switchTab('learn')">
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="practiceTab='drills';switchTab('practice')">
         <div style="font-size:28px;">&#9889;</div>
         <div style="font-size:13px;font-weight:600;margin-top:6px;">Objection Drills</div>
       </div>
@@ -3353,7 +3361,7 @@ function startDrillCat(cat){
 function renderDrillScenario(){
   const d=drillState.drill;
   const shuffled=shuffle(d.opts.map((o,i)=>({...o,origIdx:i})));
-  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="learnTab='drills';renderLearn()">&#8592; Back</button>
+  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="practiceTab='drills';renderPractice()">&#8592; Back</button>
     <div class="drill-scenario">
       <div class="drill-cat">${d.cat}</div>
       <div class="drill-objection">Customer says: ${d.obj}</div>
@@ -3364,7 +3372,7 @@ function renderDrillScenario(){
     html+=`<button class="quiz-opt" id="dopt-${i}" onclick="answerDrill(${i},${o.correct},'${o.e.replace(/'/g,"\\'")}')">${o.t}</button>`;
   });
   html+=`<div class="quiz-explain" id="drillExplain"></div>`;
-  document.getElementById('pg-learn').innerHTML=html;
+  document.getElementById('pg-practice').innerHTML=html;
 }
 
 function answerDrill(idx,correct,explanation){
@@ -3400,7 +3408,7 @@ function answerDrill(idx,correct,explanation){
   const btns=document.createElement('div');
   btns.style.cssText='text-align:center;margin-top:20px;';
   btns.innerHTML=`<button class="mv-complete-btn" style="margin:8px;" onclick="startDrill()">Next Drill</button>
-    <button class="mv-nav-btn mv-prev" style="margin:8px;" onclick="learnTab='drills';renderLearn()">Back to Drills</button>`;
+    <button class="mv-nav-btn mv-prev" style="margin:8px;" onclick="practiceTab='drills';renderPractice()">Back to Drills</button>`;
   document.getElementById('pg-drills').appendChild(btns);
 }
 
@@ -3798,7 +3806,7 @@ function renderMotivatorsQuestion() {
   html += '<button class="mv-nav-btn mv-next" ' + (!bothPicked ? 'disabled style="opacity:.4;cursor:not-allowed;"' : '') + ' onclick="motivatorsState.current++;renderMotivatorsQuestion()">Next &#8594;</button>';
   html += '</div>';
 
-  document.getElementById('pg-practice').innerHTML = html;
+  document.getElementById('pg-more').innerHTML = html;
 }
 
 function answerMotivators(idx) {
@@ -3935,12 +3943,12 @@ function buildMotivatorsDetailHTML(result){
 }
 
 function renderMotivatorsResults(result) {
-  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="practiceTab=&quot;assess&quot;;renderPractice()">&#8592; Back</button>';
+  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessmentInMore()">&#8592; Back</button>';
   html += buildMotivatorsDetailHTML(result);
   html += '<div style="text-align:center;margin-top:20px;">';
-  html += '<button class="mv-nav-btn mv-prev" onclick="practiceTab=&quot;assess&quot;;renderPractice()">Back to Assessments</button>';
+  html += '<button class="mv-nav-btn mv-prev" onclick="renderAssessmentInMore()">Back to Assessments</button>';
   html += '</div>';
-  document.getElementById('pg-practice').innerHTML = html;
+  document.getElementById('pg-more').innerHTML = html;
 }
 
 
@@ -4152,7 +4160,7 @@ function renderEqQuestion() {
   html += '<button class="mv-nav-btn mv-next" ' + (s.answers[s.current] === null ? 'disabled style="opacity:.4;cursor:not-allowed;"' : '') + ' onclick="eqState.current++;renderEqQuestion()">Next &#8594;</button>';
   html += '</div>';
 
-  document.getElementById('pg-practice').innerHTML = html;
+  document.getElementById('pg-more').innerHTML = html;
 }
 
 function answerEq(idx) {
@@ -4295,12 +4303,12 @@ function buildEqDetailHTML(result){
 }
 
 function renderEqResults(result) {
-  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="practiceTab=&quot;assess&quot;;renderPractice()">&#8592; Back</button>';
+  var html = '<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessmentInMore()">&#8592; Back</button>';
   html += buildEqDetailHTML(result);
   html += '<div style="text-align:center;margin-top:20px;">';
-  html += '<button class="mv-nav-btn mv-prev" onclick="practiceTab=&quot;assess&quot;;renderPractice()">Back to Assessments</button>';
+  html += '<button class="mv-nav-btn mv-prev" onclick="renderAssessmentInMore()">Back to Assessments</button>';
   html += '</div>';
-  document.getElementById('pg-practice').innerHTML = html;
+  document.getElementById('pg-more').innerHTML = html;
   return;
 }
 
@@ -4466,7 +4474,7 @@ function renderDiscQuestion(){
     ${s.current>0?`<button class="mv-nav-btn mv-prev" onclick="discState.current--;renderDiscQuestion()">&#8592; Back</button>`:'<div></div>'}
     <button class="mv-nav-btn mv-next" ${s.answers[s.current]===null?'disabled style="opacity:.4;cursor:not-allowed;"':''} onclick="discState.current++;renderDiscQuestion()">Next &#8594;</button>
   </div>`;
-  document.getElementById('pg-practice').innerHTML=html;
+  document.getElementById('pg-more').innerHTML=html;
 }
 
 function answerDisc(idx){
@@ -4556,12 +4564,12 @@ function buildDiscDetailHTML(result){
 }
 
 function renderDiscResultsScreen(result){
-  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="practiceTab=&quot;assess&quot;;renderPractice()">&#8592; Back</button>`;
+  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:16px;" onclick="renderAssessmentInMore()">&#8592; Back</button>`;
   html+=buildDiscDetailHTML(result);
   html+=`<div style="text-align:center;margin-top:20px;">
-    <button class="mv-nav-btn mv-prev" onclick="practiceTab=&quot;assess&quot;;renderPractice()">Back to Assessments</button>
+    <button class="mv-nav-btn mv-prev" onclick="renderAssessmentInMore()">Back to Assessments</button>
   </div>`;
-  document.getElementById('pg-practice').innerHTML=html;
+  document.getElementById('pg-more').innerHTML=html;
 }
 
 // ---- ONBOARDING CHECKLIST ----
