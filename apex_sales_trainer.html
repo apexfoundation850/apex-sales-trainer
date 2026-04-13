@@ -4651,23 +4651,25 @@ function renderBoard(){
 }
 
 // ---- MEDIA LIBRARY ----
+const FB_STORAGE='https://firebasestorage.googleapis.com/v0/b/apex-sales-trainer.appspot.com/o/media%2F';
+const fbMedia=(f)=>FB_STORAGE+encodeURIComponent(f)+'?alt=media';
 const MEDIA = [
   // Job Type modules
-  {id:'m1',moduleId:'jt3',title:'Building Science Below Grade: The 6-Component Encapsulation',type:'video',driveId:'12WDdLzKORB5kjOn9UDDk-O33Ki7Ih3ZJ',icon:'&#127902;'},
-  {id:'m2',moduleId:'jt2',title:'Closing High-Value Foundation Drainage Sales',type:'audio',driveId:'1Rq5CBt4HX2Fo4T2v9-IjkHVub-yu-r02',icon:'&#127911;'},
-  {id:'m3',moduleId:'jt5',title:'Sales Strategies for Structural Helical Piers',type:'audio',driveId:'1KzN1rXre7h7aqpbpAPj5Ign2fh8BeLTf',icon:'&#127911;'},
-  {id:'m4',moduleId:'jt4',title:'Selling Poly Injection at the Kitchen Table',type:'audio',driveId:'1c2b20By-Q8grnI4VfMBJIqKZ9FEDWL5D',icon:'&#127911;'},
-  {id:'m5',moduleId:'jt3',title:'Stop the Crawl Space Moisture Cascade',type:'audio',driveId:'1atDnOZWijJHc4nxbjJBIl2H8PA_pWD9W',icon:'&#127911;'},
-  {id:'m6',moduleId:'jt1',title:'The Physics of Interior Drainage Sales',type:'audio',driveId:'1OIqH_Qtb_6jQFCu1m-V46-fqQG0kdOCM',icon:'&#127911;'},
+  {id:'m1',moduleId:'jt3',title:'Building Science Below Grade: The 6-Component Encapsulation',type:'video',driveId:'12WDdLzKORB5kjOn9UDDk-O33Ki7Ih3ZJ',src:fbMedia('Building_Science_Below_Grade__The_6-Component_Encapsulation_Eco.mp4'),icon:'&#127902;'},
+  {id:'m2',moduleId:'jt2',title:'Closing High-Value Foundation Drainage Sales',type:'audio',driveId:'1Rq5CBt4HX2Fo4T2v9-IjkHVub-yu-r02',src:fbMedia('Closing_High_Value_Foundation_Drainage_Sales.m4a'),icon:'&#127911;'},
+  {id:'m3',moduleId:'jt5',title:'Sales Strategies for Structural Helical Piers',type:'audio',driveId:'1KzN1rXre7h7aqpbpAPj5Ign2fh8BeLTf',src:fbMedia('Sales_Strategies_for_Structural_Helical_Piers.m4a'),icon:'&#127911;'},
+  {id:'m4',moduleId:'jt4',title:'Selling Poly Injection at the Kitchen Table',type:'audio',driveId:'1c2b20By-Q8grnI4VfMBJIqKZ9FEDWL5D',src:fbMedia('Selling_Poly_Injection_at_the_Kitchen_Table.m4a'),icon:'&#127911;'},
+  {id:'m5',moduleId:'jt3',title:'Stop the Crawl Space Moisture Cascade',type:'audio',driveId:'1atDnOZWijJHc4nxbjJBIl2H8PA_pWD9W',src:fbMedia('Stop_the_crawl_space_moisture_cascade.m4a'),icon:'&#127911;'},
+  {id:'m6',moduleId:'jt1',title:'The Physics of Interior Drainage Sales',type:'audio',driveId:'1OIqH_Qtb_6jQFCu1m-V46-fqQG0kdOCM',src:fbMedia('The_Physics_of_Interior_Drainage_Sales.m4a'),icon:'&#127911;'},
   // Core Sales Process modules
-  {id:'m7',moduleId:'mod1',title:'Win the Sale Before You Arrive',type:'audio',driveId:'13FgNYTB9-wlIcIuggtiqsXC4qolTsI7C',icon:'&#127911;'},
-  {id:'m8',moduleId:'mod2',title:'Winning the Sale During the Inspection',type:'audio',driveId:'1A0nGLDFA5d6AUl6YrBYHpWT7hru2ECAY',icon:'&#127911;'},
-  {id:'m9',moduleId:'mod3',title:'Closing High-Stakes Sales with Silence',type:'audio',driveId:'1Z0eJ8d_r7PXUWZyPrHfLuycO1-vFHXaO',icon:'&#127911;'},
-  {id:'m10',moduleId:'mod4',title:'Closing Sales as a Diagnostic Process',type:'audio',driveId:'19aIg9-WqMc-Hf_MskTH4LaQYZU-8qCSk',icon:'&#127911;'},
-  {id:'m11',moduleId:'mod5',title:'Winning Sales After Leaving the House',type:'audio',driveId:'1Tf8MujWJogxlLgqVmcSK7IPEe9rrZjvX',icon:'&#127911;'},
-  {id:'m12',moduleId:'mod6',title:'Why Silence Sells Foundation Repairs',type:'audio',driveId:'1sPQ6BXKZDkfLJf1b9cauZ8ib4QNgBt45',icon:'&#127911;'},
-  {id:'m14',moduleId:'mod6',title:'Customer Psychology',type:'video',driveId:'1IhtWlwIhXmFvRrDTUloAYn9LKUdBabJm',icon:'&#127902;'},
-  {id:'m13',moduleId:'mod7',title:'Escaping the Purchased Lead Treadmill',type:'audio',driveId:'1UPgi-L7B34BfaE8oVEGu6-xHyjvxdT4-',icon:'&#127911;'}
+  {id:'m7',moduleId:'mod1',title:'Win the Sale Before You Arrive',type:'audio',driveId:'13FgNYTB9-wlIcIuggtiqsXC4qolTsI7C',src:fbMedia('Win_the_Sale_Before_You_Arrive.m4a'),icon:'&#127911;'},
+  {id:'m8',moduleId:'mod2',title:'Winning the Sale During the Inspection',type:'audio',driveId:'1A0nGLDFA5d6AUl6YrBYHpWT7hru2ECAY',src:fbMedia('Winning_the_sale_during_the_inspection.m4a'),icon:'&#127911;'},
+  {id:'m9',moduleId:'mod3',title:'Closing High-Stakes Sales with Silence',type:'audio',driveId:'1Z0eJ8d_r7PXUWZyPrHfLuycO1-vFHXaO',src:fbMedia('Closing_high_stakes_sales_with_silence.m4a'),icon:'&#127911;'},
+  {id:'m10',moduleId:'mod4',title:'Closing Sales as a Diagnostic Process',type:'audio',driveId:'19aIg9-WqMc-Hf_MskTH4LaQYZU-8qCSk',src:fbMedia('Closing_sales_as_a_diagnostic_process.m4a'),icon:'&#127911;'},
+  {id:'m11',moduleId:'mod5',title:'Winning Sales After Leaving the House',type:'audio',driveId:'1Tf8MujWJogxlLgqVmcSK7IPEe9rrZjvX',src:fbMedia('Winning_Sales_After_Leaving_The_House.m4a'),icon:'&#127911;'},
+  {id:'m12',moduleId:'mod6',title:'Why Silence Sells Foundation Repairs',type:'audio',driveId:'1sPQ6BXKZDkfLJf1b9cauZ8ib4QNgBt45',src:fbMedia('Why_Silence_Sells_Foundation_Repairs.m4a'),icon:'&#127911;'},
+  {id:'m14',moduleId:'mod6',title:'Customer Psychology',type:'video',driveId:'1IhtWlwIhXmFvRrDTUloAYn9LKUdBabJm',src:fbMedia('Apex_Module_6__Customer_Psychology.mp4'),icon:'&#127902;'},
+  {id:'m13',moduleId:'mod7',title:'Escaping the Purchased Lead Treadmill',type:'audio',driveId:'1UPgi-L7B34BfaE8oVEGu6-xHyjvxdT4-',src:fbMedia('Escaping_the_Purchased_Lead_Treadmill.m4a'),icon:'&#127911;'}
 ];
 
 function getMediaForModule(modId){return MEDIA.filter(m=>m.moduleId===modId);}
@@ -4697,8 +4699,8 @@ function playAllMedia(){
 function loadAndPlay(m){
   currentTrack=m;
   const audio=audioEl();
-  // Google Drive direct link (works when file is shared publicly)
-  const directUrl='https://drive.google.com/uc?export=download&id='+m.driveId;
+  // Use Firebase Storage URL if available, fallback to Google Drive
+  const directUrl=m.src||('https://drive.google.com/uc?export=download&id='+m.driveId);
   audio.src=directUrl;
   audio.load();
   audio.play().catch(e=>{
