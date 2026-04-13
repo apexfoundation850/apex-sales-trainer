@@ -390,14 +390,6 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
     <div id="pg-media" class="page"></div>
     <div id="pg-practice" class="page"></div>
     <div id="pg-more" class="page"></div>
-    <!-- Legacy page IDs kept for functions that write directly to them -->
-    <div id="pg-train" class="page" style="display:none;"></div>
-    <div id="pg-quiz" class="page" style="display:none;"></div>
-    <div id="pg-cards" class="page" style="display:none;"></div>
-    <div id="pg-drills" class="page" style="display:none;"></div>
-    <div id="pg-board" class="page" style="display:none;"></div>
-    <div id="pg-assess" class="page" style="display:none;"></div>
-    <div id="pg-mgr" class="page" style="display:none;"></div>
   </div>
 
   <!-- MINI AUDIO PLAYER -->
@@ -2664,7 +2656,59 @@ function renderHome(){
     });
   }
 
+  // Continue where you left off
+  const lastLog=(r.activityLog||[])[0];
+  if(lastLog){
+    let continueAction='',continueLabel='',continueIcon='&#128170;';
+    if(lastLog.action.startsWith('Opened:')){
+      const modName=lastLog.action.replace('Opened: ','');
+      const mod=MODULES.find(m=>m.title===modName);
+      if(mod){continueLabel='Continue: '+mod.title;continueIcon=mod.icon;continueAction=`openModule('${mod.id}')`;}
+    }else if(lastLog.action.includes('quiz')||lastLog.action.includes('Quiz')){
+      continueLabel='Continue Quizzes';continueIcon='&#10068;';continueAction="learnTab='quizzes';switchTab('learn')";
+    }else if(lastLog.action.includes('drill')||lastLog.action.includes('Drill')){
+      continueLabel='Continue Drills';continueIcon='&#9889;';continueAction="practiceTab='drills';switchTab('practice')";
+    }else if(lastLog.action.includes('roleplay')||lastLog.action.includes('Role')){
+      continueLabel='Continue Role-Play';continueIcon='&#127908;';continueAction="practiceTab='roleplay';switchTab('practice')";
+    }else if(lastLog.action.includes('card')||lastLog.action.includes('Flashcard')){
+      continueLabel='Continue Flashcards';continueIcon='&#127183;';continueAction="learnTab='cards';switchTab('learn')";
+    }
+    if(continueLabel){
+      html+=`<div class="card" style="cursor:pointer;border-color:var(--red)30;display:flex;align-items:center;gap:12px;" onclick="${continueAction}">
+        <div style="font-size:28px;">${continueIcon}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:700;color:var(--white);">${continueLabel}</div>
+          <div style="font-size:11px;color:var(--gray);">Pick up where you left off</div>
+        </div>
+        <span style="font-size:18px;color:var(--gray);">&#8250;</span>
+      </div>`;
+    }
+  }
+
   html+=getOnboardingHTML();
+
+  // Stats at a glance
+  const quizCount=Object.keys(r.quizScores||{}).length;
+  const rpCount=(r.roleplayHistory||[]).length;
+  html+=`<div class="sec-header">Your Stats</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
+    <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--blue);">${completed}/${total}</div>
+      <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;">Modules</div>
+    </div>
+    <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--green);">${quizCount}</div>
+      <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;">Quizzes</div>
+    </div>
+    <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--orange);">${r.drillsCompleted||0}</div>
+      <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;">Drills</div>
+    </div>
+    <div style="text-align:center;padding:10px;background:var(--dark3);border-radius:8px;">
+      <div style="font-size:18px;font-weight:700;color:var(--purple);">${rpCount}</div>
+      <div style="font-size:9px;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;">Role-Plays</div>
+    </div>
+  </div>`;
 
   // Quick Actions
   html+=`<div class="sec-header">Quick Actions</div>
@@ -2673,10 +2717,6 @@ function renderHome(){
         <div style="font-size:28px;">&#10068;</div>
         <div style="font-size:13px;font-weight:600;margin-top:6px;">Take a Quiz</div>
       </div>
-      <div class="card" style="cursor:pointer;text-align:center;" onclick="learnTab='cards';switchTab('learn')">
-        <div style="font-size:28px;">&#127183;</div>
-        <div style="font-size:13px;font-weight:600;margin-top:6px;">Flashcards</div>
-      </div>
       <div class="card" style="cursor:pointer;text-align:center;" onclick="practiceTab='drills';switchTab('practice')">
         <div style="font-size:28px;">&#9889;</div>
         <div style="font-size:13px;font-weight:600;margin-top:6px;">Objection Drills</div>
@@ -2684,6 +2724,10 @@ function renderHome(){
       <div class="card" style="cursor:pointer;text-align:center;" onclick="practiceTab='roleplay';switchTab('practice')">
         <div style="font-size:28px;">&#127908;</div>
         <div style="font-size:13px;font-weight:600;margin-top:6px;">AI Role-Play</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="switchTab('media')">
+        <div style="font-size:28px;">&#127911;</div>
+        <div style="font-size:13px;font-weight:600;margin-top:6px;">Podcasts</div>
       </div>
     </div>`;
 
@@ -2694,7 +2738,7 @@ function renderHome(){
       const d=new Date(a.time);
       html+=`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
         <span style="color:var(--gray-l);">${a.action}</span>
-        <span style="color:var(--gold);font-weight:600;">+${a.pts}</span>
+        <span style="color:var(--gold);font-weight:600;">${a.pts?'+'+a.pts:''}</span>
       </div>`;
     });
   }
@@ -2728,7 +2772,7 @@ function renderTrainHTML(){
   });
   return html;
 }
-function renderTrain(){document.getElementById('pg-train').innerHTML=renderTrainHTML();}
+function renderTrain(){learnTab='modules';renderLearn();}
 
 function modItemHTML(m,done){
   const hasQuiz=!!QUIZZES[m.id];
@@ -3008,7 +3052,7 @@ function renderQuizHTML(){
   });
   return html;
 }
-function renderQuiz(){document.getElementById('pg-quiz').innerHTML=renderQuizHTML();}
+function renderQuiz(){learnTab='quizzes';renderLearn();}
 
 function showQuizTiers(modId){
   const mod=MODULES.find(m=>m.id===modId);
@@ -3250,7 +3294,7 @@ function renderFlashcardsHTML(){
   });
   return html;
 }
-function renderCards(){document.getElementById('pg-cards').innerHTML=renderFlashcardsHTML();}
+function renderCards(){learnTab='cards';renderLearn();}
 
 function startFlashcards(deckId){
   const deck=FLASHCARD_DECKS.find(d=>d.id===deckId);
@@ -3345,7 +3389,7 @@ function renderDrillsHTML(){
   });
   return html;
 }
-function renderDrills(){document.getElementById('pg-drills').innerHTML=renderDrillsHTML();}
+function renderDrills(){practiceTab='drills';renderPractice();}
 
 function startDrill(){
   drillState={drill:DRILLS[Math.floor(Math.random()*DRILLS.length)],answered:false};
@@ -3409,7 +3453,7 @@ function answerDrill(idx,correct,explanation){
   btns.style.cssText='text-align:center;margin-top:20px;';
   btns.innerHTML=`<button class="mv-complete-btn" style="margin:8px;" onclick="startDrill()">Next Drill</button>
     <button class="mv-nav-btn mv-prev" style="margin:8px;" onclick="practiceTab='drills';renderPractice()">Back to Drills</button>`;
-  document.getElementById('pg-drills').appendChild(btns);
+  document.getElementById('pg-practice').appendChild(btns);
 }
 
 // ---- ROLE-PLAY ----
@@ -4705,7 +4749,7 @@ function renderBoardHTML(){
 
   return html;
 }
-function renderBoard(){document.getElementById('pg-board').innerHTML=renderBoardHTML();}
+function renderBoard(){renderMore();}
 
 // ---- MEDIA LIBRARY ----
 const FB_STORAGE='https://firebasestorage.googleapis.com/v0/b/apex-sales-trainer.firebasestorage.app/o/Media%2F';
