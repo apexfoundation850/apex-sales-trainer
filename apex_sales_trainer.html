@@ -251,6 +251,27 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
 .slides-toggle-btn{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--dark3);color:var(--gray);text-align:center;transition:all .2s;}
 .slides-toggle-btn.active{background:var(--red);border-color:var(--red);color:#fff;}
 
+/* NOTIFICATION BELL */
+.notif-bell{position:relative;cursor:pointer;font-size:18px;padding:4px;}
+.notif-badge{position:absolute;top:-2px;right:-4px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;line-height:1;}
+.notif-panel{display:none;position:fixed;top:50px;right:10px;left:10px;max-height:70vh;background:var(--dark2);border:1px solid var(--border);border-radius:12px;z-index:200;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);}
+.notif-panel.on{display:block;}
+.notif-item{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item.unread{background:rgba(192,57,43,.06);}
+.notif-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.notif-overlay{display:none;position:fixed;inset:0;z-index:199;background:rgba(0,0,0,.3);}
+.notif-overlay.on{display:block;}
+/* SEARCH BAR */
+.search-bar{width:100%;padding:10px 14px 10px 36px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin-bottom:16px;box-sizing:border-box;}
+.search-bar:focus{outline:none;border-color:var(--red);}
+.search-bar::placeholder{color:var(--gray-d);}
+.search-wrap{position:relative;}
+.search-wrap::before{content:'\\1F50D';position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;}
+/* OFFLINE INDICATOR */
+.offline-bar{display:none;padding:6px 16px;background:var(--orange);color:#000;font-size:12px;font-weight:600;text-align:center;z-index:100;}
+.offline-bar.on{display:block;}
+
 /* MINI AUDIO PLAYER */
 .mini-player{display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(18,18,18,.98);border-top:1px solid var(--border);z-index:55;}
 .mini-player.on{display:flex;}
@@ -379,9 +400,13 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
       <div class="topbar-streak" id="tbStreak"></div>
       <div class="topbar-pts" id="tbPts"></div>
       <div class="topbar-level" id="tbLevel"></div>
+      <div class="notif-bell" id="notifBell" onclick="toggleNotifications()">&#128276;<span class="notif-badge" id="notifCount" style="display:none;">0</span></div>
       <div class="topbar-user" id="tbUser" onclick="switchRep()" title="Sign Out"></div>
     </div>
   </div>
+  <div class="offline-bar" id="offlineBar">&#9888; You're offline — changes will sync when reconnected</div>
+  <div class="notif-overlay" id="notifOverlay" onclick="toggleNotifications()"></div>
+  <div class="notif-panel" id="notifPanel"></div>
 
   <!-- MAIN CONTENT -->
   <div id="main">
@@ -2154,8 +2179,11 @@ async function loadUserData(uid){
       discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
       eqResult:d.eqResult||null, certificates:d.certificates||[],
       roleplayHistory:d.roleplayHistory||[],
-      welcomeCompleted:d.welcomeCompleted||false, experience:d.experience||null
+      welcomeCompleted:d.welcomeCompleted||false, experience:d.experience||null,
+      notifications:d.notifications||[]
     };
+    notifications=d.notifications||[];
+    updateNotifBadge();
     return d.role||'rep';
   }
   return null;
@@ -2299,14 +2327,8 @@ auth.onAuthStateChanged(async user=>{
       // Show/hide manager tab based on role
       // Manager access is now inside the More tab — no separate nav button needed
       updateTopBar();
+      initOfflineDetection();
       renderHome();
-      renderTrain();
-      renderQuiz();
-      renderCards();
-      renderDrills();
-      renderBoard();
-      renderAssessment();
-      if(isManager)renderManager();
       // Show welcome flow for first-time users (skip if they have any activity)
       const _r=reps[user.uid];
       const isNewUser=!_r.welcomeCompleted&&!_r.lastActive&&(_r.points||0)===0;
@@ -2457,6 +2479,7 @@ function checkBadges(){
       r.badges.push(b.id);
       saveState();
       setTimeout(()=>showToast(`Badge earned: ${b.name} ${b.icon}`,'toast-badge'),800);
+      addNotification(b.icon,`Badge earned: ${b.name}`,'');
     }
   });
 }
@@ -2502,6 +2525,7 @@ function renderLearn(){
     <div class="slides-toggle-btn ${learnTab==='cards'?'active':''}" onclick="learnTab='cards';renderLearn()">&#127183; Cards</div>
   </div>`;
   if(learnTab==='modules'){
+    html+=renderSearchBar();
     html+=renderTrainHTML();
   }else if(learnTab==='quizzes'){
     html+=renderQuizHTML();
@@ -2509,6 +2533,11 @@ function renderLearn(){
     html+=renderFlashcardsHTML();
   }
   document.getElementById('pg-learn').innerHTML=html;
+  // Preserve search focus
+  if(searchQuery&&learnTab==='modules'){
+    const input=document.querySelector('.search-bar');
+    if(input){input.focus();input.selectionStart=input.selectionEnd=input.value.length;}
+  }
 }
 
 function renderPractice(){
@@ -2760,16 +2789,28 @@ function renderHome(){
 
 // ---- TRAIN PAGE ----
 function renderTrainHTML(){
-  let html='<div class="sec-header">Core Sales Process</div>';
-  MODULES.filter(m=>m.section==='core').forEach(m=>{
-    const done=currentRep&&(reps[currentRep].completedModules||[]).includes(m.id);
-    html+=modItemHTML(m,done);
-  });
-  html+='<div class="sec-header">Job Type Education</div>';
-  MODULES.filter(m=>m.section==='jobtype').forEach(m=>{
-    const done=currentRep&&(reps[currentRep].completedModules||[]).includes(m.id);
-    html+=modItemHTML(m,done);
-  });
+  const filtered=searchModules(MODULES);
+  let html='';
+  const core=filtered.filter(m=>m.section==='core');
+  const jt=filtered.filter(m=>m.section==='jobtype');
+  if(searchQuery&&!filtered.length){
+    html+='<div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;">No modules match "'+searchQuery+'"</div>';
+    return html;
+  }
+  if(core.length){
+    html+='<div class="sec-header">Core Sales Process</div>';
+    core.forEach(m=>{
+      const done=currentRep&&(reps[currentRep].completedModules||[]).includes(m.id);
+      html+=modItemHTML(m,done);
+    });
+  }
+  if(jt.length){
+    html+='<div class="sec-header">Job Type Education</div>';
+    jt.forEach(m=>{
+      const done=currentRep&&(reps[currentRep].completedModules||[]).includes(m.id);
+      html+=modItemHTML(m,done);
+    });
+  }
   return html;
 }
 function renderTrain(){learnTab='modules';renderLearn();}
@@ -3249,8 +3290,8 @@ function renderQuizResults(){
     }
     saveState();
     const tierPts=tier==='expert'?75:tier==='advanced'?60:50;
-    if(passed)addPoints(tierPts,tierInfo.label+' quiz passed: '+mod.title);
-    else addPoints(15,'Quiz attempted: '+mod.title);
+    if(passed){addPoints(tierPts,tierInfo.label+' quiz passed: '+mod.title);addNotification('&#9989;',tierInfo.label+' quiz passed: '+mod.title+' ('+pct+'%)','');}
+    else{addPoints(15,'Quiz attempted: '+mod.title);addNotification('&#10060;','Quiz not passed: '+mod.title+' ('+pct+'%) — need 80%','');}
     checkBadges();
     // Check for certificates
     if(passed){checkCertificates();checkQuizAssignment(s.modId,tier,true);}
@@ -3799,6 +3840,8 @@ const motivatorProfiles = {
 let motivatorsState = null;
 
 function startMotivatorsSurvey() {
+  var cd=getAssessCooldown('motivators');
+  if(cd){return showToast('Motivators retake available in '+cd+' day'+(cd!==1?'s':''),'toast-streak');}
   motivatorsState = {
     current: 0,
     answers: new Array(motivatorsQuestions.length).fill(null) // each answer: {first: idx, second: idx} or null
@@ -4165,6 +4208,8 @@ const eqProfiles = {
 let eqState = null;
 
 function startEqSurvey() {
+  var cd=getAssessCooldown('eq');
+  if(cd){return showToast('EQ retake available in '+cd+' day'+(cd!==1?'s':''),'toast-streak');}
   eqState = {
     current: 0,
     answers: new Array(eqQuestions.length).fill(null)
@@ -4490,6 +4535,8 @@ function renderAssessment(){practiceTab='assess';renderPractice();}
 
 // ---- DISC SURVEY FUNCTIONS (existing) ----
 function startDiscSurvey(){
+  const cd=getAssessCooldown('disc');
+  if(cd){return showToast(`DISC retake available in ${cd} day${cd!==1?'s':''}`,'toast-streak');}
   discState={current:0,answers:new Array(20).fill(null)};
   renderDiscQuestion();
 }
@@ -4751,6 +4798,133 @@ function renderBoardHTML(){
 }
 function renderBoard(){renderMore();}
 
+// ---- NOTIFICATIONS ----
+let notifications=[];
+function addNotification(icon,text,action){
+  const n={id:Date.now(),icon,text,action:action||'',time:new Date().toISOString(),read:false};
+  notifications.unshift(n);
+  if(notifications.length>50)notifications=notifications.slice(0,50);
+  updateNotifBadge();
+  // Save to Firestore
+  if(currentUid){
+    db.collection('users').doc(currentUid).update({notifications:notifications.slice(0,50)}).catch(e=>console.warn(e));
+  }
+}
+
+function updateNotifBadge(){
+  const unread=notifications.filter(n=>!n.read).length;
+  const badge=document.getElementById('notifCount');
+  if(badge){
+    badge.textContent=unread;
+    badge.style.display=unread>0?'flex':'none';
+  }
+}
+
+function toggleNotifications(){
+  const panel=document.getElementById('notifPanel');
+  const overlay=document.getElementById('notifOverlay');
+  const isOpen=panel.classList.contains('on');
+  if(isOpen){
+    panel.classList.remove('on');
+    overlay.classList.remove('on');
+  }else{
+    renderNotifications();
+    panel.classList.add('on');
+    overlay.classList.add('on');
+    // Mark all as read
+    notifications.forEach(n=>n.read=true);
+    updateNotifBadge();
+    if(currentUid)db.collection('users').doc(currentUid).update({notifications}).catch(e=>console.warn(e));
+  }
+}
+
+function renderNotifications(){
+  const panel=document.getElementById('notifPanel');
+  if(!notifications.length){
+    panel.innerHTML='<div style="padding:24px;text-align:center;color:var(--gray);font-size:13px;">No notifications yet</div>';
+    return;
+  }
+  let html='<div style="padding:12px 16px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--border);">Notifications</div>';
+  notifications.slice(0,20).forEach(n=>{
+    const ago=timeAgo(new Date(n.time));
+    html+=`<div class="notif-item ${n.read?'':'unread'}" ${n.action?`onclick="${n.action};toggleNotifications()"`:''}>
+      <div class="notif-icon">${n.icon}</div>
+      <div style="flex:1;">
+        <div style="color:var(--gray-l);">${n.text}</div>
+        <div style="font-size:10px;color:var(--gray-d);margin-top:2px;">${ago}</div>
+      </div>
+    </div>`;
+  });
+  panel.innerHTML=html;
+}
+
+function timeAgo(date){
+  const s=Math.floor((Date.now()-date)/1000);
+  if(s<60)return 'Just now';
+  if(s<3600)return Math.floor(s/60)+'m ago';
+  if(s<86400)return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+
+// ---- CONTENT SEARCH ----
+let searchQuery='';
+function renderSearchBar(){
+  return `<div class="search-wrap"><input class="search-bar" type="text" placeholder="Search modules, slides, topics..." value="${searchQuery}" oninput="searchQuery=this.value;renderLearn()"></div>`;
+}
+
+function searchModules(modules){
+  if(!searchQuery.trim())return modules;
+  const q=searchQuery.toLowerCase();
+  return modules.filter(m=>{
+    if(m.title.toLowerCase().includes(q))return true;
+    if(m.desc&&m.desc.toLowerCase().includes(q))return true;
+    if(m.slides&&m.slides.some(s=>s.t.toLowerCase().includes(q)||s.c.toLowerCase().includes(q)))return true;
+    return false;
+  });
+}
+
+// ---- ASSESSMENT RETAKE COOLDOWN ----
+const ASSESS_COOLDOWN_DAYS=7;
+function getAssessCooldown(type){
+  if(!currentRep)return null;
+  const r=reps[currentRep];
+  let result=null;
+  if(type==='disc')result=r.discResult;
+  else if(type==='motivators')result=r.motivatorsResult;
+  else if(type==='eq')result=r.eqResult;
+  if(!result||!result.completedAt)return null;
+  const completedAt=new Date(result.completedAt);
+  const cooldownEnd=new Date(completedAt.getTime()+ASSESS_COOLDOWN_DAYS*86400000);
+  const now=new Date();
+  if(now>=cooldownEnd)return null; // Cooldown expired
+  const daysLeft=Math.ceil((cooldownEnd-now)/86400000);
+  return daysLeft;
+}
+
+// ---- OFFLINE MODE ----
+function initOfflineDetection(){
+  function updateOnlineStatus(){
+    const bar=document.getElementById('offlineBar');
+    if(bar){
+      if(navigator.onLine){
+        bar.classList.remove('on');
+      }else{
+        bar.classList.add('on');
+      }
+    }
+  }
+  window.addEventListener('online',updateOnlineStatus);
+  window.addEventListener('offline',updateOnlineStatus);
+  updateOnlineStatus();
+  // Enable Firestore offline persistence
+  if(db&&db.enablePersistence){
+    db.enablePersistence({synchronizeTabs:true}).catch(e=>{
+      if(e.code==='failed-precondition')console.warn('Offline persistence: multiple tabs open');
+      else if(e.code==='unimplemented')console.warn('Offline persistence: browser not supported');
+    });
+  }
+}
+
 // ---- MEDIA LIBRARY ----
 const FB_STORAGE='https://firebasestorage.googleapis.com/v0/b/apex-sales-trainer.firebasestorage.app/o/Media%2F';
 const fbMedia=(f)=>FB_STORAGE+encodeURIComponent(f)+'?alt=media';
@@ -4985,6 +5159,7 @@ function renderManager(){
       <div class="mgr-tab ${mgrTab==='assign'?'on':''}" onclick="mgrTab='assign';renderManager()">Assign</div>
       <div class="mgr-tab ${mgrTab==='grades'?'on':''}" onclick="mgrTab='grades';renderManager()">Grades</div>
       <div class="mgr-tab ${mgrTab==='roleplay'?'on':''}" onclick="mgrTab='roleplay';renderManager()">Role-Play</div>
+      <div class="mgr-tab ${mgrTab==='analytics'?'on':''}" onclick="mgrTab='analytics';renderManager()">Analytics</div>
       <div class="mgr-tab ${mgrTab==='disc'?'on':''}" onclick="mgrTab='disc';renderManager()">Profiles</div>
       <div class="mgr-tab ${mgrTab==='manage'?'on':''}" onclick="mgrTab='manage';renderManager()">Settings</div>
     </div>`;
@@ -5320,6 +5495,135 @@ function renderManager(){
       });
       html+=`</div></div>`;
     });
+  }
+
+  if(mgrTab==='analytics'){
+    const now=new Date();
+    const repEntries=Object.entries(reps).filter(([_,r])=>r.role!=='manager');
+
+    // Weekly activity over last 4 weeks
+    html+=`<div class="sec-header">Team Activity (Last 4 Weeks)</div><div class="card" style="padding:16px;">`;
+    for(let w=3;w>=0;w--){
+      const weekStart=new Date(now-((w+1)*7)*86400000);
+      const weekEnd=new Date(now-(w*7)*86400000);
+      const weekLabel=w===0?'This Week':w===1?'Last Week':w+' Weeks Ago';
+      let totalActions=0,totalRps=0;
+      repEntries.forEach(([_,r])=>{
+        const log=r.activityLog||[];
+        totalActions+=log.filter(a=>{const d=new Date(a.time);return d>=weekStart&&d<weekEnd;}).length;
+        totalRps+=(r.roleplayHistory||[]).filter(rp=>{const d=new Date(rp.date);return d>=weekStart&&d<weekEnd;}).length;
+      });
+      const barPct=Math.min(totalActions*2,100);
+      html+=`<div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+          <span style="color:var(--gray-l);">${weekLabel}</span>
+          <span style="color:var(--white);font-weight:600;">${totalActions} actions <span style="color:var(--purple);">(${totalRps} RP)</span></span>
+        </div>
+        <div class="pbar" style="height:6px;"><div class="pbar-fill" style="width:${barPct}%;background:var(--blue);"></div></div>
+      </div>`;
+    }
+    html+=`</div>`;
+
+    // Completion velocity — modules completed per rep
+    html+=`<div class="sec-header">Completion Velocity</div>`;
+    repEntries.forEach(([id,r])=>{
+      const mods=(r.completedModules||[]).length;
+      const quizzes=Object.keys(r.quizScores||{}).length;
+      const drills=r.drillsCompleted||0;
+      const rps=(r.roleplayHistory||[]).length;
+      const total=mods+quizzes+drills+rps;
+      const log=r.activityLog||[];
+      const firstActivity=log.length?new Date(log[log.length-1].time):null;
+      const daysActive=firstActivity?Math.max(1,Math.ceil((now-firstActivity)/86400000)):0;
+      const velocity=daysActive?Math.round(total/daysActive*10)/10:0;
+
+      html+=`<div class="card" style="margin-bottom:8px;cursor:pointer;" onclick="viewRep('${id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-size:14px;font-weight:600;color:var(--white);">${r.name}</div>
+          <div style="font-size:18px;font-weight:700;color:${velocity>=3?'var(--green)':velocity>=1?'var(--orange)':'var(--red)'};">${velocity}<span style="font-size:10px;color:var(--gray);font-weight:400;">/day</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11px;text-align:center;">
+          <div><div style="font-weight:700;color:var(--blue);">${mods}</div><div style="color:var(--gray);">Modules</div></div>
+          <div><div style="font-weight:700;color:var(--green);">${quizzes}</div><div style="color:var(--gray);">Quizzes</div></div>
+          <div><div style="font-weight:700;color:var(--orange);">${drills}</div><div style="color:var(--gray);">Drills</div></div>
+          <div><div style="font-weight:700;color:var(--purple);">${rps}</div><div style="color:var(--gray);">Role-Plays</div></div>
+        </div>
+        <div style="font-size:10px;color:var(--gray-d);margin-top:6px;">${daysActive} days active &middot; ${total} total completions</div>
+      </div>`;
+    });
+
+    // Quiz performance trends
+    html+=`<div class="sec-header">Quiz Performance</div><div class="card" style="padding:16px;">`;
+    const tiers=['foundation','advanced','expert'];
+    tiers.forEach(tier=>{
+      const info=TIER_INFO[tier];
+      let totalScore=0,count=0;
+      repEntries.forEach(([_,r])=>{
+        Object.entries(r.quizScores||{}).forEach(([key,score])=>{
+          const isTier=tier==='foundation'?!key.includes('_'):key.endsWith('_'+tier);
+          if(isTier){totalScore+=score.best;count++;}
+        });
+      });
+      const avg=count?Math.round(totalScore/count):0;
+      const color=avg>=80?'var(--green)':avg>=60?'var(--orange)':count?'var(--red)':'var(--gray-d)';
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:13px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${info.color};margin-right:8px;"></span>${info.label}</div>
+        <div><span style="font-size:16px;font-weight:700;color:${color};">${count?avg+'%':'—'}</span> <span style="font-size:11px;color:var(--gray);">(${count} taken)</span></div>
+      </div>`;
+    });
+    html+=`</div>`;
+
+    // Role-play skill breakdown
+    html+=`<div class="sec-header">Role-Play Skill Breakdown</div><div class="card" style="padding:16px;">`;
+    const skills=['empathy','diagnosis','evidence','technique','close'];
+    const skillTotals={};let skillCount=0;
+    skills.forEach(s=>skillTotals[s]=0);
+    repEntries.forEach(([_,r])=>{
+      (r.roleplayHistory||[]).forEach(rp=>{
+        if(rp.scores){
+          skills.forEach(s=>{if(rp.scores[s]!==undefined)skillTotals[s]+=rp.scores[s];});
+          skillCount++;
+        }
+      });
+    });
+    if(skillCount){
+      skills.forEach(s=>{
+        const avg=Math.round(skillTotals[s]/skillCount*10)/10;
+        const color=avg>=4?'var(--green)':avg>=3?'var(--orange)':'var(--red)';
+        const pct=Math.round(avg/5*100);
+        html+=`<div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+            <span style="color:var(--gray-l);text-transform:capitalize;">${s}</span>
+            <span style="font-weight:700;color:${color};">${avg}/5</span>
+          </div>
+          <div class="pbar" style="height:6px;"><div class="pbar-fill" style="width:${pct}%;background:${color};"></div></div>
+        </div>`;
+      });
+    }else{
+      html+=`<div style="text-align:center;color:var(--gray);font-size:13px;padding:12px;">No role-play data yet</div>`;
+    }
+    html+=`</div>`;
+
+    // Session engagement
+    html+=`<div class="sec-header">Avg Session Length</div><div class="card" style="padding:16px;">`;
+    repEntries.forEach(([id,r])=>{
+      const log=r.activityLog||[];
+      if(!log.length){html+=`<div style="font-size:12px;color:var(--gray);padding:4px 0;">${r.name}: No data</div>`;return;}
+      // Estimate sessions by grouping activity within 30 min windows
+      let sessions=0,totalMins=0,lastTime=null;
+      log.slice().reverse().forEach(a=>{
+        const t=new Date(a.time).getTime();
+        if(!lastTime||t-lastTime>30*60000){sessions++;lastTime=t;}
+        else{totalMins+=Math.round((t-lastTime)/60000);}
+        lastTime=t;
+      });
+      const avgMins=sessions?Math.round(totalMins/sessions):0;
+      html+=`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <span style="color:var(--gray-l);">${r.name}</span>
+        <span style="color:var(--white);font-weight:600;">${avgMins} min <span style="color:var(--gray);">(${sessions} sessions)</span></span>
+      </div>`;
+    });
+    html+=`</div>`;
   }
 
   if(mgrTab==='disc'){
@@ -5806,6 +6110,7 @@ function submitAssignment(){
   }
 
   showToast(`Created ${count} assignment(s) for ${targetReps.length} rep(s)`,'toast-success');
+  addNotification('&#128203;',`Assigned ${count} item(s) to ${targetReps.length} rep(s)`,'');
   renderManager();
 }
 
