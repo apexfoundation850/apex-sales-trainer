@@ -3511,7 +3511,8 @@ function renderDrillScenario(){
     </div>
     <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:12px;">Choose the best response:</div>`;
   shuffled.forEach((o,i)=>{
-    html+=`<button class="quiz-opt" id="dopt-${i}" onclick="answerDrill(${i},${o.correct},'${o.e.replace(/'/g,"\\'")}')">${o.t}</button>`;
+    const safeExp=o.e.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/`/g,'&#96;');
+    html+=`<button class="quiz-opt" id="dopt-${i}" onclick="answerDrill(${i},${o.correct},'${safeExp}')">${o.t}</button>`;
   });
   html+=`<div class="quiz-explain" id="drillExplain"></div>`;
   document.getElementById('pg-practice').innerHTML=html;
@@ -3555,7 +3556,7 @@ function answerDrill(idx,correct,explanation){
 }
 
 // ---- ROLE-PLAY ----
-let rpState={scenario:null,loading:false};
+let rpState={scenario:null,loading:false,feedback:null};
 
 function renderRolePlayHTML(){
   let html='';
@@ -3907,6 +3908,7 @@ function startMotivatorsSurvey() {
 }
 
 function renderMotivatorsQuestion() {
+  if(!motivatorsState)return;
   const s = motivatorsState;
   if (s.current >= motivatorsQuestions.length) { return calculateMotivatorScores(); }
   const q = motivatorsQuestions[s.current];
@@ -4275,6 +4277,7 @@ function startEqSurvey() {
 }
 
 function renderEqQuestion() {
+  if(!eqState)return;
   var s = eqState;
   if (s.current >= eqQuestions.length) { return calculateEqScores(); }
   var q = eqQuestions[s.current];
@@ -4599,6 +4602,7 @@ function startDiscSurvey(){
 }
 
 function renderDiscQuestion(){
+  if(!discState)return;
   const s=discState;
   if(s.current>=discQuestions.length){return calculateDiscScores();}
   const q=discQuestions[s.current];
@@ -6168,7 +6172,7 @@ function submitAssignment(){
   const type=document.getElementById('assignType').value;
   if(!repId)return showToast('Select a rep','toast-streak');
 
-  const targetReps=repId==='__all__'?Object.keys(reps):[repId];
+  const targetReps=repId==='__all__'?Object.keys(reps).filter(id=>!reps[id].deleted):[repId];
   let count=0;
 
   if(type==='module'){
@@ -6454,11 +6458,13 @@ async function repairAllData(){
   }
 
   logHtml=`<div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px;">${totalFixed} rep(s) repaired</div>`+logHtml;
-  if(logEl)logEl.innerHTML=logHtml;
   showToast(`Repaired data for ${totalFixed} rep(s)`,'toast-success');
-  // Reload fresh data
+  // Reload fresh data and re-render
   await loadAllUsers();
   renderManager();
+  // Write log AFTER re-render so the repairLog div exists again
+  const logEl2=document.getElementById('repairLog');
+  if(logEl2)logEl2.innerHTML=logHtml;
 }
 
 // ---- MANUAL REP EDIT FUNCTIONS ----
