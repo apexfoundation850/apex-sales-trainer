@@ -2162,20 +2162,28 @@ function saveState(){
   },2000);
 }
 
+// Immediate save for critical state changes (bypasses debounce)
+function immediateSave(){
+  if(!currentUid||!currentRep)return;
+  const r=reps[currentRep];
+  if(!r)return;
+  db.collection('users').doc(currentUid).update({
+    points:r.points||0, streak:r.streak||0, lastActive:r.lastActive||null,
+    completedModules:r.completedModules||[], quizScores:r.quizScores||{},
+    fcReviews:r.fcReviews||0, drillsCompleted:r.drillsCompleted||0,
+    drillsPerfect:r.drillsPerfect||0, badges:r.badges||[],
+    activityLog:(r.activityLog||[]).slice(0,100),
+    discResult:r.discResult||null, motivatorsResult:r.motivatorsResult||null,
+    eqResult:r.eqResult||null, certificates:r.certificates||[],
+    roleplayHistory:(r.roleplayHistory||[]).slice(0,50)
+  }).catch(e=>console.warn('Immediate save failed:',e));
+}
+
 // Force save when user leaves/hides the page (mobile tab close, screen off)
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden'&&currentUid&&currentRep){
+  if(document.visibilityState==='hidden'){
     clearTimeout(_saveTimer);
-    const r=reps[currentRep];
-    if(r){
-      // Use sendBeacon for reliability on mobile, fallback to sync update
-      const data={points:r.points||0,streak:r.streak||0,lastActive:r.lastActive||null,
-        completedModules:r.completedModules||[],quizScores:r.quizScores||{},
-        fcReviews:r.fcReviews||0,drillsCompleted:r.drillsCompleted||0,
-        drillsPerfect:r.drillsPerfect||0,badges:r.badges||[],
-        activityLog:(r.activityLog||[]).slice(0,100)};
-      db.collection('users').doc(currentUid).update(data).catch(e=>console.warn(e));
-    }
+    immediateSave();
   }
 });
 
@@ -2493,6 +2501,7 @@ function addPoints(pts,reason){
   r.activityLog.unshift({action:reason,pts,time:new Date().toISOString()});
   if(r.activityLog.length>100)r.activityLog=r.activityLog.slice(0,100);
   saveState();
+  immediateSave();
   showToast(`+${pts} points: ${reason}`,'toast-points');
   checkBadges();
   updateTopBar();
@@ -3040,6 +3049,8 @@ function completeModule(id){
       }
     });
     saveState();
+    // Immediate save — don't rely on debounce
+    immediateSave();
     addPoints(100,'Completed module');
     renderTrain();renderHome();
   }
