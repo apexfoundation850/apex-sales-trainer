@@ -2162,6 +2162,23 @@ function saveState(){
   },2000);
 }
 
+// Force save when user leaves/hides the page (mobile tab close, screen off)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'&&currentUid&&currentRep){
+    clearTimeout(_saveTimer);
+    const r=reps[currentRep];
+    if(r){
+      // Use sendBeacon for reliability on mobile, fallback to sync update
+      const data={points:r.points||0,streak:r.streak||0,lastActive:r.lastActive||null,
+        completedModules:r.completedModules||[],quizScores:r.quizScores||{},
+        fcReviews:r.fcReviews||0,drillsCompleted:r.drillsCompleted||0,
+        drillsPerfect:r.drillsPerfect||0,badges:r.badges||[],
+        activityLog:(r.activityLog||[]).slice(0,100)};
+      db.collection('users').doc(currentUid).update(data).catch(e=>console.warn(e));
+    }
+  }
+});
+
 // ---- LOAD FROM FIRESTORE ----
 async function loadUserData(uid){
   const doc=await db.collection('users').doc(uid).get({source:'server'}).catch(()=>db.collection('users').doc(uid).get());
@@ -2452,6 +2469,19 @@ function updateStreak(){
   else if(r.lastActive!==today){r.streak=1;}
   r.lastActive=today;
   saveState();
+  // Immediate save for lastActive (don't rely on debounce — mobile may kill the tab)
+  if(currentUid)db.collection('users').doc(currentUid).update({lastActive:today,streak:r.streak}).catch(e=>console.warn(e));
+}
+
+// Derive lastActive from activityLog if the field is missing
+function getLastActive(r){
+  if(r.lastActive)return r.lastActive;
+  const log=r.activityLog||[];
+  if(log.length){
+    const latest=new Date(log[0].time);
+    return latest.toDateString();
+  }
+  return null;
 }
 
 // ---- POINTS & GAMIFICATION ----
@@ -5159,7 +5189,7 @@ function renderManager(){
     const totalReps=Object.keys(reps).length;
     const avgPts=totalReps?Math.round(Object.values(reps).reduce((a,r)=>a+(r.points||0),0)/totalReps):0;
     const avgCompletion=totalReps?Math.round(Object.values(reps).reduce((a,r)=>a+((r.completedModules||[]).length/MODULES.length*100),0)/totalReps):0;
-    const activeToday=Object.values(reps).filter(r=>r.lastActive===new Date().toDateString()).length;
+    const activeToday=Object.values(reps).filter(r=>getLastActive(r)===new Date().toDateString()).length;
     const now=new Date();const weekAgo=new Date(now-7*86400000);const twoWeeksAgo=new Date(now-14*86400000);
 
     // Pending assignments count
@@ -5184,7 +5214,8 @@ function renderManager(){
     // Inactive reps (no activity in 7+ days)
     Object.entries(reps).forEach(([id,r])=>{
       if(r.role==='manager')return;
-      const lastAct=r.lastActive?new Date(r.lastActive):null;
+      const la=getLastActive(r);
+      const lastAct=la?new Date(la):null;
       const daysSince=lastAct?Math.floor((now-lastAct)/86400000):999;
       if(daysSince>=7)alerts.push({type:'inactive',name:r.name,id,days:daysSince,color:'var(--red)'});
     });
@@ -5247,7 +5278,8 @@ function renderManager(){
     repEntries.forEach(([id,r])=>{
       const lvl=getLevel(r.points||0);
       const pct=Math.round((r.completedModules||[]).length/MODULES.length*100);
-      const lastAct=r.lastActive?new Date(r.lastActive):null;
+      const la=getLastActive(r);
+      const lastAct=la?new Date(la):null;
       const daysSince=lastAct?Math.floor((now-lastAct)/86400000):999;
       const statusColor=daysSince<=1?'var(--green)':daysSince<=3?'var(--green)':daysSince<=7?'var(--orange)':'var(--red)';
       const statusText=daysSince===0?'Today':daysSince===1?'Yesterday':daysSince<=7?daysSince+'d ago':daysSince===999?'Never':''+daysSince+'d ago';
@@ -5281,7 +5313,7 @@ function renderManager(){
     html+=`<div style="font-size:11px;color:var(--gray-d);margin-bottom:8px;">Tap any rep for full detail view.</div>`;
     Object.entries(reps).forEach(([id,r])=>{
       const lvl=getLevel(r.points||0);
-      const lastAct=r.lastActive||'Never';
+      const lastAct=getLastActive(r)||'Never';
       html+=`<div class="card" style="cursor:pointer;" onclick="viewRep('${id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div style="font-size:16px;font-weight:700;">${r.name} <span style="font-size:11px;color:var(--gray-d);">&rsaquo;</span></div>
@@ -5761,7 +5793,7 @@ function renderRepDetailHTML(id){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
       <div>
         <div style="font-size:22px;font-weight:800;color:var(--white);">${r.name}</div>
-        <div style="font-size:12px;color:var(--gray);margin-top:4px;">${r.role==='manager'?'Manager':'Rep'} &middot; Last active: ${r.lastActive||'Never'}</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px;">${r.role==='manager'?'Manager':'Rep'} &middot; Last active: ${getLastActive(r)||'Never'}</div>
       </div>
       <span class="lb-level ${lvl.cls}">${lvl.name}</span>
     </div>
@@ -6163,7 +6195,7 @@ function exportCSV(){
     const qA=qk.length?Math.round(qk.reduce((a,k)=>a+qs[k].best,0)/qk.length):0;
     const rh=r.roleplayHistory||[];
     const ra=rh.length?Math.round(rh.reduce((a,p)=>a+(p.score||0),0)/rh.length):0;
-    rows.push(['"'+(r.name||'')+'"',r.role||'rep',r.points||0,r.streak||0,(r.completedModules||[]).length+'/'+MODULES.length,qP,qA,r.drillsCompleted||0,r.fcReviews||0,rh.length,ra,r.discResult?r.discResult.primary:'',r.motivatorsResult?r.motivatorsResult.primary:'',r.eqResult?r.eqResult.overall:'',r.lastActive||''].join(','));
+    rows.push(['"'+(r.name||'')+'"',r.role||'rep',r.points||0,r.streak||0,(r.completedModules||[]).length+'/'+MODULES.length,qP,qA,r.drillsCompleted||0,r.fcReviews||0,rh.length,ra,r.discResult?r.discResult.primary:'',r.motivatorsResult?r.motivatorsResult.primary:'',r.eqResult?r.eqResult.overall:'',getLastActive(r)||''].join(','));
   });
   const blob=new Blob([rows.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
