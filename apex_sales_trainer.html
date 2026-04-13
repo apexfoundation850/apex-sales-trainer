@@ -6273,37 +6273,46 @@ function resetRep(id){
 
 // ---- DATA REPAIR ----
 async function repairAllData(){
-  if(!confirm('This will scan all reps\' activity logs and reconstruct missing data. Continue?'))return;
+  if(!confirm('This will scan all reps\' activity logs and force-reconstruct data from their history. Continue?'))return;
   const logEl=document.getElementById('repairLog');
   let logHtml='';
   let totalFixed=0;
 
-  for(const [id,r] of Object.entries(reps)){
-    const log=r.activityLog||[];
-    if(!log.length)continue;
+  // First, reload fresh data directly from Firestore
+  const freshSnap=await db.collection('users').get({source:'server'}).catch(()=>db.collection('users').get());
+
+  for(const doc of freshSnap.docs){
+    const d=doc.data();
+    const id=doc.id;
+    if(d.deleted)continue;
+    const log=d.activityLog||[];
     const fixes=[];
     const updates={};
 
-    // 1. Reconstruct lastActive from most recent log entry
-    if(!r.lastActive&&log.length){
-      const latest=new Date(log[0].time);
-      updates.lastActive=latest.toDateString();
-      fixes.push('lastActive');
+    // 1. Always reconstruct lastActive from log if missing or stale
+    const currentLA=d.lastActive||null;
+    if(log.length){
+      const latestTime=new Date(log[0].time);
+      const derivedLA=latestTime.toDateString();
+      if(!currentLA){
+        updates.lastActive=derivedLA;
+        fixes.push('lastActive → '+derivedLA);
+      }
     }
 
-    // 2. Reconstruct points from activity log
+    // 2. Recalculate points from activity log and use the higher value
     const logPoints=log.reduce((a,e)=>a+(e.pts||0),0);
-    if(logPoints>0&&(!r.points||r.points<logPoints)){
+    const currentPts=d.points||0;
+    if(logPoints>currentPts){
       updates.points=logPoints;
-      fixes.push('points ('+r.points+'→'+logPoints+')');
+      fixes.push('points ('+currentPts+'→'+logPoints+')');
     }
 
     // 3. Reconstruct quizScores from activity log
-    const qs=r.quizScores||{};
+    const qs=d.quizScores||{};
     let qsChanged=false;
     log.forEach(entry=>{
       const a=entry.action||'';
-      // Match "Foundation quiz passed: Module Name" or "Advanced quiz passed: Module Name"
       const passMatch=a.match(/^(Foundation|Advanced|Expert) quiz passed: (.+)$/);
       if(passMatch){
         const tier=passMatch[1].toLowerCase();
@@ -6323,64 +6332,67 @@ async function repairAllData(){
       fixes.push('quizScores');
     }
 
-    // 4. Reconstruct completedModules from "Completed module" log entries
-    // Since the log says "Completed module" without the name, we infer from
-    // modules that were opened AND have a quiz pass (reasonable proxy)
-    const cm=r.completedModules||[];
+    // 4. Reconstruct completedModules
+    const cm=[...(d.completedModules||[])];
     let cmChanged=false;
-    const openedMods=new Set();
-    log.forEach(entry=>{
-      const m2=entry.action&&entry.action.match(/^Opened: (.+)$/);
-      if(m2){
-        const mod=MODULES.find(m=>m.title===m2[1]);
-        if(mod)openedMods.add(mod.id);
-      }
-    });
-    // If they passed a Foundation quiz for a module, they effectively completed it
+    // If they passed a Foundation quiz for a module, mark it complete
     Object.keys(qs).forEach(key=>{
-      // Foundation keys are just the modId (no suffix)
       const mod=MODULES.find(m=>m.id===key);
       if(mod&&qs[key].best>=80&&!cm.includes(key)){
         cm.push(key);
         cmChanged=true;
       }
     });
+    // Also check for "Completed module" entries with 100 pts
+    log.forEach(entry=>{
+      if(entry.action==='Completed module'&&entry.pts===100){
+        // Try to find which module by checking what was opened just before
+        const idx=log.indexOf(entry);
+        for(let i=idx+1;i<Math.min(idx+5,log.length);i++){
+          const openMatch=(log[i].action||'').match(/^Opened: (.+)$/);
+          if(openMatch){
+            const mod=MODULES.find(m=>m.title===openMatch[1]);
+            if(mod&&!cm.includes(mod.id)){cm.push(mod.id);cmChanged=true;}
+            break;
+          }
+        }
+      }
+    });
     if(cmChanged){
       updates.completedModules=cm;
-      fixes.push('completedModules (+'+cm.filter(m=>!(r.completedModules||[]).includes(m)).length+')');
+      const added=cm.length-(d.completedModules||[]).length;
+      fixes.push('completedModules (+'+added+')');
     }
 
-    // 5. Reconstruct drill/flashcard counts from log
-    let drillCount=0,fcCount=0;
+    // 5. Reconstruct drill counts
+    let drillCount=0;
     log.forEach(entry=>{
-      if(entry.action&&entry.action.includes('drill'))drillCount++;
-      if(entry.action&&(entry.action.includes('card')||entry.action.includes('Flashcard')))fcCount++;
+      const a=entry.action||'';
+      if(a.includes('Drill correct')||a.includes('drill')||a.includes('Drill'))drillCount++;
     });
-    if(drillCount>(r.drillsCompleted||0)){
+    if(drillCount>(d.drillsCompleted||0)){
       updates.drillsCompleted=drillCount;
-      fixes.push('drillsCompleted');
+      fixes.push('drills ('+((d.drillsCompleted)||0)+'→'+drillCount+')');
     }
 
-    // Apply fixes to Firestore
+    // Apply fixes
     if(Object.keys(updates).length){
       try{
         await db.collection('users').doc(id).update(updates);
-        // Update local state
-        Object.assign(reps[id],updates);
-        if(updates.completedModules)reps[id].completedModules=updates.completedModules;
-        if(updates.quizScores)reps[id].quizScores=updates.quizScores;
+        // Update local reps
+        if(reps[id])Object.assign(reps[id],updates);
         totalFixed++;
         logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
-          <span style="color:var(--green);">&#9989;</span> <strong>${r.name}</strong>: ${fixes.join(', ')}
+          <span style="color:var(--green);">&#9989;</span> <strong>${d.name||id}</strong>: ${fixes.join(', ')}
         </div>`;
       }catch(e){
         logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
-          <span style="color:var(--red);">&#10060;</span> <strong>${r.name}</strong>: ${e.message}
+          <span style="color:var(--red);">&#10060;</span> <strong>${d.name||id}</strong>: Write failed — ${e.code||e.message}
         </div>`;
       }
     }else{
       logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
-        <span style="color:var(--gray);">&#9644;</span> <strong>${r.name}</strong>: No repairs needed
+        <span style="color:var(--gray);">&#9644;</span> <strong>${d.name||id}</strong>: No repairs needed
       </div>`;
     }
   }
@@ -6388,6 +6400,8 @@ async function repairAllData(){
   logHtml=`<div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px;">${totalFixed} rep(s) repaired</div>`+logHtml;
   if(logEl)logEl.innerHTML=logHtml;
   showToast(`Repaired data for ${totalFixed} rep(s)`,'toast-success');
+  // Reload fresh data
+  await loadAllUsers();
   renderManager();
 }
 
