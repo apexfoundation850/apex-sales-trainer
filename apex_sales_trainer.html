@@ -3511,25 +3511,27 @@ function renderDrillScenario(){
     </div>
     <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:12px;">Choose the best response:</div>`;
   shuffled.forEach((o,i)=>{
-    const safeExp=o.e.replace(/&/g,'&amp;').replace(/'/g,'&#39;').replace(/"/g,'&quot;').replace(/`/g,'&#96;');
-    html+=`<button class="quiz-opt" id="dopt-${i}" onclick="answerDrill(${i},${o.correct},'${safeExp}')">${o.t}</button>`;
+    html+=`<button class="quiz-opt" id="dopt-${i}" data-correct="${o.correct}" data-explain="${o.e.replace(/"/g,'&quot;')}" onclick="answerDrill(${i})">${o.t}</button>`;
   });
   html+=`<div class="quiz-explain" id="drillExplain"></div>`;
   document.getElementById('pg-practice').innerHTML=html;
 }
 
-function answerDrill(idx,correct,explanation){
+function answerDrill(idx){
   if(drillState.answered)return;
   drillState.answered=true;
 
+  const btn=document.getElementById('dopt-'+idx);
+  const correct=btn.dataset.correct==='true';
+  const explanation=btn.dataset.explain;
+
   // Highlight selected answer
-  document.getElementById('dopt-'+idx).classList.add(correct?'correct':'wrong');
+  btn.classList.add(correct?'correct':'wrong');
 
   // If wrong, also highlight the correct answer
   if(!correct){
-    document.querySelectorAll('.quiz-opt').forEach((b,i)=>{
-      const onclick=b.getAttribute('onclick')||'';
-      if(onclick.includes(',true,'))b.classList.add('correct');
+    document.querySelectorAll('.quiz-opt').forEach(b=>{
+      if(b.dataset.correct==='true')b.classList.add('correct');
     });
   }
 
