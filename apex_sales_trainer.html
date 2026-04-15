@@ -420,18 +420,20 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
   <!-- MINI AUDIO PLAYER -->
   <div class="mini-player" id="miniPlayer" style="position:relative;">
     <div class="mini-player-progress" id="mpProgress" onclick="seekAudio(event)"><div class="mini-player-progress-fill" id="mpProgressFill"></div></div>
-    <div class="mini-player-art" id="mpArt">&#127911;</div>
-    <div class="mini-player-info">
+    <div class="mini-player-art" id="mpArt" onclick="toggleExpandedPlayer()">&#127911;</div>
+    <div class="mini-player-info" onclick="toggleExpandedPlayer()">
       <div class="mini-player-title" id="mpTitle">—</div>
       <div class="mini-player-module" id="mpModule">—</div>
     </div>
     <div class="mini-player-controls">
-      <button class="mini-player-btn" id="mpPrev" onclick="prevTrack()">&#9198;</button>
+      <button class="mini-player-btn" onclick="skipBack()" title="Back 15s" style="font-size:14px;">-15</button>
       <button class="mini-player-btn" id="mpPlayPause" onclick="togglePlayPause()" style="font-size:26px;">&#9654;</button>
-      <button class="mini-player-btn" id="mpNext" onclick="nextTrack()">&#9197;</button>
+      <button class="mini-player-btn" onclick="skipForward()" title="Forward 30s" style="font-size:14px;">+30</button>
     </div>
     <button class="mini-player-close" onclick="closePlayer()">&#10005;</button>
   </div>
+  <!-- Expanded player panel -->
+  <div id="expandedPlayer" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(18,18,18,.99);border-top:1px solid var(--border);z-index:60;padding:16px 20px 24px;"></div>
   <audio id="audioEl" preload="metadata"></audio>
 
   <!-- BOTTOM NAV -->
@@ -2183,6 +2185,7 @@ function immediateSave(){
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
     clearTimeout(_saveTimer);
+    saveModuleStudyTime();
     immediateSave();
   }
 });
@@ -2203,7 +2206,7 @@ async function loadUserData(uid){
       eqResult:d.eqResult||null, certificates:d.certificates||[],
       roleplayHistory:d.roleplayHistory||[],
       welcomeCompleted:d.welcomeCompleted||false, experience:d.experience||null,
-      notifications:d.notifications||[]
+      notifications:d.notifications||[], studyTimes:d.studyTimes||{}
     };
     notifications=d.notifications||[];
     updateNotifBadge();
@@ -2884,6 +2887,28 @@ let currentSlide=0;
 
 let moduleOpenTime=null; // timestamp when module was opened
 
+function getModuleStudyTime(modId){
+  // Get accumulated study time for this module (in minutes)
+  if(!currentRep)return 0;
+  const r=reps[currentRep];
+  r.studyTimes=r.studyTimes||{};
+  return r.studyTimes[modId]||0;
+}
+
+function saveModuleStudyTime(){
+  // Save accumulated time when closing or leaving a module
+  if(!currentModuleId||!moduleOpenTime||!currentRep)return;
+  const r=reps[currentRep];
+  r.studyTimes=r.studyTimes||{};
+  const sessionMins=Math.floor((Date.now()-moduleOpenTime)/60000);
+  r.studyTimes[currentModuleId]=(r.studyTimes[currentModuleId]||0)+sessionMins;
+  if(currentUid&&sessionMins>0){
+    const update={};
+    update['studyTimes']=r.studyTimes;
+    db.collection('users').doc(currentUid).update(update).catch(e=>console.warn(e));
+  }
+}
+
 function getMinTime(mod){
   // Minimum minutes based on slide count: ~1.5 min per slide, minimum 5 min
   return Math.max(5, Math.round(mod.slides.length * 1.5));
@@ -2897,8 +2922,9 @@ function hasPassedQuiz(modId){
 }
 
 function getTimeSpent(){
-  if(!moduleOpenTime)return 0;
-  return Math.floor((Date.now()-moduleOpenTime)/60000); // minutes
+  const persisted=currentModuleId?getModuleStudyTime(currentModuleId):0;
+  const session=moduleOpenTime?Math.floor((Date.now()-moduleOpenTime)/60000):0;
+  return persisted+session;
 }
 
 function openModule(id){
@@ -3029,6 +3055,7 @@ function updateModuleBottom(mod){
 }
 
 function closeModule(){
+  saveModuleStudyTime();
   document.getElementById('moduleViewer').classList.remove('on');
   currentModuleId=null;
   moduleOpenTime=null;
@@ -3234,8 +3261,14 @@ function startQuiz(modId,tier){
   if(!qs.length)return;
   const mod=MODULES.find(m=>m.id===modId);
   quizState={modId,tier,questions:shuffle([...qs]),current:0,correct:0,answered:[],skipped:[]};
+  // Switch tab first, then render the question (otherwise switchTab's renderLearn overwrites it)
+  learnTab='quizzes';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pg-learn').classList.add('on');
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('on'));
+  const btn=document.querySelector('.bnav-btn[data-tab="learn"]');
+  if(btn)btn.classList.add('on');
   renderQuizQuestion();
-  learnTab='quizzes';switchTab('learn');
 }
 
 function renderQuizQuestion(){
@@ -5099,6 +5132,77 @@ function seekAudio(e){
   audio.currentTime=pct*audio.duration;
 }
 
+function skipBack(){const a=audioEl();if(a)a.currentTime=Math.max(0,a.currentTime-15);}
+function skipForward(){const a=audioEl();if(a)a.currentTime=Math.min(a.duration||0,a.currentTime+30);}
+
+let playbackSpeed=1;
+function cycleSpeed(){
+  const speeds=[1,1.25,1.5,1.75,2,0.75];
+  const idx=speeds.indexOf(playbackSpeed);
+  playbackSpeed=speeds[(idx+1)%speeds.length];
+  const a=audioEl();
+  if(a)a.playbackRate=playbackSpeed;
+  const btn=document.getElementById('speedBtn');
+  if(btn)btn.textContent=playbackSpeed+'x';
+}
+
+function formatTime(s){
+  if(!s||isNaN(s))return '0:00';
+  const m=Math.floor(s/60);
+  const sec=Math.floor(s%60);
+  return m+':'+(sec<10?'0':'')+sec;
+}
+
+let expandedPlayerOpen=false;
+function toggleExpandedPlayer(){
+  expandedPlayerOpen=!expandedPlayerOpen;
+  const el=document.getElementById('expandedPlayer');
+  const mp=document.getElementById('miniPlayer');
+  if(expandedPlayerOpen){
+    mp.style.display='none';
+    el.style.display='block';
+    renderExpandedPlayer();
+  }else{
+    el.style.display='none';
+    mp.style.display='flex';
+    mp.classList.add('on');
+  }
+}
+
+function renderExpandedPlayer(){
+  const a=audioEl();
+  const m=currentTrack;
+  if(!m)return;
+  const mod=MODULES.find(x=>x.id===m.moduleId);
+  const el=document.getElementById('expandedPlayer');
+  el.innerHTML=`
+    <div style="text-align:center;margin-bottom:12px;">
+      <div style="font-size:36px;margin-bottom:8px;">${m.type==='video'?'&#127902;':'&#127911;'}</div>
+      <div style="font-size:16px;font-weight:700;color:var(--white);">${m.title}</div>
+      <div style="font-size:12px;color:var(--gray);margin-top:4px;">${mod?mod.title:''}</div>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div class="mini-player-progress" style="position:relative;height:6px;border-radius:3px;" onclick="seekAudio(event)">
+        <div class="mini-player-progress-fill" id="mpProgressFill2" style="height:100%;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gray);margin-top:4px;">
+        <span id="mpTimeNow">${formatTime(a.currentTime)}</span>
+        <span id="mpTimeTotal">${formatTime(a.duration)}</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:12px;">
+      <button class="mini-player-btn" onclick="prevTrack()" style="font-size:22px;">&#9198;</button>
+      <button class="mini-player-btn" onclick="skipBack()" style="font-size:16px;">-15</button>
+      <button class="mini-player-btn" onclick="togglePlayPause()" style="font-size:36px;" id="mpPlayPause2">${a.paused?'&#9654;':'&#9208;'}</button>
+      <button class="mini-player-btn" onclick="skipForward()" style="font-size:16px;">+30</button>
+      <button class="mini-player-btn" onclick="nextTrack()" style="font-size:22px;">&#9197;</button>
+    </div>
+    <div style="display:flex;justify-content:center;gap:16px;">
+      <button id="speedBtn" onclick="cycleSpeed()" style="background:var(--dark3);border:1px solid var(--border);color:var(--gray-l);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">${playbackSpeed}x</button>
+      <button onclick="toggleExpandedPlayer()" style="background:var(--dark3);border:1px solid var(--border);color:var(--gray-l);padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;">Minimize</button>
+    </div>`;
+}
+
 function closePlayer(){
   const audio=audioEl();
   audio.pause();
@@ -5106,7 +5210,10 @@ function closePlayer(){
   currentTrack=null;
   playlist=[];
   playlistIdx=-1;
+  expandedPlayerOpen=false;
   document.getElementById('miniPlayer').classList.remove('on');
+  document.getElementById('miniPlayer').style.display='';
+  document.getElementById('expandedPlayer').style.display='none';
 }
 
 // Progress bar update
@@ -5114,7 +5221,14 @@ setInterval(()=>{
   const audio=audioEl();
   if(audio&&audio.duration&&!audio.paused){
     const pct=(audio.currentTime/audio.duration)*100;
-    document.getElementById('mpProgressFill').style.width=pct+'%';
+    const fill1=document.getElementById('mpProgressFill');
+    const fill2=document.getElementById('mpProgressFill2');
+    if(fill1)fill1.style.width=pct+'%';
+    if(fill2)fill2.style.width=pct+'%';
+    const tn=document.getElementById('mpTimeNow');
+    const tt=document.getElementById('mpTimeTotal');
+    if(tn)tn.textContent=formatTime(audio.currentTime);
+    if(tt)tt.textContent=formatTime(audio.duration);
   }
 },500);
 
