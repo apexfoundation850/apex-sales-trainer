@@ -523,7 +523,7 @@ const MODULES = [
   ]
 },
 {
-  id:'mod4', section:'core', title:'Close Phase', icon:'&#9989;',
+  id:'mod4', section:'core', title:'Close Phase', icon:'&#129309;',
   desc:'The Ask, Objection Handling, Right-Sizing, Second Ask',
   slidesId:'1rjsiqZuEPL-Bptpgh0KprmySWWiddMlNoPafwQcPo8s',
   color:'var(--purple)', slides:[
@@ -2475,7 +2475,10 @@ function updateStreak(){
   const r=reps[currentRep];
   const today=new Date().toDateString();
   if(r.lastActive===today)return;
-  const yesterday=new Date(Date.now()-86400000).toDateString();
+  // Calculate yesterday using local date components (DST-safe)
+  const y=new Date();
+  y.setDate(y.getDate()-1);
+  const yesterday=y.toDateString();
   if(r.lastActive===yesterday){r.streak=(r.streak||0)+1;}
   else if(r.lastActive!==today){r.streak=1;}
   r.lastActive=today;
@@ -2625,6 +2628,11 @@ function renderManagerInMore(){
 }
 
 // ---- TOAST ----
+function escapeHtml(s){
+  if(s==null)return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function showToast(msg,cls){
   const t=document.getElementById('toast');
   t.className='toast '+cls;
@@ -3083,7 +3091,14 @@ function logActivity(action){
   if(!currentRep)return;
   const r=reps[currentRep];
   r.activityLog=r.activityLog||[];
+  // Dedupe: skip if the most recent entry is the same action within last 5 minutes
+  const last=r.activityLog[0];
+  if(last&&last.action===action&&(Date.now()-new Date(last.time).getTime())<5*60*1000){
+    return;
+  }
   r.activityLog.unshift({action,pts:0,time:new Date().toISOString()});
+  // Cap at 100 entries (matches addPoints behavior)
+  if(r.activityLog.length>100)r.activityLog=r.activityLog.slice(0,100);
   saveState();
 }
 
@@ -3184,14 +3199,17 @@ function showQuizTiers(modId){
     const locked=isQuizLocked(modId,tier);
 
     if(unlocked&&!locked){
-      html+=`<div class="mod-item" onclick="startQuiz('${modId}','${tier}')" style="border-color:${passed?'var(--green)':info.color}20;">
-        <div class="mod-icon" style="background:${info.color}20;color:${info.color}">${info.icon}</div>
+      // If module not complete, show tier visually disabled
+      const tierDisabled=!modComplete;
+      const clickAction=tierDisabled?`openModule('${modId}')`:`startQuiz('${modId}','${tier}')`;
+      html+=`<div class="mod-item" onclick="${clickAction}" style="border-color:${passed?'var(--green)':info.color}20;${tierDisabled?'opacity:.5;':''}">
+        <div class="mod-icon" style="background:${tierDisabled?'rgba(120,120,120,.15)':info.color+'20'};color:${tierDisabled?'var(--gray)':info.color};">${tierDisabled?'&#128274;':info.icon}</div>
         <div class="mod-info">
           <div class="mod-name">${info.label}</div>
-          <div class="mod-desc">${info.desc} &middot; ${qs.length} questions</div>
+          <div class="mod-desc">${tierDisabled?'Complete module to unlock':info.desc+' &middot; '+qs.length+' questions'}</div>
         </div>
         <div style="text-align:right;">
-          ${passed?`<div style="font-size:16px;font-weight:700;color:var(--green);">${score.best}% &#9989;</div>`:(score?`<div style="font-size:16px;font-weight:700;color:var(--orange);">${score.best}%</div><div style="font-size:10px;color:var(--gray);">Need 80%</div>`:`<div style="font-size:12px;color:${info.color};">&#9654; Start</div>`)}
+          ${tierDisabled?'<div style="font-size:12px;color:var(--gray-d);">&#128274;</div>':(passed?`<div style="font-size:16px;font-weight:700;color:var(--green);">${score.best}% &#9989;</div>`:(score?`<div style="font-size:16px;font-weight:700;color:var(--orange);">${score.best}%</div><div style="font-size:10px;color:var(--gray);">Need 80%</div>`:`<div style="font-size:12px;color:${info.color};">&#9654; Start</div>`))}
         </div>
       </div>`;
     }else if(unlocked&&locked){
@@ -3672,8 +3690,8 @@ async function submitRolePlay(){
       const pts=score>=80?50:score>=60?30:15;
       addPoints(pts,'Role play: '+rpState.scenario.cat);
       const r=reps[currentRep];
-      r.drillsCompleted=(r.drillsCompleted||0)+1;
-      if(score>=80)r.drillsPerfect=(r.drillsPerfect||0)+1;
+      // Note: role-plays are tracked separately in roleplayHistory.
+      // We do NOT increment drillsCompleted/drillsPerfect — those are for objection drills only.
       // Store role-play result history
       r.roleplayHistory=r.roleplayHistory||[];
       r.roleplayHistory.unshift({
@@ -3716,7 +3734,7 @@ function renderRolePlayFeedback(){
     <div class="drill-scenario" style="opacity:.7;font-size:13px;">
       <div class="drill-cat">${rpState.scenario.cat}</div>
       <div style="color:var(--gray-l);margin-bottom:6px;">${rpState.scenario.scenario}</div>
-      <div style="color:var(--gray);font-style:italic;">Your response: "${rpState.repResponse}"</div>
+      <div style="color:var(--gray);font-style:italic;">Your response: "${escapeHtml(rpState.repResponse)}"</div>
     </div>
 
     <div class="rp-feedback" style="border-color:${border};">
@@ -3726,20 +3744,20 @@ function renderRolePlayFeedback(){
       <div class="rp-scores-grid">
         ${Object.entries(fb.scores||{}).map(([k,v])=>{
           const c=v>=4?'var(--green)':v>=3?'var(--orange)':'var(--red)';
-          return `<div class="rp-score-item"><div class="num" style="color:${c}">${v}/5</div><div class="label">${k}</div></div>`;
+          return `<div class="rp-score-item"><div class="num" style="color:${c}">${escapeHtml(v)}/5</div><div class="label">${escapeHtml(k)}</div></div>`;
         }).join('')}
       </div>
 
-      <div style="font-size:14px;color:var(--gray-l);line-height:1.7;margin:16px 0;">${fb.feedback||''}</div>
+      <div style="font-size:14px;color:var(--gray-l);line-height:1.7;margin:16px 0;">${escapeHtml(fb.feedback||'')}</div>
 
       ${fb.better_response?`<div class="rp-model">
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">Model Response</div>
-        <div style="font-size:13px;color:var(--gray-l);line-height:1.7;font-style:italic;">${fb.better_response}</div>
+        <div style="font-size:13px;color:var(--gray-l);line-height:1.7;font-style:italic;">${escapeHtml(fb.better_response)}</div>
       </div>`:''}
 
       ${fb.tip?`<div class="rp-tip">
         <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">Pro Tip</div>
-        <div style="font-size:13px;color:var(--gray-l);line-height:1.7;">${fb.tip}</div>
+        <div style="font-size:13px;color:var(--gray-l);line-height:1.7;">${escapeHtml(fb.tip)}</div>
       </div>`:''}
     </div>
 
@@ -4936,17 +4954,31 @@ function renderNotifications(){
     return;
   }
   let html='<div style="padding:12px 16px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--border);">Notifications</div>';
-  notifications.slice(0,20).forEach(n=>{
+  notifications.slice(0,20).forEach((n,i)=>{
     const ago=timeAgo(new Date(n.time));
-    html+=`<div class="notif-item ${n.read?'':'unread'}" ${n.action?`onclick="${n.action};toggleNotifications()"`:''}>
-      <div class="notif-icon">${n.icon}</div>
+    // n.icon is a known HTML entity from our code (not user input) — leave unescaped
+    // n.text is user/system text — escape it
+    // n.action is JS to run — store as data attr, attached via listener below (NOT inlined as onclick)
+    html+=`<div class="notif-item ${n.read?'':'unread'}" data-notif-idx="${i}" style="${n.action?'cursor:pointer;':''}">
+      <div class="notif-icon">${n.icon||'&#128276;'}</div>
       <div style="flex:1;">
-        <div style="color:var(--gray-l);">${n.text}</div>
+        <div style="color:var(--gray-l);">${escapeHtml(n.text)}</div>
         <div style="font-size:10px;color:var(--gray-d);margin-top:2px;">${ago}</div>
       </div>
     </div>`;
   });
   panel.innerHTML=html;
+  // Attach click listeners safely (no inline onclick — prevents XSS via n.action)
+  panel.querySelectorAll('.notif-item').forEach(el=>{
+    const idx=parseInt(el.dataset.notifIdx);
+    const n=notifications[idx];
+    if(n&&n.action){
+      el.addEventListener('click',()=>{
+        try{Function(n.action)();}catch(e){console.warn('Notification action failed:',e);}
+        toggleNotifications();
+      });
+    }
+  });
 }
 
 function timeAgo(date){
@@ -5253,16 +5285,29 @@ function goFullscreen(elId){
 
 let _mediaUid=0;
 function renderMediaPlayer(m){
-  const embedUrl='https://drive.google.com/file/d/'+m.driveId+'/preview';
   const uid='media-'+(++_mediaUid);
   if(m.type==='video'){
-    return `<div style="margin-bottom:16px;">
-      <div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:8px;">${m.icon} ${m.title}</div>
-      <div id="${uid}" style="position:relative;width:100%;padding-bottom:56.25%;border-radius:8px;overflow:hidden;background:var(--dark3);">
-        <iframe src="${embedUrl}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay;encrypted-media" allowfullscreen></iframe>
-        <button onclick="goFullscreen('${uid}')" style="position:absolute;bottom:8px;right:8px;z-index:5;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;backdrop-filter:blur(4px);">&#x26F6; Fullscreen</button>
-      </div>
-    </div>`;
+    // Use Firebase-hosted MP4 if available (native HTML5 video); fall back to Drive iframe embed
+    if(m.src){
+      return `<div style="margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:8px;">${m.icon} ${m.title}</div>
+        <div id="${uid}" style="position:relative;width:100%;border-radius:8px;overflow:hidden;background:var(--dark3);">
+          <video src="${m.src}" controls preload="metadata" style="width:100%;display:block;" playsinline></video>
+          <button onclick="goFullscreen('${uid}')" style="position:absolute;bottom:8px;right:8px;z-index:5;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;backdrop-filter:blur(4px);">&#x26F6; Fullscreen</button>
+        </div>
+      </div>`;
+    }
+    if(m.driveId){
+      const embedUrl='https://drive.google.com/file/d/'+m.driveId+'/preview';
+      return `<div style="margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:8px;">${m.icon} ${m.title}</div>
+        <div id="${uid}" style="position:relative;width:100%;padding-bottom:56.25%;border-radius:8px;overflow:hidden;background:var(--dark3);">
+          <iframe src="${embedUrl}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allow="autoplay;encrypted-media" allowfullscreen></iframe>
+          <button onclick="goFullscreen('${uid}')" style="position:absolute;bottom:8px;right:8px;z-index:5;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.3);color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;backdrop-filter:blur(4px);">&#x26F6; Fullscreen</button>
+        </div>
+      </div>`;
+    }
+    return `<div style="margin-bottom:16px;color:var(--gray);font-size:12px;">Video unavailable</div>`;
   }
   // Audio: play button card instead of iframe
   const isPlaying=currentTrack&&currentTrack.id===m.id;
