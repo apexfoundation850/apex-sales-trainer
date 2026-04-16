@@ -2663,7 +2663,7 @@ function renderHome(){
     <div class="card" style="background:linear-gradient(135deg,#1a0905,#200c08);border-color:rgba(192,57,43,.25);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div>
-          <div style="font-size:22px;font-weight:700;">Welcome back, ${r.name}</div>
+          <div style="font-size:22px;font-weight:700;">Welcome back, ${escapeHtml(r.name)}</div>
           <div style="font-size:13px;color:var(--gray);">${r.points||0} points &middot; ${r.streak||0} day streak</div>
         </div>
         <div style="font-size:48px;">${completed===total?'&#127942;':'&#128170;'}</div>
@@ -2842,7 +2842,7 @@ function renderTrainHTML(){
   const core=filtered.filter(m=>m.section==='core');
   const jt=filtered.filter(m=>m.section==='jobtype');
   if(searchQuery&&!filtered.length){
-    html+='<div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;">No modules match "'+searchQuery+'"</div>';
+    html+='<div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;">No modules match "'+escapeHtml(searchQuery)+'"</div>';
     return html;
   }
   if(core.length){
@@ -4900,7 +4900,7 @@ function renderBoardHTML(){
     const rankCls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
     html+=`<div class="lb-row">
       <div class="lb-rank ${rankCls}">${i+1}</div>
-      <div class="lb-name">${r.name}</div>
+      <div class="lb-name">${escapeHtml(r.name)}</div>
       <span class="lb-level ${lvl.cls}">${lvl.name}</span>
       <div class="lb-pts">${r.points||0} pts</div>
     </div>`;
@@ -5036,7 +5036,7 @@ function timeAgo(date){
 // ---- CONTENT SEARCH ----
 let searchQuery='';
 function renderSearchBar(){
-  return `<div class="search-wrap"><input class="search-bar" type="text" placeholder="Search modules, slides, topics..." value="${searchQuery}" oninput="searchQuery=this.value;renderLearn()"></div>`;
+  return `<div class="search-wrap"><input class="search-bar" type="text" placeholder="Search modules, slides, topics..." value="${escapeHtml(searchQuery)}" oninput="searchQuery=this.value;renderLearn()"></div>`;
 }
 
 function searchModules(modules){
@@ -5206,7 +5206,7 @@ function seekAudio(e){
 }
 
 function skipBack(){const a=audioEl();if(a)a.currentTime=Math.max(0,a.currentTime-15);}
-function skipForward(){const a=audioEl();if(a)a.currentTime=Math.min(a.duration||0,a.currentTime+30);}
+function skipForward(){const a=audioEl();if(!a)return;const tgt=a.currentTime+30;a.currentTime=(a.duration&&isFinite(a.duration))?Math.min(a.duration,tgt):tgt;}
 
 let playbackSpeed=1;
 function cycleSpeed(){
@@ -5468,11 +5468,11 @@ function renderManager(){
       alerts.forEach(a=>{
         if(a.type==='inactive'){
           html+=`<div class="mgr-stat" style="border-left:3px solid ${a.color};cursor:pointer;" onclick="viewRep('${a.id}')">
-            <div><span style="font-weight:600;color:var(--white);">${a.name}</span> <span style="font-size:12px;color:var(--red);">— ${a.days===999?'Never logged in':'Inactive '+a.days+' days'}</span></div>
+            <div><span style="font-weight:600;color:var(--white);">${escapeHtml(a.name)}</span> <span style="font-size:12px;color:var(--red);">— ${a.days===999?'Never logged in':'Inactive '+a.days+' days'}</span></div>
           </div>`;
         }else{
           html+=`<div class="mgr-stat" style="border-left:3px solid ${a.color};">
-            <div><span style="font-weight:600;color:var(--white);">${a.name}</span> <span style="font-size:12px;color:var(--orange);">— Overdue: ${a.label}</span></div>
+            <div><span style="font-weight:600;color:var(--white);">${escapeHtml(a.name)}</span> <span style="font-size:12px;color:var(--orange);">— Overdue: ${a.label}</span></div>
           </div>`;
         }
       });
@@ -5529,7 +5529,7 @@ function renderManager(){
         <div style="width:8px;height:8px;border-radius:50%;background:${statusColor};flex-shrink:0;margin-right:4px;" title="${statusText}"></div>
         <div style="flex:1;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:14px;font-weight:600;color:var(--white);">${r.name} <span style="font-size:10px;color:var(--gray-d);">&rsaquo;</span></div>
+            <div style="font-size:14px;font-weight:600;color:var(--white);">${escapeHtml(r.name)} <span style="font-size:10px;color:var(--gray-d);">&rsaquo;</span></div>
             <span class="lb-level ${lvl.cls}" style="font-size:9px;padding:2px 8px;">${lvl.name}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
@@ -5551,7 +5551,7 @@ function renderManager(){
       const lastAct=getLastActive(r)||'Never';
       html+=`<div class="card" style="cursor:pointer;" onclick="viewRep('${id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-size:16px;font-weight:700;">${r.name} <span style="font-size:11px;color:var(--gray-d);">&rsaquo;</span></div>
+          <div style="font-size:16px;font-weight:700;">${escapeHtml(r.name)} <span style="font-size:11px;color:var(--gray-d);">&rsaquo;</span></div>
           <span class="lb-level ${lvl.cls}">${lvl.name}</span>
         </div>
         <div style="font-size:13px;color:var(--gray);margin-bottom:4px;">Points: ${r.points||0} &middot; Streak: ${r.streak||0} days</div>
@@ -5574,7 +5574,7 @@ function renderManager(){
       <select id="assignRep" style="${selStyle}">
         <option value="">-- Choose Rep --</option>
         <option value="__all__">All Reps</option>
-        ${Object.entries(reps).map(([id,r])=>`<option value="${id}">${r.name}</option>`).join('')}
+        ${Object.entries(reps).map(([id,r])=>`<option value="${id}">${escapeHtml(r.name)}</option>`).join('')}
       </select>
 
       <label style="font-size:12px;color:var(--gray);display:block;margin-bottom:4px;">Assignment Type</label>
@@ -5604,7 +5604,7 @@ function renderManager(){
         const typeIcon=a.type==='quiz'?'&#10068;':a.type==='drill'?'&#9889;':a.type==='roleplay'?'&#127908;':a.type==='assessment'?'&#128202;':'&#128218;';
         const progress=a.targetCount>1?` (${a.currentCount||0}/${a.targetCount})`:'';
         html+=`<div class="mgr-stat">
-          <div><span style="font-weight:600;color:var(--white);">${rep.name}</span> <span style="color:var(--gray);">&rarr;</span> ${typeIcon} ${label}${progress}</div>
+          <div><span style="font-weight:600;color:var(--white);">${escapeHtml(rep.name)}</span> <span style="color:var(--gray);">&rarr;</span> ${typeIcon} ${escapeHtml(label)}${progress}</div>
           <div>${a.dueDate?'Due: '+a.dueDate:''} <span style="cursor:pointer;color:var(--red);margin-left:8px;" onclick="deleteAssignment('${aid}')">&#10005;</span></div>
         </div>`;
       });
@@ -5625,7 +5625,7 @@ function renderManager(){
       const quizAvg=Object.keys(qs).length?Math.round(Object.values(qs).reduce((a,s)=>a+s.best,0)/Object.keys(qs).length):'-';
       const quizColor=quizAvg==='-'?'var(--gray)':quizAvg>=80?'var(--green)':quizAvg>=60?'var(--orange)':'var(--red)';
       html+=`<tr style="border-bottom:1px solid var(--border);cursor:pointer;" onclick="viewRep('${id}')">
-        <td style="padding:10px;font-weight:600;color:var(--white);">${r.name} <span style="font-size:10px;color:var(--gray-d);">&rsaquo;</span></td>
+        <td style="padding:10px;font-weight:600;color:var(--white);">${escapeHtml(r.name)} <span style="font-size:10px;color:var(--gray-d);">&rsaquo;</span></td>
         <td style="text-align:center;padding:10px;">${(r.completedModules||[]).length}/${MODULES.length}</td>
         <td style="text-align:center;padding:10px;color:${quizColor};font-weight:600;">${quizAvg}${quizAvg!=='-'?'%':''}</td>
         <td style="text-align:center;padding:10px;">${r.fcReviews||0}</td>
@@ -5639,7 +5639,7 @@ function renderManager(){
     Object.entries(reps).forEach(([id,r])=>{
       const qs=r.quizScores||{};
       if(!Object.keys(qs).length)return;
-      html+=`<div class="card"><div style="font-weight:600;margin-bottom:8px;">${r.name}</div>`;
+      html+=`<div class="card"><div style="font-weight:600;margin-bottom:8px;">${escapeHtml(r.name)}</div>`;
       Object.entries(qs).forEach(([modId,score])=>{
         const mod=MODULES.find(m=>m.id===modId);
         const color=score.best>=80?'var(--green)':score.best>=60?'var(--orange)':'var(--red)';
@@ -5674,7 +5674,7 @@ function renderManager(){
     Object.entries(reps).forEach(([id,r])=>{
       const h=r.roleplayHistory||[];
       if(!h.length){
-        html+=`<div class="card" style="opacity:.5;"><span style="font-weight:600;">${r.name}</span> <span style="color:var(--gray);font-size:13px;">— No role-plays yet</span></div>`;
+        html+=`<div class="card" style="opacity:.5;"><span style="font-weight:600;">${escapeHtml(r.name)}</span> <span style="color:var(--gray);font-size:13px;">— No role-plays yet</span></div>`;
         return;
       }
 
@@ -5702,7 +5702,7 @@ function renderManager(){
       html+=`<div class="card" style="cursor:pointer;" onclick="viewRep('${id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <div>
-            <div style="font-size:16px;font-weight:700;color:var(--white);">${r.name} <span style="font-size:11px;color:var(--gray-d);">&rsaquo;</span></div>
+            <div style="font-size:16px;font-weight:700;color:var(--white);">${escapeHtml(r.name)} <span style="font-size:11px;color:var(--gray-d);">&rsaquo;</span></div>
             <div style="font-size:12px;color:var(--gray);">${h.length} sessions &middot; tap for full history</div>
           </div>
           <div style="text-align:right;">
@@ -5744,11 +5744,11 @@ function renderManager(){
         const sc=rp.score>=80?'var(--green)':rp.score>=60?'var(--orange)':'var(--red)';
         html+=`<div style="padding:8px;background:var(--dark3);border-radius:6px;margin-bottom:6px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-            <span style="font-size:11px;color:var(--gray);">${rp.cat} — ${new Date(rp.date).toLocaleDateString()}</span>
+            <span style="font-size:11px;color:var(--gray);">${escapeHtml(rp.cat)} — ${new Date(rp.date).toLocaleDateString()}</span>
             <span style="font-size:13px;font-weight:700;color:${sc};">${rp.score}%</span>
           </div>
-          <div style="font-size:12px;color:var(--gray-l);line-height:1.5;">${rp.feedback}</div>
-          ${rp.tip?`<div style="font-size:11px;color:var(--gold);margin-top:4px;font-style:italic;">${rp.tip}</div>`:''}
+          <div style="font-size:12px;color:var(--gray-l);line-height:1.5;">${escapeHtml(rp.feedback)}</div>
+          ${rp.tip?`<div style="font-size:11px;color:var(--gold);margin-top:4px;font-style:italic;">${escapeHtml(rp.tip)}</div>`:''}
         </div>`;
       });
       html+=`</div></div>`;
@@ -5797,7 +5797,7 @@ function renderManager(){
 
       html+=`<div class="card" style="margin-bottom:8px;cursor:pointer;" onclick="viewRep('${id}')">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="font-size:14px;font-weight:600;color:var(--white);">${r.name}</div>
+          <div style="font-size:14px;font-weight:600;color:var(--white);">${escapeHtml(r.name)}</div>
           <div style="font-size:18px;font-weight:700;color:${velocity>=3?'var(--green)':velocity>=1?'var(--orange)':'var(--red)'};">${velocity}<span style="font-size:10px;color:var(--gray);font-weight:400;">/day</span></div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:11px;text-align:center;">
@@ -5866,7 +5866,7 @@ function renderManager(){
     html+=`<div class="sec-header">Avg Session Length</div><div class="card" style="padding:16px;">`;
     repEntries.forEach(([id,r])=>{
       const log=r.activityLog||[];
-      if(!log.length){html+=`<div style="font-size:12px;color:var(--gray);padding:4px 0;">${r.name}: No data</div>`;return;}
+      if(!log.length){html+=`<div style="font-size:12px;color:var(--gray);padding:4px 0;">${escapeHtml(r.name)}: No data</div>`;return;}
       // Estimate sessions by grouping activity within 30 min windows
       let sessions=0,totalMins=0,lastTime=null;
       log.slice().reverse().forEach(a=>{
@@ -5877,7 +5877,7 @@ function renderManager(){
       });
       const avgMins=sessions?Math.round(totalMins/sessions):0;
       html+=`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px;">
-        <span style="color:var(--gray-l);">${r.name}</span>
+        <span style="color:var(--gray-l);">${escapeHtml(r.name)}</span>
         <span style="color:var(--white);font-weight:600;">${avgMins} min <span style="color:var(--gray);">(${sessions} sessions)</span></span>
       </div>`;
     });
@@ -5894,7 +5894,7 @@ function renderManager(){
       const isExpanded=expandedProfileRepId===id;
 
       html+=`<div class="card">
-        <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px;">${r.name}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:10px;">${escapeHtml(r.name)}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">`;
 
       // DISC badge
@@ -5985,7 +5985,7 @@ function renderManager(){
       const role=r.role||'rep';
       html+=`<div class="mgr-stat">
         <div>
-          <span style="font-weight:600;color:var(--white);">${r.name}</span>
+          <span style="font-weight:600;color:var(--white);">${escapeHtml(r.name)}</span>
           <span style="font-size:10px;padding:2px 8px;border-radius:10px;margin-left:8px;background:${role==='manager'?'var(--purple)':'var(--dark4)'};color:${role==='manager'?'#fff':'var(--gray)'};">${role}</span>
         </div>
         <div>
@@ -6034,7 +6034,7 @@ function renderRepDetailHTML(id){
   html+=`<div class="card" style="border-left:4px solid var(--gold);">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
       <div>
-        <div style="font-size:22px;font-weight:800;color:var(--white);">${r.name}</div>
+        <div style="font-size:22px;font-weight:800;color:var(--white);">${escapeHtml(r.name)}</div>
         <div style="font-size:12px;color:var(--gray);margin-top:4px;">${r.role==='manager'?'Manager':'Rep'} &middot; Last active: ${getLastActive(r)||'Never'}</div>
       </div>
       <span class="lb-level ${lvl.cls}">${lvl.name}</span>
@@ -6176,12 +6176,12 @@ function renderRepDetailHTML(id){
       const sc=rp.score>=80?'var(--green)':rp.score>=60?'var(--orange)':'var(--red)';
       html+=`<div style="padding:10px;background:var(--dark3);border-radius:6px;margin-bottom:8px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:12px;color:var(--gray-l);font-weight:600;">${rp.cat}${rp.scenario?' &middot; '+rp.scenario:''}</span>
+          <span style="font-size:12px;color:var(--gray-l);font-weight:600;">${escapeHtml(rp.cat)}${rp.scenario?' &middot; '+escapeHtml(rp.scenario):''}</span>
           <span style="font-size:13px;font-weight:700;color:${sc};">${rp.score}%</span>
         </div>
         <div style="font-size:10px;color:var(--gray);margin-bottom:6px;">${new Date(rp.date).toLocaleString()}</div>
-        <div style="font-size:12px;color:var(--gray-l);line-height:1.5;">${rp.feedback||''}</div>
-        ${rp.tip?`<div style="font-size:11px;color:var(--gold);margin-top:6px;font-style:italic;">&#128161; ${rp.tip}</div>`:''}
+        <div style="font-size:12px;color:var(--gray-l);line-height:1.5;">${escapeHtml(rp.feedback||'')}</div>
+        ${rp.tip?`<div style="font-size:11px;color:var(--gold);margin-top:6px;font-style:italic;">&#128161; ${escapeHtml(rp.tip)}</div>`:''}
       </div>`;
     });
     if(rpHist.length>20){
@@ -6220,7 +6220,7 @@ function renderRepDetailHTML(id){
       const progress=a.targetCount>1?` (${a.currentCount||0}/${a.targetCount})`:'';
       const status=a.status==='completed'?'<span style="color:var(--green);">&#9989; Complete</span>':(a.dueDate?`<span style="color:var(--gray);">Due: ${a.dueDate}</span>`:'<span style="color:var(--orange);">Active</span>');
       html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
-        <span>${typeIcon} ${label}${progress}</span>
+        <span>${typeIcon} ${escapeHtml(label)}${progress}</span>
         <span style="font-size:11px;">${status}</span>
       </div>`;
     });
@@ -6645,16 +6645,16 @@ async function repairAllData(){
         if(reps[id])Object.assign(reps[id],updates);
         totalFixed++;
         logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
-          <span style="color:var(--green);">&#9989;</span> <strong>${d.name||id}</strong>: ${fixes.join(', ')}
+          <span style="color:var(--green);">&#9989;</span> <strong>${escapeHtml(d.name||id)}</strong>: ${fixes.join(', ')}
         </div>`;
       }catch(e){
         logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
-          <span style="color:var(--red);">&#10060;</span> <strong>${d.name||id}</strong>: Write failed — ${e.code||e.message}
+          <span style="color:var(--red);">&#10060;</span> <strong>${escapeHtml(d.name||id)}</strong>: Write failed — ${e.code||e.message}
         </div>`;
       }
     }else{
       logHtml+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
-        <span style="color:var(--gray);">&#9644;</span> <strong>${d.name||id}</strong>: No repairs needed
+        <span style="color:var(--gray);">&#9644;</span> <strong>${escapeHtml(d.name||id)}</strong>: No repairs needed
       </div>`;
     }
   }
