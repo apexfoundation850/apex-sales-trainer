@@ -2738,14 +2738,14 @@ async function deleteCustomScript(id){
 }
 
 function renderField(){
+  // Migrate away from removed 'calc' tab if it was set
+  if(fieldTab==='calc')fieldTab='scripts';
   let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:12px;" onclick="switchTab('home')">&#8592; Home</button>
   <div class="slides-toggle" style="margin-bottom:16px;">
     <div class="slides-toggle-btn ${fieldTab==='scripts'?'active':''}" onclick="fieldTab='scripts';renderField()">&#128221; Scripts</div>
-    <div class="slides-toggle-btn ${fieldTab==='calc'?'active':''}" onclick="fieldTab='calc';renderField()">&#128176; Calc</div>
     <div class="slides-toggle-btn ${fieldTab==='objections'?'active':''}" onclick="fieldTab='objections';renderField()">&#128172; Objection Logger</div>
   </div>`;
   if(fieldTab==='scripts')html+=renderScriptsTabHTML();
-  else if(fieldTab==='calc')html+=renderCalcTabHTML();
   else if(fieldTab==='objections')html+=renderObjectionTabHTML();
   document.getElementById('pg-field').innerHTML=html;
   // Preserve search focus
@@ -2753,8 +2753,6 @@ function renderField(){
     const input=document.getElementById('scriptSearch');
     if(input){input.focus();input.selectionStart=input.selectionEnd=input.value.length;}
   }
-  // Initialize calculator on first render
-  if(fieldTab==='calc')setTimeout(updateCalc,0);
 }
 
 function renderScriptsTabHTML(){
@@ -2854,73 +2852,6 @@ function showAddCustomScript(){
   const text=prompt('Script text:');
   if(!text)return;
   saveCustomScript(title,category,text);
-}
-
-function renderCalcTabHTML(){
-  return `<div class="sec-header">Financing Payment Calculator</div>
-  <div class="card" style="padding:20px;">
-    <p style="font-size:12px;color:var(--gray);margin-bottom:16px;">For live close-table math. Enter values to see the monthly payment instantly.</p>
-    <div style="display:grid;gap:12px;">
-      <div>
-        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Loan Amount ($)</label>
-        <input type="number" id="calcAmt" value="15000" step="100" min="0" oninput="updateCalc()" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:18px;font-weight:700;box-sizing:border-box;">
-      </div>
-      <div>
-        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">APR (%)</label>
-        <input type="number" id="calcApr" value="9.99" step="0.01" min="0" oninput="updateCalc()" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:18px;font-weight:700;box-sizing:border-box;">
-      </div>
-      <div>
-        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Term (months)</label>
-        <select id="calcTerm" onchange="updateCalc()" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:18px;font-weight:700;box-sizing:border-box;">
-          <option value="12">12 months (1 year)</option>
-          <option value="24">24 months (2 years)</option>
-          <option value="36">36 months (3 years)</option>
-          <option value="60" selected>60 months (5 years)</option>
-          <option value="84">84 months (7 years)</option>
-          <option value="120">120 months (10 years)</option>
-          <option value="180">180 months (15 years)</option>
-        </select>
-      </div>
-    </div>
-  </div>
-  <div class="card" style="text-align:center;padding:24px;background:linear-gradient(135deg,#1a0905,#200c08);border-color:rgba(201,168,76,.35);">
-    <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;">Monthly Payment</div>
-    <div id="calcResult" style="font-size:42px;font-weight:800;color:var(--gold);line-height:1;">&mdash;</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;font-size:12px;">
-      <div style="padding:8px;background:var(--dark3);border-radius:8px;">
-        <div style="color:var(--gray);">Total Interest</div>
-        <div id="calcInterest" style="font-weight:700;color:var(--orange);font-size:14px;">&mdash;</div>
-      </div>
-      <div style="padding:8px;background:var(--dark3);border-radius:8px;">
-        <div style="color:var(--gray);">Total Paid</div>
-        <div id="calcTotal" style="font-weight:700;color:var(--gray-l);font-size:14px;">&mdash;</div>
-      </div>
-    </div>
-    <button class="mv-nav-btn mv-prev" style="margin-top:14px;width:100%;" onclick="copyPayment()">&#128203; Copy Payment to Clipboard</button>
-  </div>`;
-}
-
-function updateCalc(){
-  const amt=parseFloat(document.getElementById('calcAmt').value)||0;
-  const apr=parseFloat(document.getElementById('calcApr').value)||0;
-  const n=parseFloat(document.getElementById('calcTerm').value)||60;
-  const r=apr/100/12;
-  let monthly=0;
-  if(r===0){monthly=amt/n;}
-  else{monthly=amt*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
-  const total=monthly*n;
-  const interest=total-amt;
-  const fmt=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
-  document.getElementById('calcResult').textContent=isFinite(monthly)?fmt(monthly):'—';
-  document.getElementById('calcInterest').textContent=isFinite(interest)?fmt(interest):'—';
-  document.getElementById('calcTotal').textContent=isFinite(total)?fmt(total):'—';
-}
-
-function copyPayment(){
-  const txt=document.getElementById('calcResult').textContent;
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(txt).then(()=>showToast('Copied '+txt,'toast-success'));
-  }else{fallbackCopy(txt);}
 }
 
 // ---- OBJECTION LOGGER ----
@@ -3201,9 +3132,11 @@ function spStartRecording(){
       else if(e.error==='no-speech'){/* let them keep going */}
       else{showToast('Mic error: '+e.error,'toast-streak');}
     };
+    const thisSpRec=_spRecognition;
     _spRecognition.onend=()=>{
-      if(scriptPracticeState.phase==='recording'){
-        try{_spRecognition.start();}catch(e){}
+      // Only auto-restart if this exact recognition is still active + still in recording phase
+      if(_spRecognition===thisSpRec&&scriptPracticeState.phase==='recording'){
+        try{thisSpRec.start();}catch(e){}
       }
     };
     _spRecognition.start();
@@ -3212,9 +3145,19 @@ function spStartRecording(){
 }
 
 function stopScriptPractice(){
-  if(_spRecognition){try{_spRecognition.stop();}catch(e){}_spRecognition=null;}
-  if(!scriptPracticeState.transcript||scriptPracticeState.transcript.length<5){
-    return showToast('Say more of the script first','toast-streak');
+  // Null out handlers so onend doesn't auto-restart
+  if(_spRecognition){
+    _spRecognition.onresult=null;
+    _spRecognition.onerror=null;
+    _spRecognition.onend=null;
+    try{_spRecognition.stop();}catch(e){}
+    try{_spRecognition.abort();}catch(e){}
+    _spRecognition=null;
+  }
+  if(!scriptPracticeState.transcript||scriptPracticeState.transcript.trim().length<5){
+    scriptPracticeState.active=false;
+    document.getElementById('practiceOverlay').style.display='none';
+    return showToast('No speech captured — try again','toast-streak');
   }
   scriptPracticeState.phase='scoring';
   renderScriptPractice();
@@ -3268,7 +3211,14 @@ function spRetry(){
 
 function spCancel(){
   if(_spCountdownTimer){clearInterval(_spCountdownTimer);_spCountdownTimer=null;}
-  if(_spRecognition){try{_spRecognition.stop();}catch(e){}_spRecognition=null;}
+  if(_spRecognition){
+    _spRecognition.onresult=null;
+    _spRecognition.onerror=null;
+    _spRecognition.onend=null;
+    try{_spRecognition.stop();}catch(e){}
+    try{_spRecognition.abort();}catch(e){}
+    _spRecognition=null;
+  }
   scriptPracticeState={active:false,scriptId:null,scriptTitle:'',referenceText:'',phase:'idle',countdown:10,transcript:'',result:null};
   document.getElementById('practiceOverlay').style.display='none';
 }
@@ -3391,7 +3341,7 @@ function renderMore(){
   html+=`<div class="sec-header">Field Tools</div>
   <div class="card" style="cursor:pointer;text-align:center;border-color:rgba(201,168,76,.3);" onclick="switchTab('field')">
     <div style="font-size:28px;">&#128188;</div>
-    <div style="font-size:14px;font-weight:700;margin-top:6px;">Scripts & Calculator</div>
+    <div style="font-size:14px;font-weight:700;margin-top:6px;">Scripts & Objection Logger</div>
     <div style="font-size:12px;color:var(--gray);margin-top:4px;">Quick reference for live appointments</div>
   </div>`;
   // Leaderboard
@@ -3572,10 +3522,10 @@ function renderHome(){
       <div style="font-size:13px;font-weight:700;margin-top:6px;">Scripts</div>
       <div style="font-size:11px;color:var(--gray);margin-top:2px;">Quick reference</div>
     </div>
-    <div class="card" style="cursor:pointer;text-align:center;border-color:rgba(201,168,76,.3);" onclick="fieldTab='calc';switchTab('field')">
-      <div style="font-size:28px;">&#128176;</div>
-      <div style="font-size:13px;font-weight:700;margin-top:6px;">Financing Calc</div>
-      <div style="font-size:11px;color:var(--gray);margin-top:2px;">Monthly payment</div>
+    <div class="card" style="cursor:pointer;text-align:center;border-color:rgba(201,168,76,.3);" onclick="fieldTab='objections';switchTab('field')">
+      <div style="font-size:28px;">&#128172;</div>
+      <div style="font-size:13px;font-weight:700;margin-top:6px;">Objection Logger</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:2px;">AI-crafted responses</div>
     </div>
   </div>`;
 
@@ -4538,10 +4488,11 @@ function startRpListening(){
       else if(e.error==='no-speech')showToast('No speech detected','toast-streak');
       stopRpListening();
     };
+    const thisRec=_rpRecognition;
     _rpRecognition.onend=()=>{
-      if(rpState.listening){
-        // Auto-restart if user hasn't manually stopped (handles Chrome's auto-stop after pause)
-        try{_rpRecognition.start();}catch(e){rpState.listening=false;renderPractice();}
+      // Only restart if this is still the active recognition AND user hasn't stopped
+      if(_rpRecognition===thisRec&&rpState.listening){
+        try{thisRec.start();}catch(e){rpState.listening=false;renderPractice();}
       }
     };
     _rpRecognition.start();
@@ -4551,7 +4502,15 @@ function startRpListening(){
 }
 function stopRpListening(){
   rpState.listening=false;
-  if(_rpRecognition){try{_rpRecognition.stop();}catch(e){}_rpRecognition=null;}
+  if(_rpRecognition){
+    // Null out handlers so onend can't re-trigger start()
+    _rpRecognition.onresult=null;
+    _rpRecognition.onerror=null;
+    _rpRecognition.onend=null;
+    try{_rpRecognition.stop();}catch(e){}
+    try{_rpRecognition.abort();}catch(e){}
+    _rpRecognition=null;
+  }
   renderPractice();
 }
 
