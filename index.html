@@ -3451,12 +3451,13 @@ function renderFlashcard(){
   if(s.current>=s.cards.length){return renderFcResults();}
   const card=s.cards[s.current];
   const deck=FLASHCARD_DECKS.find(d=>d.id===s.deckId);
+  s.flipped=false; // reset on each new card
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
     <button class="mv-nav-btn mv-prev" onclick="renderCards()">&#8592; Back</button>
     <div style="font-size:13px;color:var(--gray);">${deck.title}</div>
   </div>
   <div class="fc-counter">${s.current+1} of ${s.cards.length} &middot; &#9989; ${s.known} &middot; &#128260; ${s.again}</div>
-  <div class="fc-card" id="fcCard" onclick="document.getElementById('fcCard').classList.toggle('flipped')">
+  <div class="fc-card" id="fcCard" onclick="flipFcCard()">
     <div class="fc-inner">
       <div class="fc-front">
         <div class="fc-label">Question</div>
@@ -3469,11 +3470,26 @@ function renderFlashcard(){
       </div>
     </div>
   </div>
-  <div class="fc-actions">
+  <div class="fc-actions" id="fcActions" style="display:none;">
     <button class="fc-btn fc-again" onclick="fcAnswer('again')">&#128260; Review Again</button>
     <button class="fc-btn fc-know" onclick="fcAnswer('know')">&#9989; Got It</button>
-  </div>`;
+  </div>
+  <div id="fcHint" style="text-align:center;font-size:12px;color:var(--gray);margin-top:12px;">Try to recall the answer first, then tap to flip</div>`;
   document.getElementById('pg-learn').innerHTML=html;
+}
+
+function flipFcCard(){
+  const card=document.getElementById('fcCard');
+  if(!card)return;
+  card.classList.toggle('flipped');
+  fcState.flipped=card.classList.contains('flipped');
+  // Reveal answer buttons only after first flip
+  if(fcState.flipped){
+    const actions=document.getElementById('fcActions');
+    const hint=document.getElementById('fcHint');
+    if(actions)actions.style.display='';
+    if(hint)hint.style.display='none';
+  }
 }
 
 function fcAnswer(type){
@@ -4909,8 +4925,36 @@ function renderBoard(){renderMore();}
 
 // ---- NOTIFICATIONS ----
 let notifications=[];
-function addNotification(icon,text,action){
-  const n={id:Date.now(),icon,text,action:action||'',time:new Date().toISOString(),read:false};
+// Whitelist of allowed notification action keys → handler functions.
+// Adding ad-hoc JS strings is no longer supported (security: prevents code injection
+// if Firestore notifications collection is ever tampered with).
+const NOTIF_ACTIONS={
+  'open-home':()=>switchTab('home'),
+  'open-learn-modules':()=>{learnTab='modules';switchTab('learn');},
+  'open-learn-quizzes':()=>{learnTab='quizzes';switchTab('learn');},
+  'open-learn-cards':()=>{learnTab='cards';switchTab('learn');},
+  'open-practice-drills':()=>{practiceTab='drills';switchTab('practice');},
+  'open-practice-roleplay':()=>{practiceTab='roleplay';switchTab('practice');},
+  'open-media':()=>switchTab('media'),
+  'open-more':()=>switchTab('more'),
+  'open-assessments':()=>{switchTab('more');renderAssessmentInMore();},
+  'open-manager':()=>{switchTab('more');renderManagerInMore();}
+};
+
+function runNotifAction(actionKey){
+  const fn=NOTIF_ACTIONS[actionKey];
+  if(fn)try{fn();}catch(e){console.warn('Notif action failed:',e);}
+}
+
+function addNotification(icon,text,actionKey){
+  // actionKey must be a key from NOTIF_ACTIONS; anything else is ignored.
+  const safeAction=(actionKey&&NOTIF_ACTIONS[actionKey])?actionKey:'';
+  // Dedupe: skip if the same text was added in the last 5 minutes
+  const last=notifications[0];
+  if(last&&last.text===text&&(Date.now()-new Date(last.time).getTime())<5*60*1000){
+    return;
+  }
+  const n={id:Date.now(),icon,text,action:safeAction,time:new Date().toISOString(),read:false};
   notifications.unshift(n);
   if(notifications.length>50)notifications=notifications.slice(0,50);
   updateNotifBadge();
@@ -4968,13 +5012,13 @@ function renderNotifications(){
     </div>`;
   });
   panel.innerHTML=html;
-  // Attach click listeners safely (no inline onclick — prevents XSS via n.action)
+  // Attach click listeners — only whitelisted actions can run (no eval, no Function constructor)
   panel.querySelectorAll('.notif-item').forEach(el=>{
     const idx=parseInt(el.dataset.notifIdx);
     const n=notifications[idx];
-    if(n&&n.action){
+    if(n&&n.action&&NOTIF_ACTIONS[n.action]){
       el.addEventListener('click',()=>{
-        try{Function(n.action)();}catch(e){console.warn('Notification action failed:',e);}
+        runNotifAction(n.action);
         toggleNotifications();
       });
     }
