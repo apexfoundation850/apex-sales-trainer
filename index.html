@@ -3020,7 +3020,8 @@ function updateModuleBottom(mod){
   const timeMet=timeSpent>=minTime;
   const hasQuiz=!!QUIZZES[mod.id];
   const quizPassed=hasPassedQuiz(mod.id);
-  const canComplete=timeMet&&(!hasQuiz||quizPassed);
+  // Module completes based on study time alone. Quiz is unlocked after completion.
+  const canComplete=timeMet;
 
   let statusHtml='<div style="display:flex;flex-direction:column;gap:4px;">';
 
@@ -3031,13 +3032,9 @@ function updateModuleBottom(mod){
     statusHtml+=`<div style="font-size:11px;color:var(--gray);">&#9203; ${timeSpent}/${minTime} min study time</div>`;
   }
 
-  // Quiz requirement
-  if(hasQuiz){
-    if(quizPassed){
-      statusHtml+=`<div style="font-size:11px;color:var(--green);">&#9989; Quiz passed</div>`;
-    }else{
-      statusHtml+=`<div style="font-size:11px;color:var(--orange);">&#10060; Pass quiz (80%+) to complete</div>`;
-    }
+  // Quiz status (informational — quizzes unlock after module completion)
+  if(hasQuiz&&quizPassed){
+    statusHtml+=`<div style="font-size:11px;color:var(--green);">&#9989; Quiz passed</div>`;
   }
 
   statusHtml+='</div>';
@@ -3045,10 +3042,8 @@ function updateModuleBottom(mod){
   let btnHtml;
   if(canComplete){
     btnHtml=`<button class="mv-complete-btn" onclick="completeModule('${mod.id}')">&#9989; Mark Complete</button>`;
-  }else if(!timeMet&&(!hasQuiz||quizPassed)){
-    btnHtml=`<button class="mv-nav-btn mv-prev" style="opacity:.5;cursor:not-allowed;" disabled>&#9203; Keep studying...</button>`;
   }else{
-    btnHtml=`<button class="mv-complete-btn" style="background:var(--blue);" onclick="closeModule();startQuiz('${mod.id}')">&#10068; Take Quiz</button>`;
+    btnHtml=`<button class="mv-nav-btn mv-prev" style="opacity:.5;cursor:not-allowed;" disabled>&#9203; Keep studying...</button>`;
   }
 
   document.getElementById('mvBottom').innerHTML=statusHtml+btnHtml;
