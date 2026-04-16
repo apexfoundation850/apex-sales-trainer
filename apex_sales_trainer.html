@@ -427,6 +427,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
     <div id="pg-media" class="page"></div>
     <div id="pg-practice" class="page"></div>
     <div id="pg-more" class="page"></div>
+    <div id="pg-field" class="page"></div>
   </div>
 
   <!-- MINI AUDIO PLAYER -->
@@ -2352,6 +2353,7 @@ auth.onAuthStateChanged(async user=>{
     // Load all users and assignments for leaderboard/manager
     await loadAllUsers();
     await loadAssignments();
+    await loadCustomScripts();
     // Start real-time sync for leaderboard/manager
     startRealtimeSync();
     // Enter app
@@ -2558,6 +2560,10 @@ function updateTopBar(){
 // ---- NAVIGATION ----
 let learnTab='modules';
 let practiceTab='drills';
+let fieldTab='scripts';
+let scriptSearchQuery='';
+let expandedScriptId=null;
+let customScripts=[];
 
 function switchTab(tab){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
@@ -2571,6 +2577,7 @@ function switchTab(tab){
   if(tab==='media')renderMediaLibrary();
   if(tab==='practice')renderPractice();
   if(tab==='more')renderMore();
+  if(tab==='field')renderField();
 }
 
 function renderLearn(){
@@ -2608,8 +2615,276 @@ function renderPractice(){
   document.getElementById('pg-practice').innerHTML=html;
 }
 
+// ---- FIELD TOOLS: SCRIPTS LIBRARY + CALCULATOR ----
+
+// Phase categories for grouping scripts, in display order
+const SCRIPT_PHASES=[
+  {ids:['mod1'],name:'Pre-Inspection Phase'},
+  {ids:['mod2'],name:'Inspection Phase'},
+  {ids:['mod3'],name:'Presentation Phase'},
+  {ids:['mod4'],name:'Close Phase'},
+  {ids:['mod5'],name:'Post-Appointment Follow-Up'},
+  {ids:['mod6'],name:'Customer Psychology'},
+  {ids:['mod7'],name:'Self-Generated Leads'},
+  {ids:['jt1','jt2','jt3','jt4','jt5'],name:'Job Type'}
+];
+
+let _extractedScripts=null;
+function extractScriptsFromModules(){
+  if(_extractedScripts)return _extractedScripts;
+  const out=[];
+  let sid=0;
+  MODULES.forEach(mod=>{
+    mod.slides.forEach(slide=>{
+      const content=slide.c||'';
+      // Match every <div class="script-box">...</div> (non-greedy, DOTALL via [\s\S])
+      const re=/<div class="script-box">([\s\S]*?)<\/div>/g;
+      let m;
+      while((m=re.exec(content))!==null){
+        const boxEnd=m.index+m[0].length;
+        // Strip tags from the script content
+        const rawText=m[1].replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&quot;/g,'"').replace(/&mdash;/g,'—').replace(/&amp;/g,'&').trim();
+        // Look for a "Goal:" paragraph within the next 400 chars after the script box
+        const after=content.slice(boxEnd,boxEnd+500);
+        const goalMatch=after.match(/<p>\s*<strong>Goal:<\/strong>\s*([^<]+)<\/p>/);
+        const goal=goalMatch?goalMatch[1].trim():'';
+        out.push({
+          id:'s'+(sid++),
+          moduleId:mod.id,
+          moduleTitle:mod.title,
+          slideTitle:slide.t,
+          text:rawText,
+          goal,
+          custom:false
+        });
+      }
+    });
+  });
+  _extractedScripts=out;
+  return out;
+}
+
+async function loadCustomScripts(){
+  try{
+    const doc=await db.collection('meta').doc('customScripts').get({source:'server'}).catch(()=>db.collection('meta').doc('customScripts').get());
+    if(doc.exists){
+      const d=doc.data();
+      customScripts=Array.isArray(d.scripts)?d.scripts:[];
+    }
+  }catch(e){console.warn('customScripts load failed',e);}
+}
+
+async function saveCustomScript(title,category,text){
+  if(!isManager)return showToast('Managers only','toast-streak');
+  const s={id:'cs'+Date.now(),title,category,text,createdBy:currentUid||'',createdAt:new Date().toISOString()};
+  customScripts.push(s);
+  try{
+    await db.collection('meta').doc('customScripts').set({scripts:customScripts},{merge:true});
+    showToast('Custom script added','toast-success');
+    renderField();
+  }catch(e){showToast('Save failed: '+e.message,'toast-streak');}
+}
+
+async function deleteCustomScript(id){
+  if(!isManager)return;
+  if(!confirm('Delete this custom script?'))return;
+  customScripts=customScripts.filter(s=>s.id!==id);
+  try{
+    await db.collection('meta').doc('customScripts').set({scripts:customScripts},{merge:true});
+    showToast('Deleted','toast-success');
+    renderField();
+  }catch(e){showToast('Delete failed: '+e.message,'toast-streak');}
+}
+
+function renderField(){
+  let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:12px;" onclick="switchTab('home')">&#8592; Home</button>
+  <div class="slides-toggle" style="margin-bottom:16px;">
+    <div class="slides-toggle-btn ${fieldTab==='scripts'?'active':''}" onclick="fieldTab='scripts';renderField()">&#128221; Scripts</div>
+    <div class="slides-toggle-btn ${fieldTab==='calc'?'active':''}" onclick="fieldTab='calc';renderField()">&#128176; Financing Calculator</div>
+  </div>`;
+  if(fieldTab==='scripts')html+=renderScriptsTabHTML();
+  else html+=renderCalcTabHTML();
+  document.getElementById('pg-field').innerHTML=html;
+  // Preserve search focus
+  if(fieldTab==='scripts'&&scriptSearchQuery){
+    const input=document.getElementById('scriptSearch');
+    if(input){input.focus();input.selectionStart=input.selectionEnd=input.value.length;}
+  }
+  // Initialize calculator on first render
+  if(fieldTab==='calc')setTimeout(updateCalc,0);
+}
+
+function renderScriptsTabHTML(){
+  const all=[...extractScriptsFromModules(),...customScripts.map(c=>({id:c.id,moduleId:'custom',moduleTitle:c.category||'Custom',slideTitle:c.title,text:c.text,goal:'',custom:true}))];
+  const q=scriptSearchQuery.trim().toLowerCase();
+  const filtered=q?all.filter(s=>(s.text+' '+s.slideTitle+' '+s.moduleTitle+' '+(s.goal||'')).toLowerCase().includes(q)):all;
+
+  let html=`<div class="search-wrap"><input id="scriptSearch" class="search-bar" type="text" placeholder="Search scripts..." value="${escapeHtml(scriptSearchQuery)}" oninput="scriptSearchQuery=this.value;renderField()"></div>`;
+
+  if(isManager){
+    html+=`<button class="mv-complete-btn" style="width:100%;margin-bottom:16px;background:var(--purple);" onclick="showAddCustomScript()">+ Add Custom Script</button>`;
+  }
+
+  if(!filtered.length){
+    html+='<div style="text-align:center;padding:24px;color:var(--gray);font-size:13px;">No scripts match "'+escapeHtml(scriptSearchQuery)+'"</div>';
+    return html;
+  }
+
+  // Group by phase
+  const phaseOrder=[...SCRIPT_PHASES.map(p=>p.name),'Custom'];
+  const groups={};
+  filtered.forEach(s=>{
+    let phaseName='Other';
+    if(s.custom){phaseName='Custom';}
+    else{
+      const phase=SCRIPT_PHASES.find(p=>p.ids.includes(s.moduleId));
+      if(phase)phaseName=phase.name;
+    }
+    if(!groups[phaseName])groups[phaseName]=[];
+    groups[phaseName].push(s);
+  });
+
+  phaseOrder.concat(Object.keys(groups).filter(k=>!phaseOrder.includes(k))).forEach(phase=>{
+    const items=groups[phase];
+    if(!items||!items.length)return;
+    html+=`<div class="sec-header" style="margin-top:16px;">${escapeHtml(phase)} <span style="font-size:10px;color:var(--gray);font-weight:400;letter-spacing:0;text-transform:none;">(${items.length})</span></div>`;
+    items.forEach(s=>{
+      const expanded=expandedScriptId===s.id;
+      const preview=s.text.split('\n').slice(0,2).join(' ').substring(0,120);
+      html+=`<div class="card" style="cursor:pointer;${expanded?'border-color:var(--gold);':''}" onclick="toggleScript('${s.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;">${escapeHtml(s.slideTitle)}${s.custom?' <span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--purple)30;color:var(--purple);">CUSTOM</span>':''}</div>
+            <div style="font-size:11px;color:var(--gray);margin-bottom:${expanded?'8':'0'}px;">${escapeHtml(s.moduleTitle)}</div>
+            ${!expanded?`<div style="font-size:12px;color:var(--gray-l);font-style:italic;line-height:1.5;">"${escapeHtml(preview)}..."</div>`:''}
+          </div>
+          <span style="font-size:16px;color:var(--gray);">${expanded?'&minus;':'+'}</span>
+        </div>
+        ${expanded?`
+          <div style="margin-top:12px;padding:14px;background:var(--dark3);border-left:3px solid var(--red);border-radius:0 8px 8px 0;font-style:italic;font-size:13px;color:var(--gray-l);line-height:1.6;white-space:pre-wrap;">${escapeHtml(s.text)}</div>
+          ${s.goal?`<div style="margin-top:8px;font-size:12px;color:var(--gray);"><strong style="color:var(--gold);">Goal:</strong> ${escapeHtml(s.goal)}</div>`:''}
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="mv-nav-btn mv-prev" style="flex:1;" onclick="event.stopPropagation();copyScript('${s.id}')">&#128203; Copy</button>
+            ${s.custom&&isManager?`<button class="mv-nav-btn mv-prev" style="background:var(--red);color:#fff;" onclick="event.stopPropagation();deleteCustomScript('${s.id}')">Delete</button>`:''}
+          </div>
+        `:''}
+      </div>`;
+    });
+  });
+  return html;
+}
+
+function toggleScript(id){
+  expandedScriptId=expandedScriptId===id?null:id;
+  renderField();
+}
+
+function copyScript(id){
+  const all=[...extractScriptsFromModules(),...customScripts.map(c=>({id:c.id,text:c.text}))];
+  const s=all.find(x=>x.id===id);
+  if(!s)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(s.text).then(()=>showToast('Script copied','toast-success')).catch(()=>fallbackCopy(s.text));
+  }else{
+    fallbackCopy(s.text);
+  }
+}
+
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');showToast('Script copied','toast-success');}catch(e){showToast('Copy failed','toast-streak');}
+  document.body.removeChild(ta);
+}
+
+function showAddCustomScript(){
+  if(!isManager)return;
+  const title=prompt('Script title:');
+  if(!title)return;
+  const category=prompt('Category (e.g., "Close Phase", "Objections"):','Custom');
+  if(category===null)return;
+  const text=prompt('Script text:');
+  if(!text)return;
+  saveCustomScript(title,category,text);
+}
+
+function renderCalcTabHTML(){
+  return `<div class="sec-header">Financing Payment Calculator</div>
+  <div class="card" style="padding:20px;">
+    <p style="font-size:12px;color:var(--gray);margin-bottom:16px;">For live close-table math. Enter values to see the monthly payment instantly.</p>
+    <div style="display:grid;gap:12px;">
+      <div>
+        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Loan Amount ($)</label>
+        <input type="number" id="calcAmt" value="15000" step="100" min="0" oninput="updateCalc()" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:18px;font-weight:700;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">APR (%)</label>
+        <input type="number" id="calcApr" value="9.99" step="0.01" min="0" oninput="updateCalc()" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:18px;font-weight:700;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">Term (months)</label>
+        <select id="calcTerm" onchange="updateCalc()" style="width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:18px;font-weight:700;box-sizing:border-box;">
+          <option value="12">12 months (1 year)</option>
+          <option value="24">24 months (2 years)</option>
+          <option value="36">36 months (3 years)</option>
+          <option value="60" selected>60 months (5 years)</option>
+          <option value="84">84 months (7 years)</option>
+          <option value="120">120 months (10 years)</option>
+          <option value="180">180 months (15 years)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="text-align:center;padding:24px;background:linear-gradient(135deg,#1a0905,#200c08);border-color:rgba(201,168,76,.35);">
+    <div style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;">Monthly Payment</div>
+    <div id="calcResult" style="font-size:42px;font-weight:800;color:var(--gold);line-height:1;">&mdash;</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;font-size:12px;">
+      <div style="padding:8px;background:var(--dark3);border-radius:8px;">
+        <div style="color:var(--gray);">Total Interest</div>
+        <div id="calcInterest" style="font-weight:700;color:var(--orange);font-size:14px;">&mdash;</div>
+      </div>
+      <div style="padding:8px;background:var(--dark3);border-radius:8px;">
+        <div style="color:var(--gray);">Total Paid</div>
+        <div id="calcTotal" style="font-weight:700;color:var(--gray-l);font-size:14px;">&mdash;</div>
+      </div>
+    </div>
+    <button class="mv-nav-btn mv-prev" style="margin-top:14px;width:100%;" onclick="copyPayment()">&#128203; Copy Payment to Clipboard</button>
+  </div>`;
+}
+
+function updateCalc(){
+  const amt=parseFloat(document.getElementById('calcAmt').value)||0;
+  const apr=parseFloat(document.getElementById('calcApr').value)||0;
+  const n=parseFloat(document.getElementById('calcTerm').value)||60;
+  const r=apr/100/12;
+  let monthly=0;
+  if(r===0){monthly=amt/n;}
+  else{monthly=amt*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);}
+  const total=monthly*n;
+  const interest=total-amt;
+  const fmt=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  document.getElementById('calcResult').textContent=isFinite(monthly)?fmt(monthly):'—';
+  document.getElementById('calcInterest').textContent=isFinite(interest)?fmt(interest):'—';
+  document.getElementById('calcTotal').textContent=isFinite(total)?fmt(total):'—';
+}
+
+function copyPayment(){
+  const txt=document.getElementById('calcResult').textContent;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>showToast('Copied '+txt,'toast-success'));
+  }else{fallbackCopy(txt);}
+}
+
 function renderMore(){
   let html='';
+  // Field Tools
+  html+=`<div class="sec-header">Field Tools</div>
+  <div class="card" style="cursor:pointer;text-align:center;border-color:rgba(201,168,76,.3);" onclick="switchTab('field')">
+    <div style="font-size:28px;">&#128188;</div>
+    <div style="font-size:14px;font-weight:700;margin-top:6px;">Scripts & Calculator</div>
+    <div style="font-size:12px;color:var(--gray);margin-top:4px;">Quick reference for live appointments</div>
+  </div>`;
   // Leaderboard
   html+=renderBoardHTML();
   // Assessments
@@ -2775,6 +3050,21 @@ function renderHome(){
   }
 
   html+=getOnboardingHTML();
+
+  // Field Tools — two tap-through cards
+  html+=`<div class="sec-header">Field Tools</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+    <div class="card" style="cursor:pointer;text-align:center;border-color:rgba(201,168,76,.3);" onclick="fieldTab='scripts';switchTab('field')">
+      <div style="font-size:28px;">&#128221;</div>
+      <div style="font-size:13px;font-weight:700;margin-top:6px;">Scripts</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:2px;">Quick reference</div>
+    </div>
+    <div class="card" style="cursor:pointer;text-align:center;border-color:rgba(201,168,76,.3);" onclick="fieldTab='calc';switchTab('field')">
+      <div style="font-size:28px;">&#128176;</div>
+      <div style="font-size:13px;font-weight:700;margin-top:6px;">Financing Calc</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:2px;">Monthly payment</div>
+    </div>
+  </div>`;
 
   // Stats at a glance
   const quizCount=Object.keys(r.quizScores||{}).length;
