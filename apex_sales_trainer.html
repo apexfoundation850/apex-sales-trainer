@@ -2359,6 +2359,7 @@ auth.onAuthStateChanged(async user=>{
     await loadAllUsers();
     await loadAssignments();
     await loadCustomScripts();
+    await loadTeamObjections();
     // Start real-time sync for leaderboard/manager
     startRealtimeSync();
     // Enter app
@@ -2569,8 +2570,10 @@ let fieldTab='scripts';
 let scriptSearchQuery='';
 let expandedScriptId=null;
 let customScripts=[];
-let objectionState={input:'',context:'',loading:false,response:null};
-let objectionView='logger'; // 'logger' | 'playbook'
+let objectionState={input:'',context:'',loading:false,response:null,share:true};
+let objectionView='logger'; // 'logger' | 'playbook' | 'team'
+let teamObjections=[];
+let teamObjCategoryFilter='all';
 
 function switchTab(tab){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
@@ -2888,9 +2891,10 @@ function copyPayment(){
 // ---- OBJECTION LOGGER ----
 function renderObjectionTabHTML(){
   const playbook=(currentRep&&reps[currentRep].objectionPlaybook)||[];
-  let html=`<div class="slides-toggle" style="margin-bottom:16px;">
-    <div class="slides-toggle-btn ${objectionView==='logger'?'active':''}" onclick="objectionView='logger';renderField()">&#9997; Log New</div>
-    <div class="slides-toggle-btn ${objectionView==='playbook'?'active':''}" onclick="objectionView='playbook';renderField()">&#128214; My Playbook (${playbook.length})</div>
+  let html=`<div class="slides-toggle" style="margin-bottom:16px;flex-wrap:wrap;">
+    <div class="slides-toggle-btn ${objectionView==='logger'?'active':''}" onclick="objectionView='logger';renderField()">&#9997; Log</div>
+    <div class="slides-toggle-btn ${objectionView==='playbook'?'active':''}" onclick="objectionView='playbook';renderField()">&#128214; Mine (${playbook.length})</div>
+    <div class="slides-toggle-btn ${objectionView==='team'?'active':''}" onclick="objectionView='team';renderField()">&#128101; Team (${teamObjections.length})</div>
   </div>`;
 
   if(objectionView==='logger'){
@@ -2919,8 +2923,17 @@ function renderObjectionTabHTML(){
           <div style="font-size:11px;color:var(--red);font-weight:700;">&#9888; Avoid</div>
           <div style="font-size:11px;color:var(--gray-l);margin-top:2px;">${escapeHtml(r.warning)}</div>
         </div>`:''}
-        <div style="display:flex;gap:8px;margin-top:14px;">
-          <button class="mv-complete-btn" style="flex:1;" onclick="saveObjectionToPlaybook()">&#128214; Save to Playbook</button>
+        <div style="margin-top:14px;padding:10px;background:var(--dark3);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:600;color:var(--white);">Share with team</div>
+            <div style="font-size:10px;color:var(--gray);margin-top:2px;">${objectionState.share?'This objection + response will appear in the team playbook':'Kept private to you only'}</div>
+          </div>
+          <label style="display:flex;align-items:center;cursor:pointer;">
+            <input type="checkbox" ${objectionState.share?'checked':''} onchange="objectionState.share=this.checked;renderField()" style="width:20px;height:20px;accent-color:var(--gold);">
+          </label>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="mv-complete-btn" style="flex:1;" onclick="saveObjectionToPlaybook()">${objectionState.share?'&#128214; Save & Share':'&#128274; Save Private'}</button>
           <button class="mv-nav-btn mv-prev" style="flex:1;" onclick="copyObjectionResponse()">&#128203; Copy</button>
         </div>
         <button class="mv-nav-btn mv-prev" style="width:100%;margin-top:8px;background:var(--dark4);" onclick="resetObjection()">&larr; New Objection</button>
@@ -2936,22 +2949,25 @@ function renderObjectionTabHTML(){
       </div>
       <p style="font-size:11px;color:var(--gray-d);text-align:center;margin-top:12px;">Uses AI coaching tailored to your DISC style</p>`;
     }
-  }else{
-    // Playbook view
+  }else if(objectionView==='playbook'){
+    // Personal Playbook view
     if(!playbook.length){
       html+=`<div class="card" style="text-align:center;padding:30px;color:var(--gray);font-size:13px;">
         <div style="font-size:40px;margin-bottom:10px;">&#128214;</div>
-        No saved objections yet. Log one from the "Log New" tab and save it here for future reference.
+        No saved objections yet. Log one from the "Log" tab and save it here for future reference.
       </div>`;
     }else{
-      // Group by category
       const groups={};
       playbook.forEach(p=>{const c=p.category||'Other';if(!groups[c])groups[c]=[];groups[c].push(p);});
       Object.entries(groups).forEach(([cat,items])=>{
         html+=`<div class="sec-header">${escapeHtml(cat)} <span style="font-size:10px;color:var(--gray);font-weight:400;letter-spacing:0;text-transform:none;">(${items.length})</span></div>`;
         items.forEach(p=>{
+          const shared=p.shared!==false;
           html+=`<div class="card">
-            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">${new Date(p.date).toLocaleDateString()}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <div style="font-size:10px;color:var(--gray);">${new Date(p.date).toLocaleDateString()}</div>
+              ${shared?'<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--green)20;color:var(--green);font-weight:700;">&#128101; SHARED</span>':'<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--gray-d)40;color:var(--gray);font-weight:700;">&#128274; PRIVATE</span>'}
+            </div>
             <div style="font-size:12px;color:var(--gray-l);font-style:italic;margin-bottom:10px;">"${escapeHtml(p.objection)}"</div>
             <div style="padding:10px;background:var(--dark3);border-left:3px solid var(--red);border-radius:0 6px 6px 0;font-size:13px;color:var(--gray-l);line-height:1.5;white-space:pre-wrap;">${escapeHtml(p.response)}</div>
             ${p.technique?`<div style="font-size:11px;color:var(--gold);margin-top:6px;">&#128161; ${escapeHtml(p.technique)}</div>`:''}
@@ -2961,6 +2977,43 @@ function renderObjectionTabHTML(){
             </div>
           </div>`;
         });
+      });
+    }
+  }else if(objectionView==='team'){
+    // Team Playbook view
+    const cats=['all',...[...new Set(teamObjections.map(t=>t.category||'Other'))]];
+    html+=`<div style="overflow-x:auto;white-space:nowrap;margin-bottom:12px;padding-bottom:4px;">`;
+    cats.forEach(c=>{
+      const active=teamObjCategoryFilter===c;
+      const label=c==='all'?`All (${teamObjections.length})`:`${c} (${teamObjections.filter(t=>t.category===c).length})`;
+      html+=`<button style="display:inline-block;margin-right:6px;padding:6px 12px;border-radius:16px;border:1px solid var(--border);background:${active?'var(--red)':'var(--dark3)'};color:${active?'#fff':'var(--gray-l)'};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;" onclick="teamObjCategoryFilter='${c}';renderField()">${escapeHtml(label)}</button>`;
+    });
+    html+=`</div>`;
+
+    const filtered=teamObjCategoryFilter==='all'?teamObjections:teamObjections.filter(t=>t.category===teamObjCategoryFilter);
+    if(!filtered.length){
+      html+=`<div class="card" style="text-align:center;padding:30px;color:var(--gray);font-size:13px;">
+        <div style="font-size:40px;margin-bottom:10px;">&#128101;</div>
+        ${teamObjections.length?'No objections in this category yet.':'Team playbook is empty. Be the first to share an objection you hear in the field.'}
+      </div>`;
+    }else{
+      html+=`<p style="font-size:11px;color:var(--gray-d);margin-bottom:12px;">Real objections logged by teammates in the field, with AI-crafted Apex responses.</p>`;
+      filtered.forEach(t=>{
+        const canDelete=t.submittedBy===currentUid||isManager;
+        html+=`<div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div style="font-size:10px;color:var(--gray);">${new Date(t.date).toLocaleDateString()} &middot; ${escapeHtml(t.submittedByName||'Unknown')}</div>
+            <span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--purple)20;color:var(--purple);font-weight:700;">${escapeHtml(t.category||'Other')}</span>
+          </div>
+          <div style="font-size:12px;color:var(--gray-l);font-style:italic;margin-bottom:10px;">"${escapeHtml(t.objection)}"</div>
+          <div style="padding:10px;background:var(--dark3);border-left:3px solid var(--red);border-radius:0 6px 6px 0;font-size:13px;color:var(--gray-l);line-height:1.5;white-space:pre-wrap;">${escapeHtml(t.response)}</div>
+          ${t.technique?`<div style="font-size:11px;color:var(--gold);margin-top:6px;">&#128161; ${escapeHtml(t.technique)}</div>`:''}
+          ${t.followup?`<div style="font-size:11px;color:var(--blue);margin-top:4px;">&rarr; Then ask: ${escapeHtml(t.followup)}</div>`:''}
+          <div style="display:flex;gap:6px;margin-top:10px;">
+            <button class="mv-nav-btn mv-prev" style="flex:1;font-size:12px;padding:6px;" onclick="copyTeamObjection('${t.id}')">&#128203; Copy</button>
+            ${canDelete?`<button class="mv-nav-btn mv-prev" style="background:var(--red);color:#fff;font-size:12px;padding:6px;" onclick="deleteTeamObjection('${t.id}')">&#10005;</button>`:''}
+          </div>
+        </div>`;
       });
     }
   }
@@ -3002,11 +3055,11 @@ async function submitObjection(){
 }
 
 function resetObjection(){
-  objectionState={input:'',context:'',loading:false,response:null};
+  objectionState={input:'',context:'',loading:false,response:null,share:true};
   renderField();
 }
 
-function saveObjectionToPlaybook(){
+async function saveObjectionToPlaybook(){
   if(!currentRep||!objectionState.response)return;
   const r=reps[currentRep];
   r.objectionPlaybook=r.objectionPlaybook||[];
@@ -3018,13 +3071,20 @@ function saveObjectionToPlaybook(){
     technique:objectionState.response.technique||'',
     response:objectionState.response.response||'',
     followup:objectionState.response.followup_question||'',
-    date:new Date().toISOString()
+    date:new Date().toISOString(),
+    shared:!!objectionState.share
   };
   r.objectionPlaybook.unshift(entry);
   if(r.objectionPlaybook.length>100)r.objectionPlaybook=r.objectionPlaybook.slice(0,100);
   saveState();
   immediateSave();
-  showToast('Saved to playbook','toast-success');
+  // Share with team if toggle is on
+  if(objectionState.share){
+    await shareObjectionWithTeam(entry);
+    showToast('Saved & shared with team','toast-success');
+  }else{
+    showToast('Saved (private)','toast-success');
+  }
   objectionView='playbook';
   resetObjection();
 }
@@ -3054,6 +3114,58 @@ function deletePlaybookEntry(id){
   immediateSave();
   showToast('Deleted','toast-success');
   renderField();
+}
+
+// ---- TEAM OBJECTION PLAYBOOK (shared) ----
+async function loadTeamObjections(){
+  try{
+    const snap=await db.collection('teamObjections').orderBy('date','desc').limit(200).get({source:'server'}).catch(()=>db.collection('teamObjections').orderBy('date','desc').limit(200).get());
+    teamObjections=[];
+    snap.forEach(doc=>teamObjections.push({id:doc.id,...doc.data()}));
+  }catch(e){console.warn('teamObjections load failed',e);}
+}
+
+async function shareObjectionWithTeam(entry){
+  // entry: same shape as the personal playbook save
+  if(!currentUid||!currentRep)return;
+  const r=reps[currentRep];
+  const doc={
+    objection:entry.objection,
+    context:entry.context||'',
+    category:entry.category||'Other',
+    technique:entry.technique||'',
+    response:entry.response||'',
+    followup:entry.followup||'',
+    submittedBy:currentUid,
+    submittedByName:r.name||'Unknown',
+    date:entry.date||new Date().toISOString()
+  };
+  try{
+    const ref=await db.collection('teamObjections').add(doc);
+    teamObjections.unshift({id:ref.id,...doc});
+  }catch(e){console.warn('shareObjection failed',e);}
+}
+
+async function deleteTeamObjection(id){
+  if(!confirm('Remove this objection from the team playbook? (Your personal copy stays.)'))return;
+  const entry=teamObjections.find(x=>x.id===id);
+  if(!entry)return;
+  // Only allow the author OR a manager to delete
+  if(entry.submittedBy!==currentUid&&!isManager){return showToast('Only the author or a manager can remove','toast-streak');}
+  try{
+    await db.collection('teamObjections').doc(id).delete();
+    teamObjections=teamObjections.filter(x=>x.id!==id);
+    showToast('Removed from team playbook','toast-success');
+    renderField();
+  }catch(e){showToast('Delete failed: '+e.message,'toast-streak');}
+}
+
+function copyTeamObjection(id){
+  const e=teamObjections.find(x=>x.id===id);
+  if(!e)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(e.response).then(()=>showToast('Response copied','toast-success')).catch(()=>fallbackCopy(e.response));
+  }else{fallbackCopy(e.response);}
 }
 
 function renderMore(){
