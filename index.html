@@ -317,6 +317,29 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
 .rp-loading .spinner{display:inline-block;width:32px;height:32px;border:3px solid var(--dark4);border-top-color:var(--red);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* VOICE MIC BUTTON + PRACTICE OVERLAY */
+.mic-btn-big{width:96px;height:96px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:0 auto;transition:all .2s;box-shadow:0 6px 20px rgba(192,57,43,.35);}
+.mic-btn-big:hover{transform:scale(1.04);background:var(--red-l);}
+.mic-btn-big.listening{background:var(--green);box-shadow:0 6px 20px rgba(34,163,88,.4);animation:pulse 1.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+.voice-toggle{display:flex;gap:8px;margin-bottom:12px;}
+.voice-toggle-btn{flex:1;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--dark3);color:var(--gray);text-align:center;}
+.voice-toggle-btn.active{background:var(--red);border-color:var(--red);color:#fff;}
+.voice-transcript{min-height:80px;padding:14px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--gray-l);font-size:14px;line-height:1.5;white-space:pre-wrap;margin-top:12px;}
+.voice-transcript:empty::before{content:'Your words will appear here...';color:var(--gray-d);font-style:italic;}
+
+/* SCRIPT PRACTICE OVERLAY */
+.practice-overlay{position:fixed;inset:0;background:rgba(10,10,10,.98);z-index:200;display:flex;flex-direction:column;padding:24px;overflow-y:auto;}
+.practice-overlay.on{display:flex;}
+.practice-countdown{font-size:72px;font-weight:800;color:var(--red);text-align:center;margin:20px 0;}
+.practice-script{background:var(--dark3);border-left:4px solid var(--red);padding:20px;border-radius:0 12px 12px 0;font-size:16px;font-style:italic;color:var(--gray-l);line-height:1.8;margin:20px 0;white-space:pre-wrap;}
+.practice-phase-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;text-align:center;margin-bottom:8px;}
+.practice-score-big{font-size:72px;font-weight:800;text-align:center;margin:12px 0;}
+.practice-score-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0;}
+.practice-score-cell{text-align:center;padding:12px;background:var(--dark3);border-radius:8px;}
+.practice-score-cell .num{font-size:22px;font-weight:700;}
+.practice-score-cell .label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-top:2px;}
+
 /* DISC ASSESSMENT */
 .disc-d{color:#d4461a;} .disc-i{color:#d4a017;} .disc-s{color:#22a358;} .disc-c{color:#2e7dd4;}
 .disc-bg-d{background:#d4461a;} .disc-bg-i{background:#d4a017;} .disc-bg-s{background:#22a358;} .disc-bg-c{background:#2e7dd4;}
@@ -468,6 +491,9 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
     </button>
   </div>
 </div>
+
+<!-- SCRIPT PRACTICE OVERLAY -->
+<div class="practice-overlay" id="practiceOverlay" style="display:none;"></div>
 
 <!-- MODULE VIEWER -->
 <div id="moduleViewer">
@@ -2168,7 +2194,8 @@ function saveState(){
         eqResult:r.eqResult||null,
         certificates:r.certificates||[],
         roleplayHistory:(r.roleplayHistory||[]).slice(0,50),
-        objectionPlaybook:(r.objectionPlaybook||[]).slice(0,100)
+        objectionPlaybook:(r.objectionPlaybook||[]).slice(0,100),
+        scriptPracticeHistory:(r.scriptPracticeHistory||[]).slice(0,50)
       }).catch(e=>console.warn('Save failed:',e));
     }
     // Save assignments
@@ -2192,7 +2219,8 @@ function immediateSave(){
     discResult:r.discResult||null, motivatorsResult:r.motivatorsResult||null,
     eqResult:r.eqResult||null, certificates:r.certificates||[],
     roleplayHistory:(r.roleplayHistory||[]).slice(0,50),
-    objectionPlaybook:(r.objectionPlaybook||[]).slice(0,100)
+    objectionPlaybook:(r.objectionPlaybook||[]).slice(0,100),
+    scriptPracticeHistory:(r.scriptPracticeHistory||[]).slice(0,50)
   }).catch(e=>console.warn('Immediate save failed:',e));
 }
 
@@ -2222,7 +2250,8 @@ async function loadUserData(uid){
       roleplayHistory:d.roleplayHistory||[],
       welcomeCompleted:d.welcomeCompleted||false, experience:d.experience||null,
       notifications:d.notifications||[], studyTimes:d.studyTimes||{},
-      objectionPlaybook:d.objectionPlaybook||[]
+      objectionPlaybook:d.objectionPlaybook||[],
+      scriptPracticeHistory:d.scriptPracticeHistory||[]
     };
     notifications=d.notifications||[];
     updateNotifBadge();
@@ -2245,7 +2274,8 @@ async function loadAllUsers(){
       badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep',
       discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
       eqResult:d.eqResult||null, roleplayHistory:d.roleplayHistory||[],
-      objectionPlaybook:d.objectionPlaybook||[]
+      objectionPlaybook:d.objectionPlaybook||[],
+      scriptPracticeHistory:d.scriptPracticeHistory||[]
     };
   });
 }
@@ -2279,7 +2309,8 @@ function startRealtimeSync(){
           eqResult:d.eqResult||null,
           welcomeCompleted:d.welcomeCompleted||false, experience:d.experience||null,
           certificates:d.certificates||[], roleplayHistory:d.roleplayHistory||[],
-          objectionPlaybook:d.objectionPlaybook||[]
+          objectionPlaybook:d.objectionPlaybook||[],
+          scriptPracticeHistory:d.scriptPracticeHistory||[]
         };
       }
     });
@@ -2763,10 +2794,13 @@ function renderScriptsTabHTML(){
     items.forEach(s=>{
       const expanded=expandedScriptId===s.id;
       const preview=s.text.split('\n').slice(0,2).join(' ').substring(0,120);
+      // Practice history for this script
+      const practiceHist=(currentRep&&reps[currentRep].scriptPracticeHistory||[]).filter(p=>p.scriptId===s.id);
+      const practiceStat=practiceHist.length?`<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--gold)20;color:var(--gold);font-weight:700;margin-left:6px;">&#127908; ${practiceHist.length}&times; &middot; ${practiceHist[0].score}%</span>`:'';
       html+=`<div class="card" style="cursor:pointer;${expanded?'border-color:var(--gold);':''}" onclick="toggleScript('${s.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;">${escapeHtml(s.slideTitle)}${s.custom?' <span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--purple)30;color:var(--purple);">CUSTOM</span>':''}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;">${escapeHtml(s.slideTitle)}${s.custom?' <span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--purple)30;color:var(--purple);">CUSTOM</span>':''}${practiceStat}</div>
             <div style="font-size:11px;color:var(--gray);margin-bottom:${expanded?'8':'0'}px;">${escapeHtml(s.moduleTitle)}</div>
             ${!expanded?`<div style="font-size:12px;color:var(--gray-l);font-style:italic;line-height:1.5;">"${escapeHtml(preview)}..."</div>`:''}
           </div>
@@ -2776,6 +2810,7 @@ function renderScriptsTabHTML(){
           <div style="margin-top:12px;padding:14px;background:var(--dark3);border-left:3px solid var(--red);border-radius:0 8px 8px 0;font-style:italic;font-size:13px;color:var(--gray-l);line-height:1.6;white-space:pre-wrap;">${escapeHtml(s.text)}</div>
           ${s.goal?`<div style="margin-top:8px;font-size:12px;color:var(--gray);"><strong style="color:var(--gold);">Goal:</strong> ${escapeHtml(s.goal)}</div>`:''}
           <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="mv-complete-btn" style="flex:1;background:var(--purple);" onclick="event.stopPropagation();startScriptPractice('${s.id}')">&#127908; Practice</button>
             <button class="mv-nav-btn mv-prev" style="flex:1;" onclick="event.stopPropagation();copyScript('${s.id}')">&#128203; Copy</button>
             ${s.custom&&isManager?`<button class="mv-nav-btn mv-prev" style="background:var(--red);color:#fff;" onclick="event.stopPropagation();deleteCustomScript('${s.id}')">Delete</button>`:''}
           </div>
@@ -3116,7 +3151,189 @@ function deletePlaybookEntry(id){
   renderField();
 }
 
-// ---- TEAM OBJECTION PLAYBOOK (shared) ----
+// ---- MUSCLE-MEMORY SCRIPT PRACTICE ----
+let scriptPracticeState={active:false,scriptId:null,scriptTitle:'',referenceText:'',phase:'idle',countdown:10,transcript:'',result:null};
+let _spCountdownTimer=null;
+let _spRecognition=null;
+
+function startScriptPractice(scriptId){
+  if(!isSpeechSupported()){return showToast('Voice practice requires Chrome or Safari','toast-streak');}
+  const all=[...extractScriptsFromModules(),...customScripts.map(c=>({id:c.id,slideTitle:c.title,text:c.text}))];
+  const s=all.find(x=>x.id===scriptId);
+  if(!s)return;
+  scriptPracticeState={active:true,scriptId,scriptTitle:s.slideTitle,referenceText:s.text,phase:'countdown',countdown:10,transcript:'',result:null};
+  const overlay=document.getElementById('practiceOverlay');
+  overlay.style.display='flex';
+  renderScriptPractice();
+  // Tick the countdown every second
+  _spCountdownTimer=setInterval(()=>{
+    scriptPracticeState.countdown--;
+    if(scriptPracticeState.countdown<=0){
+      clearInterval(_spCountdownTimer);_spCountdownTimer=null;
+      scriptPracticeState.phase='recording';
+      spStartRecording();
+    }
+    renderScriptPractice();
+  },1000);
+}
+
+function spStartRecording(){
+  const Rec=getSpeechRecognition();
+  if(!Rec){spCancel();return showToast('Speech recognition unavailable','toast-streak');}
+  try{
+    _spRecognition=new Rec();
+    _spRecognition.continuous=true;
+    _spRecognition.interimResults=true;
+    _spRecognition.lang='en-US';
+    let finalBuf='';
+    _spRecognition.onresult=(e)=>{
+      let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const res=e.results[i];
+        if(res.isFinal){finalBuf+=(finalBuf?' ':'')+res[0].transcript.trim();}
+        else{interim+=res[0].transcript;}
+      }
+      scriptPracticeState.transcript=(finalBuf+(interim?' '+interim:'')).trim();
+      renderScriptPractice();
+    };
+    _spRecognition.onerror=(e)=>{
+      if(e.error==='not-allowed'||e.error==='service-not-allowed'){showToast('Mic permission denied','toast-streak');spCancel();}
+      else if(e.error==='no-speech'){/* let them keep going */}
+      else{showToast('Mic error: '+e.error,'toast-streak');}
+    };
+    _spRecognition.onend=()=>{
+      if(scriptPracticeState.phase==='recording'){
+        try{_spRecognition.start();}catch(e){}
+      }
+    };
+    _spRecognition.start();
+    renderScriptPractice();
+  }catch(e){showToast('Failed to start mic: '+e.message,'toast-streak');spCancel();}
+}
+
+function stopScriptPractice(){
+  if(_spRecognition){try{_spRecognition.stop();}catch(e){}_spRecognition=null;}
+  if(!scriptPracticeState.transcript||scriptPracticeState.transcript.length<5){
+    return showToast('Say more of the script first','toast-streak');
+  }
+  scriptPracticeState.phase='scoring';
+  renderScriptPractice();
+  scoreScriptPractice();
+}
+
+async function scoreScriptPractice(){
+  try{
+    const res=await fetch('/api/script-practice',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        reference:scriptPracticeState.referenceText,
+        transcript:scriptPracticeState.transcript,
+        title:scriptPracticeState.scriptTitle
+      })
+    });
+    if(!res.ok)throw new Error('API error');
+    scriptPracticeState.result=await res.json();
+    scriptPracticeState.phase='results';
+    // Persist + award points
+    if(currentRep&&scriptPracticeState.result&&!scriptPracticeState.result.error){
+      const r=reps[currentRep];
+      r.scriptPracticeHistory=r.scriptPracticeHistory||[];
+      r.scriptPracticeHistory.unshift({
+        scriptId:scriptPracticeState.scriptId,
+        title:scriptPracticeState.scriptTitle,
+        score:scriptPracticeState.result.overall_score||0,
+        accuracy:scriptPracticeState.result.accuracy||0,
+        tone:scriptPracticeState.result.tone||0,
+        completeness:scriptPracticeState.result.completeness||0,
+        date:new Date().toISOString()
+      });
+      if(r.scriptPracticeHistory.length>50)r.scriptPracticeHistory=r.scriptPracticeHistory.slice(0,50);
+      addPoints(10,'Script practice: '+scriptPracticeState.scriptTitle);
+      saveState();immediateSave();
+    }
+    renderScriptPractice();
+  }catch(e){
+    scriptPracticeState.result={error:true,coaching:'AI scoring unavailable right now. Try again in a moment.'};
+    scriptPracticeState.phase='results';
+    renderScriptPractice();
+  }
+}
+
+function spRetry(){
+  const id=scriptPracticeState.scriptId;
+  spCancel();
+  startScriptPractice(id);
+}
+
+function spCancel(){
+  if(_spCountdownTimer){clearInterval(_spCountdownTimer);_spCountdownTimer=null;}
+  if(_spRecognition){try{_spRecognition.stop();}catch(e){}_spRecognition=null;}
+  scriptPracticeState={active:false,scriptId:null,scriptTitle:'',referenceText:'',phase:'idle',countdown:10,transcript:'',result:null};
+  document.getElementById('practiceOverlay').style.display='none';
+}
+
+function renderScriptPractice(){
+  const el=document.getElementById('practiceOverlay');
+  if(!scriptPracticeState.active){el.style.display='none';return;}
+  const s=scriptPracticeState;
+  let html='';
+  if(s.phase==='countdown'){
+    html=`<div style="max-width:700px;margin:0 auto;width:100%;">
+      <div class="practice-phase-label">&#128221; Read it carefully</div>
+      <div style="font-size:18px;font-weight:700;color:var(--white);text-align:center;margin-bottom:8px;">${escapeHtml(s.scriptTitle)}</div>
+      <div class="practice-script">${escapeHtml(s.referenceText)}</div>
+      <div style="text-align:center;font-size:12px;color:var(--gray);margin-bottom:4px;">Script hides in</div>
+      <div class="practice-countdown">${s.countdown}</div>
+      <button class="mv-nav-btn mv-prev" style="width:100%;margin-top:20px;" onclick="spCancel()">Cancel</button>
+    </div>`;
+  }else if(s.phase==='recording'){
+    html=`<div style="max-width:700px;margin:0 auto;width:100%;">
+      <div class="practice-phase-label">&#127908; Say it from memory</div>
+      <div style="font-size:16px;font-weight:700;color:var(--white);text-align:center;margin-bottom:20px;">${escapeHtml(s.scriptTitle)}</div>
+      <div style="text-align:center;padding:20px 0;">
+        <button class="mic-btn-big listening" onclick="stopScriptPractice()">&#9632;</button>
+        <div style="font-size:12px;color:var(--gray);margin-top:12px;">Recording... tap the square when done</div>
+      </div>
+      <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:6px;">Your words</div>
+      <div class="voice-transcript">${escapeHtml(s.transcript||'')}</div>
+      <button class="mv-nav-btn mv-prev" style="width:100%;margin-top:14px;background:var(--dark4);" onclick="spCancel()">Cancel</button>
+    </div>`;
+  }else if(s.phase==='scoring'){
+    html=`<div style="max-width:700px;margin:0 auto;width:100%;">
+      <div class="rp-loading"><div class="spinner"></div><div style="font-size:14px;">Scoring your delivery...</div><div style="font-size:12px;color:var(--gray-d);margin-top:4px;">AI coach is comparing your words to the reference</div></div>
+    </div>`;
+  }else if(s.phase==='results'){
+    const r=s.result||{};
+    const score=r.overall_score||0;
+    const color=score>=80?'var(--green)':score>=60?'var(--orange)':'var(--red)';
+    html=`<div style="max-width:700px;margin:0 auto;width:100%;">
+      <div class="practice-phase-label">Your Delivery</div>
+      <div class="practice-score-big" style="color:${color};">${score}%</div>`;
+    if(!r.error){
+      html+=`<div class="practice-score-row">
+        <div class="practice-score-cell"><div class="num" style="color:${(r.accuracy||0)>=8?'var(--green)':(r.accuracy||0)>=5?'var(--orange)':'var(--red)'};">${r.accuracy||0}/10</div><div class="label">Accuracy</div></div>
+        <div class="practice-score-cell"><div class="num" style="color:${(r.tone||0)>=8?'var(--green)':(r.tone||0)>=5?'var(--orange)':'var(--red)'};">${r.tone||0}/10</div><div class="label">Tone</div></div>
+        <div class="practice-score-cell"><div class="num" style="color:${(r.completeness||0)>=8?'var(--green)':(r.completeness||0)>=5?'var(--orange)':'var(--red)'};">${r.completeness||0}/10</div><div class="label">Completeness</div></div>
+      </div>`;
+      if(r.missing)html+=`<div class="card" style="padding:12px;border-left:3px solid var(--orange);"><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--orange);margin-bottom:4px;">You missed</div><div style="font-size:13px;color:var(--gray-l);">${escapeHtml(r.missing)}</div></div>`;
+      if(r.added)html+=`<div class="card" style="padding:12px;border-left:3px solid var(--gray);"><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:4px;">You added</div><div style="font-size:13px;color:var(--gray-l);">${escapeHtml(r.added)}</div></div>`;
+    }
+    if(r.coaching)html+=`<div class="card" style="padding:14px;border-left:3px solid var(--gold);background:rgba(201,168,76,.08);"><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">&#128161; Coaching</div><div style="font-size:13px;color:var(--gray-l);line-height:1.5;">${escapeHtml(r.coaching)}</div></div>`;
+    html+=`<div class="card" style="padding:12px;margin-top:10px;">
+      <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:6px;">What you said</div>
+      <div style="font-size:12px;color:var(--gray-l);font-style:italic;margin-bottom:12px;">"${escapeHtml(s.transcript)}"</div>
+      <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:6px;">Reference</div>
+      <div style="font-size:12px;color:var(--gray-l);font-style:italic;white-space:pre-wrap;">"${escapeHtml(s.referenceText)}"</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="mv-complete-btn" style="flex:1;" onclick="spRetry()">&#8634; Try Again</button>
+      <button class="mv-nav-btn mv-prev" style="flex:1;" onclick="spCancel()">Back to Scripts</button>
+    </div>
+    </div>`;
+  }
+  el.innerHTML=html;
+}
 async function loadTeamObjections(){
   try{
     const snap=await db.collection('teamObjections').orderBy('date','desc').limit(200).get({source:'server'}).catch(()=>db.collection('teamObjections').orderBy('date','desc').limit(200).get());
@@ -3211,6 +3428,10 @@ function escapeHtml(s){
   if(s==null)return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+
+// ---- Web Speech API helpers (voice role-play + script practice) ----
+function getSpeechRecognition(){return window.SpeechRecognition||window.webkitSpeechRecognition||null;}
+function isSpeechSupported(){return !!getSpeechRecognition();}
 
 function showToast(msg,cls){
   const t=document.getElementById('toast');
@@ -4214,7 +4435,8 @@ function answerDrill(idx){
 }
 
 // ---- ROLE-PLAY ----
-let rpState={scenario:null,loading:false,feedback:null};
+let rpState={scenario:null,loading:false,feedback:null,voiceMode:false,listening:false,transcript:''};
+let _rpRecognition=null;
 
 function renderRolePlayHTML(){
   let html='';
@@ -4253,14 +4475,85 @@ function renderRolePlayHTML(){
         <div class="drill-context">${s.context}</div>
       </div>
       <div style="font-size:14px;font-weight:600;color:var(--white);margin-bottom:8px;">Your response:</div>
-      <p style="font-size:12px;color:var(--gray);margin-bottom:10px;">Respond as if you\'re speaking directly to the homeowner. Be natural.</p>
-      <textarea class="rp-textarea" id="rpResponse" placeholder="Type what you would say to this customer..."></textarea>
-      <button class="rp-submit" id="rpSubmit" onclick="submitRolePlay()">Get AI Coaching Feedback</button>`;
+      <p style="font-size:12px;color:var(--gray);margin-bottom:10px;">Respond as if you\'re speaking directly to the homeowner. Be natural.</p>`;
+
+    // Voice/Type toggle (only if browser supports speech recognition)
+    if(isSpeechSupported()){
+      html+=`<div class="voice-toggle">
+        <div class="voice-toggle-btn ${!rpState.voiceMode?'active':''}" onclick="toggleRpVoiceMode(false)">&#9000;&#65039; Type</div>
+        <div class="voice-toggle-btn ${rpState.voiceMode?'active':''}" onclick="toggleRpVoiceMode(true)">&#127908; Voice</div>
+      </div>`;
+    }else{
+      html+=`<div style="font-size:11px;color:var(--gray-d);margin-bottom:10px;text-align:center;">&#9432; Voice practice requires Chrome or Safari</div>`;
+    }
+
+    if(rpState.voiceMode&&isSpeechSupported()){
+      // Voice input mode
+      html+=`<div style="text-align:center;padding:20px 0;">
+        <button class="mic-btn-big ${rpState.listening?'listening':''}" onclick="toggleRpListening()" title="${rpState.listening?'Stop recording':'Start recording'}">${rpState.listening?'&#9632;':'&#127908;'}</button>
+        <div style="font-size:12px;color:var(--gray);margin-top:10px;">${rpState.listening?'Listening... tap to stop':'Tap to speak your response'}</div>
+      </div>
+      <textarea class="rp-textarea" id="rpResponse" placeholder="Your words will appear here..." oninput="rpState.transcript=this.value">${escapeHtml(rpState.transcript)}</textarea>`;
+    }else{
+      html+=`<textarea class="rp-textarea" id="rpResponse" placeholder="Type what you would say to this customer..." oninput="rpState.transcript=this.value">${escapeHtml(rpState.transcript||'')}</textarea>`;
+    }
+    html+=`<button class="rp-submit" id="rpSubmit" onclick="submitRolePlay()">Get AI Coaching Feedback</button>`;
   }
 
   return html;
 }
 function renderRolePlay(){practiceTab='roleplay';renderPractice();}
+
+// ---- VOICE ROLE-PLAY CONTROLS ----
+function toggleRpVoiceMode(voice){
+  if(rpState.listening)stopRpListening();
+  rpState.voiceMode=voice;
+  renderPractice();
+}
+function toggleRpListening(){
+  if(rpState.listening){stopRpListening();}else{startRpListening();}
+}
+function startRpListening(){
+  const Rec=getSpeechRecognition();
+  if(!Rec)return showToast('Speech recognition not supported','toast-streak');
+  try{
+    _rpRecognition=new Rec();
+    _rpRecognition.continuous=true;
+    _rpRecognition.interimResults=true;
+    _rpRecognition.lang='en-US';
+    let finalBuf=rpState.transcript||'';
+    _rpRecognition.onresult=(e)=>{
+      let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const res=e.results[i];
+        if(res.isFinal){finalBuf+=(finalBuf?' ':'')+res[0].transcript.trim();}
+        else{interim+=res[0].transcript;}
+      }
+      rpState.transcript=(finalBuf+(interim?' '+interim:'')).trim();
+      const ta=document.getElementById('rpResponse');
+      if(ta)ta.value=rpState.transcript;
+    };
+    _rpRecognition.onerror=(e)=>{
+      if(e.error==='not-allowed'||e.error==='service-not-allowed')showToast('Mic permission denied','toast-streak');
+      else if(e.error==='no-speech')showToast('No speech detected','toast-streak');
+      stopRpListening();
+    };
+    _rpRecognition.onend=()=>{
+      if(rpState.listening){
+        // Auto-restart if user hasn't manually stopped (handles Chrome's auto-stop after pause)
+        try{_rpRecognition.start();}catch(e){rpState.listening=false;renderPractice();}
+      }
+    };
+    _rpRecognition.start();
+    rpState.listening=true;
+    renderPractice();
+  }catch(e){showToast('Failed to start mic: '+e.message,'toast-streak');}
+}
+function stopRpListening(){
+  rpState.listening=false;
+  if(_rpRecognition){try{_rpRecognition.stop();}catch(e){}_rpRecognition=null;}
+  renderPractice();
+}
 
 function startRolePlay(cat){
   const pool=cat?ROLEPLAY_SCENARIOS.filter(s=>s.cat===cat):ROLEPLAY_SCENARIOS;
@@ -4269,12 +4562,15 @@ function startRolePlay(cat){
 }
 
 async function submitRolePlay(){
+  // Stop any active mic capture so it doesn't keep running
+  if(rpState.listening)stopRpListening();
   const response=document.getElementById('rpResponse').value.trim();
-  if(!response)return showToast('Type your response first','toast-streak');
+  if(!response)return showToast('Say or type your response first','toast-streak');
   if(response.length<20)return showToast('Give a more complete response','toast-streak');
 
   rpState.loading=true;
   rpState.repResponse=response;
+  rpState.transcript=''; // reset for next session
   renderRolePlay();
 
   try{
