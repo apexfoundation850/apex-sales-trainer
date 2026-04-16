@@ -2167,7 +2167,8 @@ function saveState(){
         motivatorsResult:r.motivatorsResult||null,
         eqResult:r.eqResult||null,
         certificates:r.certificates||[],
-        roleplayHistory:(r.roleplayHistory||[]).slice(0,50)
+        roleplayHistory:(r.roleplayHistory||[]).slice(0,50),
+        objectionPlaybook:(r.objectionPlaybook||[]).slice(0,100)
       }).catch(e=>console.warn('Save failed:',e));
     }
     // Save assignments
@@ -2190,7 +2191,8 @@ function immediateSave(){
     activityLog:(r.activityLog||[]).slice(0,100),
     discResult:r.discResult||null, motivatorsResult:r.motivatorsResult||null,
     eqResult:r.eqResult||null, certificates:r.certificates||[],
-    roleplayHistory:(r.roleplayHistory||[]).slice(0,50)
+    roleplayHistory:(r.roleplayHistory||[]).slice(0,50),
+    objectionPlaybook:(r.objectionPlaybook||[]).slice(0,100)
   }).catch(e=>console.warn('Immediate save failed:',e));
 }
 
@@ -2219,7 +2221,8 @@ async function loadUserData(uid){
       eqResult:d.eqResult||null, certificates:d.certificates||[],
       roleplayHistory:d.roleplayHistory||[],
       welcomeCompleted:d.welcomeCompleted||false, experience:d.experience||null,
-      notifications:d.notifications||[], studyTimes:d.studyTimes||{}
+      notifications:d.notifications||[], studyTimes:d.studyTimes||{},
+      objectionPlaybook:d.objectionPlaybook||[]
     };
     notifications=d.notifications||[];
     updateNotifBadge();
@@ -2241,7 +2244,8 @@ async function loadAllUsers(){
       drillsCompleted:d.drillsCompleted||0, drillsPerfect:d.drillsPerfect||0,
       badges:d.badges||[], activityLog:d.activityLog||[], role:d.role||'rep',
       discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
-      eqResult:d.eqResult||null, roleplayHistory:d.roleplayHistory||[]
+      eqResult:d.eqResult||null, roleplayHistory:d.roleplayHistory||[],
+      objectionPlaybook:d.objectionPlaybook||[]
     };
   });
 }
@@ -2274,7 +2278,8 @@ function startRealtimeSync(){
           discResult:d.discResult||null, motivatorsResult:d.motivatorsResult||null,
           eqResult:d.eqResult||null,
           welcomeCompleted:d.welcomeCompleted||false, experience:d.experience||null,
-          certificates:d.certificates||[], roleplayHistory:d.roleplayHistory||[]
+          certificates:d.certificates||[], roleplayHistory:d.roleplayHistory||[],
+          objectionPlaybook:d.objectionPlaybook||[]
         };
       }
     });
@@ -2564,6 +2569,8 @@ let fieldTab='scripts';
 let scriptSearchQuery='';
 let expandedScriptId=null;
 let customScripts=[];
+let objectionState={input:'',context:'',loading:false,response:null};
+let objectionView='logger'; // 'logger' | 'playbook'
 
 function switchTab(tab){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
@@ -2700,10 +2707,12 @@ function renderField(){
   let html=`<button class="mv-nav-btn mv-prev" style="margin-bottom:12px;" onclick="switchTab('home')">&#8592; Home</button>
   <div class="slides-toggle" style="margin-bottom:16px;">
     <div class="slides-toggle-btn ${fieldTab==='scripts'?'active':''}" onclick="fieldTab='scripts';renderField()">&#128221; Scripts</div>
-    <div class="slides-toggle-btn ${fieldTab==='calc'?'active':''}" onclick="fieldTab='calc';renderField()">&#128176; Financing Calculator</div>
+    <div class="slides-toggle-btn ${fieldTab==='calc'?'active':''}" onclick="fieldTab='calc';renderField()">&#128176; Calc</div>
+    <div class="slides-toggle-btn ${fieldTab==='objections'?'active':''}" onclick="fieldTab='objections';renderField()">&#128172; Objection Logger</div>
   </div>`;
   if(fieldTab==='scripts')html+=renderScriptsTabHTML();
-  else html+=renderCalcTabHTML();
+  else if(fieldTab==='calc')html+=renderCalcTabHTML();
+  else if(fieldTab==='objections')html+=renderObjectionTabHTML();
   document.getElementById('pg-field').innerHTML=html;
   // Preserve search focus
   if(fieldTab==='scripts'&&scriptSearchQuery){
@@ -2874,6 +2883,177 @@ function copyPayment(){
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(()=>showToast('Copied '+txt,'toast-success'));
   }else{fallbackCopy(txt);}
+}
+
+// ---- OBJECTION LOGGER ----
+function renderObjectionTabHTML(){
+  const playbook=(currentRep&&reps[currentRep].objectionPlaybook)||[];
+  let html=`<div class="slides-toggle" style="margin-bottom:16px;">
+    <div class="slides-toggle-btn ${objectionView==='logger'?'active':''}" onclick="objectionView='logger';renderField()">&#9997; Log New</div>
+    <div class="slides-toggle-btn ${objectionView==='playbook'?'active':''}" onclick="objectionView='playbook';renderField()">&#128214; My Playbook (${playbook.length})</div>
+  </div>`;
+
+  if(objectionView==='logger'){
+    if(objectionState.loading){
+      html+=`<div class="rp-loading"><div class="spinner"></div><div style="font-size:14px;">Crafting your Apex-aligned response...</div><div style="font-size:12px;color:var(--gray-d);margin-top:4px;">AI coach is analyzing the objection</div></div>`;
+    }else if(objectionState.response){
+      const r=objectionState.response;
+      html+=`<div class="card" style="border-left:3px solid var(--orange);margin-bottom:12px;padding:14px;">
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:4px;">The Objection</div>
+        <div style="font-size:13px;color:var(--gray-l);font-style:italic;">"${escapeHtml(objectionState.input)}"</div>
+        ${objectionState.context?`<div style="font-size:11px;color:var(--gray);margin-top:6px;"><strong>Context:</strong> ${escapeHtml(objectionState.context)}</div>`:''}
+      </div>
+      <div class="card" style="border-left:3px solid var(--green);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:11px;padding:3px 10px;border-radius:12px;background:var(--purple)20;color:var(--purple);font-weight:700;">${escapeHtml(r.category||'Other')}</span>
+          <span style="font-size:11px;color:var(--gold);font-weight:700;">&#128161; ${escapeHtml(r.technique||'')}</span>
+        </div>
+        ${r.technique_explanation?`<div style="font-size:12px;color:var(--gray);margin-bottom:12px;font-style:italic;">${escapeHtml(r.technique_explanation)}</div>`:''}
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;font-weight:700;">What to Say</div>
+        <div style="padding:14px;background:var(--dark3);border-left:3px solid var(--red);border-radius:0 8px 8px 0;font-style:italic;font-size:14px;color:var(--gray-l);line-height:1.6;white-space:pre-wrap;">${escapeHtml(r.response||'')}</div>
+        ${r.followup_question?`<div style="margin-top:10px;padding:10px;background:rgba(46,125,212,.1);border-radius:8px;">
+          <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:4px;font-weight:700;">Then Ask</div>
+          <div style="font-size:12px;color:var(--gray-l);">${escapeHtml(r.followup_question)}</div>
+        </div>`:''}
+        ${r.warning?`<div style="margin-top:10px;padding:8px 10px;background:rgba(200,57,10,.1);border-left:3px solid var(--red);border-radius:0 6px 6px 0;">
+          <div style="font-size:11px;color:var(--red);font-weight:700;">&#9888; Avoid</div>
+          <div style="font-size:11px;color:var(--gray-l);margin-top:2px;">${escapeHtml(r.warning)}</div>
+        </div>`:''}
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="mv-complete-btn" style="flex:1;" onclick="saveObjectionToPlaybook()">&#128214; Save to Playbook</button>
+          <button class="mv-nav-btn mv-prev" style="flex:1;" onclick="copyObjectionResponse()">&#128203; Copy</button>
+        </div>
+        <button class="mv-nav-btn mv-prev" style="width:100%;margin-top:8px;background:var(--dark4);" onclick="resetObjection()">&larr; New Objection</button>
+      </div>`;
+    }else{
+      html+=`<div class="card" style="padding:16px;">
+        <p style="font-size:12px;color:var(--gray);margin-bottom:12px;">Heard an objection in the field? Type it below and get an Apex-aligned response you can use next time.</p>
+        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;">What the customer said</label>
+        <textarea id="objInput" placeholder='e.g., "My cousin said I should get three more quotes before deciding..."' style="width:100%;min-height:80px;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;line-height:1.5;resize:vertical;font-family:inherit;box-sizing:border-box;" oninput="objectionState.input=this.value"></textarea>
+        <label style="font-size:11px;color:var(--gray);text-transform:uppercase;letter-spacing:1px;display:block;margin:12px 0 4px;">Context (optional)</label>
+        <textarea id="objContext" placeholder="What was happening? Where in the appointment? Anything you noticed?" style="width:100%;min-height:60px;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;line-height:1.5;resize:vertical;font-family:inherit;box-sizing:border-box;" oninput="objectionState.context=this.value"></textarea>
+        <button class="mv-complete-btn" style="width:100%;margin-top:14px;" onclick="submitObjection()">&#128161; Get Apex-Aligned Response</button>
+      </div>
+      <p style="font-size:11px;color:var(--gray-d);text-align:center;margin-top:12px;">Uses AI coaching tailored to your DISC style</p>`;
+    }
+  }else{
+    // Playbook view
+    if(!playbook.length){
+      html+=`<div class="card" style="text-align:center;padding:30px;color:var(--gray);font-size:13px;">
+        <div style="font-size:40px;margin-bottom:10px;">&#128214;</div>
+        No saved objections yet. Log one from the "Log New" tab and save it here for future reference.
+      </div>`;
+    }else{
+      // Group by category
+      const groups={};
+      playbook.forEach(p=>{const c=p.category||'Other';if(!groups[c])groups[c]=[];groups[c].push(p);});
+      Object.entries(groups).forEach(([cat,items])=>{
+        html+=`<div class="sec-header">${escapeHtml(cat)} <span style="font-size:10px;color:var(--gray);font-weight:400;letter-spacing:0;text-transform:none;">(${items.length})</span></div>`;
+        items.forEach(p=>{
+          html+=`<div class="card">
+            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">${new Date(p.date).toLocaleDateString()}</div>
+            <div style="font-size:12px;color:var(--gray-l);font-style:italic;margin-bottom:10px;">"${escapeHtml(p.objection)}"</div>
+            <div style="padding:10px;background:var(--dark3);border-left:3px solid var(--red);border-radius:0 6px 6px 0;font-size:13px;color:var(--gray-l);line-height:1.5;white-space:pre-wrap;">${escapeHtml(p.response)}</div>
+            ${p.technique?`<div style="font-size:11px;color:var(--gold);margin-top:6px;">&#128161; ${escapeHtml(p.technique)}</div>`:''}
+            <div style="display:flex;gap:6px;margin-top:10px;">
+              <button class="mv-nav-btn mv-prev" style="flex:1;font-size:12px;padding:6px;" onclick="copyPlaybookEntry('${p.id}')">&#128203; Copy</button>
+              <button class="mv-nav-btn mv-prev" style="background:var(--red);color:#fff;font-size:12px;padding:6px;" onclick="deletePlaybookEntry('${p.id}')">&#10005;</button>
+            </div>
+          </div>`;
+        });
+      });
+    }
+  }
+  return html;
+}
+
+async function submitObjection(){
+  const input=document.getElementById('objInput');
+  const context=document.getElementById('objContext');
+  if(!input||!input.value.trim()){return showToast('Type an objection first','toast-streak');}
+  objectionState.input=input.value.trim();
+  objectionState.context=context?context.value.trim():'';
+  objectionState.loading=true;
+  objectionState.response=null;
+  renderField();
+
+  try{
+    const res=await fetch('/api/objection',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        objection:objectionState.input,
+        context:objectionState.context,
+        discProfile:currentRep&&reps[currentRep].discResult?reps[currentRep].discResult:null,
+        motivatorsProfile:currentRep&&reps[currentRep].motivatorsResult?reps[currentRep].motivatorsResult:null
+      })
+    });
+    if(!res.ok)throw new Error('API error');
+    objectionState.response=await res.json();
+    objectionState.loading=false;
+    // Award points for logging — encourages using the tool
+    addPoints(5,'Logged objection: '+objectionState.response.category);
+  }catch(e){
+    objectionState.loading=false;
+    objectionState.response={category:'Error',response:'Sorry, AI coaching is unavailable right now. Try again in a moment.',error:true};
+    showToast('AI request failed','toast-streak');
+  }
+  renderField();
+}
+
+function resetObjection(){
+  objectionState={input:'',context:'',loading:false,response:null};
+  renderField();
+}
+
+function saveObjectionToPlaybook(){
+  if(!currentRep||!objectionState.response)return;
+  const r=reps[currentRep];
+  r.objectionPlaybook=r.objectionPlaybook||[];
+  const entry={
+    id:'obj'+Date.now(),
+    objection:objectionState.input,
+    context:objectionState.context,
+    category:objectionState.response.category||'Other',
+    technique:objectionState.response.technique||'',
+    response:objectionState.response.response||'',
+    followup:objectionState.response.followup_question||'',
+    date:new Date().toISOString()
+  };
+  r.objectionPlaybook.unshift(entry);
+  if(r.objectionPlaybook.length>100)r.objectionPlaybook=r.objectionPlaybook.slice(0,100);
+  saveState();
+  immediateSave();
+  showToast('Saved to playbook','toast-success');
+  objectionView='playbook';
+  resetObjection();
+}
+
+function copyObjectionResponse(){
+  const txt=objectionState.response&&objectionState.response.response;
+  if(!txt)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>showToast('Response copied','toast-success')).catch(()=>fallbackCopy(txt));
+  }else{fallbackCopy(txt);}
+}
+
+function copyPlaybookEntry(id){
+  if(!currentRep)return;
+  const p=(reps[currentRep].objectionPlaybook||[]).find(x=>x.id===id);
+  if(!p)return;
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(p.response).then(()=>showToast('Response copied','toast-success')).catch(()=>fallbackCopy(p.response));
+  }else{fallbackCopy(p.response);}
+}
+
+function deletePlaybookEntry(id){
+  if(!currentRep||!confirm('Delete this saved objection?'))return;
+  const r=reps[currentRep];
+  r.objectionPlaybook=(r.objectionPlaybook||[]).filter(x=>x.id!==id);
+  saveState();
+  immediateSave();
+  showToast('Deleted','toast-success');
+  renderField();
 }
 
 function renderMore(){
@@ -6493,6 +6673,27 @@ function renderRepDetailHTML(id){
   }else{
     html+=`<div class="sec-header">Role-Play Detail</div>
     <div class="card" style="text-align:center;padding:20px;color:var(--gray);font-size:13px;">No role-play sessions yet.</div>`;
+  }
+
+  // Objection Playbook
+  const objPlay=r.objectionPlaybook||[];
+  if(objPlay.length){
+    html+=`<div class="sec-header">Objection Playbook (${objPlay.length})</div>`;
+    // Category breakdown
+    const byCat={};
+    objPlay.forEach(o=>{const c=o.category||'Other';byCat[c]=(byCat[c]||0)+1;});
+    html+=`<div class="card" style="padding:12px;margin-bottom:8px;">
+      <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:8px;">By Category</div>
+      ${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;"><span style="color:var(--gray-l);">${escapeHtml(c)}</span><span style="color:var(--gold);font-weight:700;">${n}</span></div>`).join('')}
+    </div>
+    <div class="card" style="padding:12px;"><div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:8px;">Most Recent</div>`;
+    objPlay.slice(0,5).forEach(o=>{
+      html+=`<div style="padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--gray);margin-bottom:3px;">${new Date(o.date).toLocaleDateString()} &middot; ${escapeHtml(o.category||'Other')}</div>
+        <div style="font-size:12px;color:var(--gray-l);font-style:italic;">"${escapeHtml((o.objection||'').substring(0,140))}${(o.objection||'').length>140?'...':''}"</div>
+      </div>`;
+    });
+    html+=`</div>`;
   }
 
   // Assessments snapshot
