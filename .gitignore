@@ -10,3 +10,9 @@ parse_scenarios.mjs
 extract_pdfs.mjs
 api/fix-quiz.js
 .claude/
+.test-logs/
+expanded_drills.js
+expanded_flashcards.js
+updated_decks_transcript.txt
+package.json
+package-lock.json
