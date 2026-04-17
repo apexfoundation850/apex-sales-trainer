@@ -2614,6 +2614,7 @@ function switchTab(tab){
   if(btn)btn.classList.add('on');
   document.getElementById('main').scrollTop=0;
   // Auto-render content for consolidated tabs
+  if(tab==='home')renderHome();
   if(tab==='learn')renderLearn();
   if(tab==='media')renderMediaLibrary();
   if(tab==='practice')renderPractice();
@@ -4157,6 +4158,7 @@ function renderQuizResults(){
       }
     }
     saveState();
+    immediateSave(); // Quiz result is critical — flush to Firestore now in case rep kills the app
     const tierPts=tier==='expert'?75:tier==='advanced'?60:50;
     if(passed){addPoints(tierPts,tierInfo.label+' quiz passed: '+mod.title);addNotification('&#9989;',tierInfo.label+' quiz passed: '+mod.title+' ('+pct+'%)','');}
     else{addPoints(15,'Quiz attempted: '+mod.title);addNotification('&#10060;','Quiz not passed: '+mod.title+' ('+pct+'%) — need 80%','');}
