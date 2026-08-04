@@ -58,8 +58,9 @@ Score their delivery.`;
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 600,
+        model: 'claude-sonnet-5',
+        max_tokens: 800,
+        thinking: { type: 'disabled' },
         messages: [{ role: 'user', content: userMessage }],
         system: systemPrompt
       })

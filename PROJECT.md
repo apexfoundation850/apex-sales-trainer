@@ -53,7 +53,7 @@ Zero-build single-page app. Everything runs in the browser from one monolithic H
                                                             ▼
                                                   ┌─────────────────┐
                                                   │ Anthropic       │
-                                                  │ claude-sonnet-4 │
+                                                  │ claude-sonnet-5 │
                                                   └─────────────────┘
 ```
 
@@ -76,7 +76,7 @@ Zero-build single-page app. Everything runs in the browser from one monolithic H
 | Database | Firestore (compat SDK v10.12.2) |
 | File storage | Firebase Storage |
 | Serverless | Vercel functions (Node.js, ES modules) |
-| AI | Anthropic Claude `claude-sonnet-4-20250514` |
+| AI | Anthropic Claude `claude-sonnet-5` (thinking disabled, JSON coaching responses) |
 | Browser APIs used | Web Speech API (voice features), Web Audio (mini-player), Fullscreen API, Media Session API, Clipboard API, visibilitychange |
 | PWA | `manifest.json` with inline SVG icon |
 
@@ -370,7 +370,7 @@ service firebase.storage {
 
 ## Serverless API Endpoints
 
-All endpoints: POST-only, CORS-open, require `ANTHROPIC_API_KEY` in Vercel env, use `claude-sonnet-4-20250514`.
+All endpoints: POST-only, CORS-open, require `ANTHROPIC_API_KEY` in Vercel env, use `claude-sonnet-5` with `thinking: {type: 'disabled'}` (predictable latency + the full token budget goes to the JSON response). `claude-sonnet-4-20250514` was retired mid-2026, which broke all three endpoints (500s) until this swap.
 
 ### `/api/roleplay` — Role-play scoring
 **In:** `{scenario, repResponse, category, discProfile?, motivatorsProfile?, eqProfile?}`

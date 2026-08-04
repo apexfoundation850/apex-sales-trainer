@@ -73,8 +73,9 @@ Provide an Apex-aligned response the rep can use next time.`;
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 700,
+        model: 'claude-sonnet-5',
+        max_tokens: 1024,
+        thinking: { type: 'disabled' },
         messages: [
           { role: 'user', content: userMessage }
         ],

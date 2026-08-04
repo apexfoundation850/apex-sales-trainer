@@ -198,20 +198,13 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
 .mgr-rep-row{display:flex;align-items:center;gap:12px;padding:14px;background:var(--dark2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;cursor:pointer;transition:border-color .2s;}
 .mgr-rep-row:hover{border-color:var(--red);}
 
-/* ASSIGN MODAL */
-.modal-overlay{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:20px;}
-.modal-overlay.on{display:flex;}
-.modal{background:var(--dark2);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;}
-.modal-title{font-size:18px;font-weight:700;color:var(--white);margin-bottom:16px;}
-.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--gray);font-size:20px;cursor:pointer;}
+/* ASSIGN PANEL (inline in manager Assign tab) */
 .chk-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--dark3);border-radius:8px;margin-bottom:6px;cursor:pointer;}
 .chk-row:hover{background:var(--dark4);}
 .chk-row input[type="checkbox"]{width:18px;height:18px;accent-color:var(--red);}
 .chk-row label{font-size:14px;color:var(--gray-l);cursor:pointer;}
 .modal-btn{width:100%;padding:14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:12px;}
 .modal-btn:hover{background:var(--red-l);}
-.modal input[type="date"]{width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin:8px 0;}
-.modal select{width:100%;padding:12px;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--white);font-size:14px;margin:8px 0;appearance:none;}
 
 /* LEVEL COLORS */
 .lvl-rookie{background:var(--gray-d);color:#fff;}
@@ -504,14 +497,6 @@ input,textarea,select{-webkit-user-select:text;user-select:text;}
   </div>
   <div class="mv-body" id="mvBody"></div>
   <div class="mv-bottom" id="mvBottom"></div>
-</div>
-
-<!-- ASSIGN MODAL -->
-<div class="modal-overlay" id="assignModal">
-  <div class="modal">
-    <div class="modal-title" id="assignTitle">Assign Training</div>
-    <div id="assignContent"></div>
-  </div>
 </div>
 
 <script>
@@ -1392,8 +1377,6 @@ const FLASHCARD_DECKS = [
 
 
 // ---- OBJECTION DRILL DATA ----
-// expanded_drills.js — 50 Apex Foundation Specialists objection-handling drills
-// Replace the existing DRILLS array in index.html with this expanded set.
 
 const DRILLS = [
 
@@ -2795,11 +2778,11 @@ function renderScriptsTabHTML(){
       const preview=s.text.split('\n').slice(0,2).join(' ').substring(0,120);
       // Practice history for this script
       const practiceHist=(currentRep&&reps[currentRep].scriptPracticeHistory||[]).filter(p=>p.scriptId===s.id);
-      const practiceStat=practiceHist.length?`<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--gold)20;color:var(--gold);font-weight:700;margin-left:6px;">&#127908; ${practiceHist.length}&times; &middot; ${practiceHist[0].score}%</span>`:'';
+      const practiceStat=practiceHist.length?`<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(201,168,76,.13);color:var(--gold);font-weight:700;margin-left:6px;">&#127908; ${practiceHist.length}&times; &middot; ${practiceHist[0].score}%</span>`:'';
       html+=`<div class="card" style="cursor:pointer;${expanded?'border-color:var(--gold);':''}" onclick="toggleScript('${s.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;">${escapeHtml(s.slideTitle)}${s.custom?' <span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--purple)30;color:var(--purple);">CUSTOM</span>':''}${practiceStat}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px;">${escapeHtml(s.slideTitle)}${s.custom?' <span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(142,68,173,.19);color:var(--purple);">CUSTOM</span>':''}${practiceStat}</div>
             <div style="font-size:11px;color:var(--gray);margin-bottom:${expanded?'8':'0'}px;">${escapeHtml(s.moduleTitle)}</div>
             ${!expanded?`<div style="font-size:12px;color:var(--gray-l);font-style:italic;line-height:1.5;">"${escapeHtml(preview)}..."</div>`:''}
           </div>
@@ -2876,7 +2859,7 @@ function renderObjectionTabHTML(){
       </div>
       <div class="card" style="border-left:3px solid var(--green);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <span style="font-size:11px;padding:3px 10px;border-radius:12px;background:var(--purple)20;color:var(--purple);font-weight:700;">${escapeHtml(r.category||'Other')}</span>
+          <span style="font-size:11px;padding:3px 10px;border-radius:12px;background:rgba(142,68,173,.13);color:var(--purple);font-weight:700;">${escapeHtml(r.category||'Other')}</span>
           <span style="font-size:11px;color:var(--gold);font-weight:700;">&#128161; ${escapeHtml(r.technique||'')}</span>
         </div>
         ${r.technique_explanation?`<div style="font-size:12px;color:var(--gray);margin-bottom:12px;font-style:italic;">${escapeHtml(r.technique_explanation)}</div>`:''}
@@ -2933,7 +2916,7 @@ function renderObjectionTabHTML(){
           html+=`<div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
               <div style="font-size:10px;color:var(--gray);">${new Date(p.date).toLocaleDateString()}</div>
-              ${shared?'<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--green)20;color:var(--green);font-weight:700;">&#128101; SHARED</span>':'<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--gray-d)40;color:var(--gray);font-weight:700;">&#128274; PRIVATE</span>'}
+              ${shared?'<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(39,174,96,.13);color:var(--green);font-weight:700;">&#128101; SHARED</span>':'<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(85,85,85,.25);color:var(--gray);font-weight:700;">&#128274; PRIVATE</span>'}
             </div>
             <div style="font-size:12px;color:var(--gray-l);font-style:italic;margin-bottom:10px;">"${escapeHtml(p.objection)}"</div>
             <div style="padding:10px;background:var(--dark3);border-left:3px solid var(--red);border-radius:0 6px 6px 0;font-size:13px;color:var(--gray-l);line-height:1.5;white-space:pre-wrap;">${escapeHtml(p.response)}</div>
@@ -2970,7 +2953,7 @@ function renderObjectionTabHTML(){
         html+=`<div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <div style="font-size:10px;color:var(--gray);">${new Date(t.date).toLocaleDateString()} &middot; ${escapeHtml(t.submittedByName||'Unknown')}</div>
-            <span style="font-size:9px;padding:2px 6px;border-radius:10px;background:var(--purple)20;color:var(--purple);font-weight:700;">${escapeHtml(t.category||'Other')}</span>
+            <span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(142,68,173,.13);color:var(--purple);font-weight:700;">${escapeHtml(t.category||'Other')}</span>
           </div>
           <div style="font-size:12px;color:var(--gray-l);font-style:italic;margin-bottom:10px;">"${escapeHtml(t.objection)}"</div>
           <div style="padding:10px;background:var(--dark3);border-left:3px solid var(--red);border-radius:0 6px 6px 0;font-size:13px;color:var(--gray-l);line-height:1.5;white-space:pre-wrap;">${escapeHtml(t.response)}</div>
@@ -3097,7 +3080,9 @@ function startScriptPractice(scriptId){
   const overlay=document.getElementById('practiceOverlay');
   overlay.style.display='flex';
   renderScriptPractice();
-  // Tick the countdown every second
+  // Tick the countdown every second (clear any prior tick so a re-launch
+  // can't orphan a running interval)
+  if(_spCountdownTimer){clearInterval(_spCountdownTimer);}
   _spCountdownTimer=setInterval(()=>{
     scriptPracticeState.countdown--;
     if(scriptPracticeState.countdown<=0){
@@ -3357,7 +3342,7 @@ function renderMore(){
   // Manager dashboard access
   if(isManager){
     html+=`<div class="sec-header" style="margin-top:24px;">Management</div>
-    <div class="card" style="cursor:pointer;text-align:center;border-color:var(--purple)30;" onclick="switchTab('more');renderManagerInMore()">
+    <div class="card" style="cursor:pointer;text-align:center;border-color:rgba(142,68,173,.19);" onclick="switchTab('more');renderManagerInMore()">
       <div style="font-size:28px;">&#9881;</div>
       <div style="font-size:14px;font-weight:700;margin-top:6px;">Manage Team</div>
       <div style="font-size:12px;color:var(--gray);margin-top:4px;">Dashboard, assignments, grades, profiles</div>
@@ -3502,7 +3487,7 @@ function renderHome(){
       continueLabel='Continue Flashcards';continueIcon='&#127183;';continueAction="learnTab='cards';switchTab('learn')";
     }
     if(continueLabel){
-      html+=`<div class="card" style="cursor:pointer;border-color:var(--red)30;display:flex;align-items:center;gap:12px;" onclick="${continueAction}">
+      html+=`<div class="card" style="cursor:pointer;border-color:rgba(192,57,43,.19);display:flex;align-items:center;gap:12px;" onclick="${continueAction}">
         <div style="font-size:28px;">${continueIcon}</div>
         <div style="flex:1;">
           <div style="font-size:14px;font-weight:700;color:var(--white);">${continueLabel}</div>
@@ -3657,7 +3642,6 @@ function modItemHTML(m,done){
 
 // ---- MODULE VIEWER ----
 let currentModuleId=null;
-let currentSlide=0;
 
 let moduleOpenTime=null; // timestamp when module was opened
 
@@ -3703,7 +3687,6 @@ function getTimeSpent(){
 
 function openModule(id){
   currentModuleId=id;
-  currentSlide=0;
   mvViewMode='slides';
   moduleOpenTime=Date.now();
   const mod=MODULES.find(m=>m.id===id);
@@ -3979,7 +3962,7 @@ function showQuizTiers(modId){
         </div>
       </div>`;
     }else if(unlocked&&locked){
-      html+=`<div class="mod-item" style="border-color:var(--red)20;opacity:.7;" onclick="openModule('${modId}');learnTab='modules';switchTab('learn');">
+      html+=`<div class="mod-item" style="border-color:rgba(192,57,43,.13);opacity:.7;" onclick="openModule('${modId}');learnTab='modules';switchTab('learn');">
         <div class="mod-icon" style="background:rgba(192,57,43,.15);color:var(--red);">&#128274;</div>
         <div class="mod-info">
           <div class="mod-name">${info.label}</div>
@@ -4295,7 +4278,6 @@ function renderFcResults(){
 
 // ---- DRILLS PAGE ----
 let drillState={};
-let drillMode='menu'; // 'menu','drill','roleplay'
 
 function renderDrillsHTML(){
   let html=`<div class="sec-header">Objection Handling Drills</div>
@@ -4316,7 +4298,6 @@ function renderDrillsHTML(){
   });
   return html;
 }
-function renderDrills(){practiceTab='drills';renderPractice();}
 
 function startDrill(){
   drillState={drill:DRILLS[Math.floor(Math.random()*DRILLS.length)],answered:false};
@@ -4517,8 +4498,11 @@ function stopRpListening(){
 }
 
 function startRolePlay(cat){
+  // Stop any in-flight mic capture before swapping scenarios, and preserve
+  // voiceMode so the Voice/Type toggle doesn't snap back to Type
+  if(rpState.listening)stopRpListening();
   const pool=cat?ROLEPLAY_SCENARIOS.filter(s=>s.cat===cat):ROLEPLAY_SCENARIOS;
-  rpState={scenario:pool[Math.floor(Math.random()*pool.length)],loading:false,feedback:null};
+  rpState={...rpState,scenario:pool[Math.floor(Math.random()*pool.length)],loading:false,feedback:null,listening:false,transcript:''};
   renderRolePlay();
 }
 
@@ -5378,7 +5362,7 @@ function renderEqResults(result) {
 
 
 
-// ---- UPDATED renderAssessment() — shows all 3 assessments ----
+// ---- ASSESSMENT HUB — shows all 3 assessments ----
 
 function renderAssessmentHTML() {
   var r = currentRep ? reps[currentRep] : null;
@@ -5505,7 +5489,6 @@ function renderAssessmentHTML() {
 
   return html;
 }
-function renderAssessment(){practiceTab='assess';renderPractice();}
 
 
 // ---- DISC SURVEY FUNCTIONS (existing) ----
@@ -5663,7 +5646,7 @@ function getOnboardingHTML(){
   const total=ONBOARDING_STEPS.length;
   if(completed>=total)return '';
   const pct=Math.round(completed/total*100);
-  let html=`<div class="sec-header">Onboarding Roadmap</div><div class="card" style="border-color:var(--red)30;">
+  let html=`<div class="sec-header">Onboarding Roadmap</div><div class="card" style="border-color:rgba(192,57,43,.19);">
     <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><div style="font-size:14px;font-weight:700;">Your First 30 Days</div><div style="font-size:13px;color:var(--gray);">${completed}/${total}</div></div>
     <div class="pbar" style="margin-bottom:12px;"><div class="pbar-fill" style="width:${pct}%;background:var(--red);"></div></div>`;
   let lastPhase='';
@@ -6168,8 +6151,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   const audio=document.getElementById('audioEl');
   if(audio){
     audio.addEventListener('ended',()=>nextTrack());
-    audio.addEventListener('pause',()=>{document.getElementById('mpPlayPause').innerHTML='&#9654;';});
-    audio.addEventListener('play',()=>{document.getElementById('mpPlayPause').innerHTML='&#9208;';});
+    // Update both the mini-player and expanded-player buttons (the latter only
+    // exists while the expanded overlay is open)
+    const setPlayIcons=icon=>{
+      document.getElementById('mpPlayPause').innerHTML=icon;
+      const big=document.getElementById('mpPlayPause2');
+      if(big)big.innerHTML=icon;
+    };
+    audio.addEventListener('pause',()=>setPlayIcons('&#9654;'));
+    audio.addEventListener('play',()=>setPlayIcons('&#9208;'));
   }
 });
 
@@ -6447,7 +6437,7 @@ function renderManager(){
       <div id="assignOptions"></div>
 
       <label style="font-size:12px;color:var(--gray);display:block;margin:12px 0 4px;">Due Date (optional)</label>
-      <input type="date" id="assignDue">
+      <input type="date" id="assignDue" style="${selStyle}">
       <button class="modal-btn" onclick="submitAssignment()">Assign</button>
     </div>`;
 
@@ -7402,12 +7392,14 @@ function demoteToRep(uid){
 function resetRep(id){
   if(!confirm('Reset all progress for '+reps[id].name+'?'))return;
   const name=reps[id].name;
-  const role=reps[id].role||'rep';
-  reps[id]={name,points:0,streak:0,lastActive:null,completedModules:[],quizScores:{},fcReviews:0,drillsCompleted:0,drillsPerfect:0,badges:[],activityLog:[],role};
-  db.collection('users').doc(id).update({
-    points:0,streak:0,lastActive:null,completedModules:[],quizScores:{},
-    fcReviews:0,drillsCompleted:0,drillsPerfect:0,badges:[],activityLog:[]
-  }).catch(e=>console.warn(e));
+  // One payload used for both the local merge and the Firestore write, so the
+  // realtime snapshot can't push stale fields back after the reset
+  const reset={points:0,streak:0,lastActive:null,completedModules:[],quizScores:{},
+    fcReviews:0,drillsCompleted:0,drillsPerfect:0,badges:[],activityLog:[],
+    discResult:null,motivatorsResult:null,eqResult:null,certificates:[],
+    roleplayHistory:[],objectionPlaybook:[],scriptPracticeHistory:[],studyTimes:{}};
+  reps[id]={...reps[id],...reset};
+  db.collection('users').doc(id).update(reset).catch(e=>console.warn(e));
   renderManager();
   showToast(`Reset ${name}`,'toast-success');
 }
