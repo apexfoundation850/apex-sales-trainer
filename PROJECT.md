@@ -219,7 +219,10 @@ Bottom nav has 5 tabs.
 - **Manage Team** card (managers only) → opens Manager Dashboard
 
 ### 📋 Field Tools (not a bottom nav item — reached via Home or More)
-- **Scripts** — 26 sales scripts auto-extracted from module slide content, grouped by phase, searchable. Tap to expand for full text + Goal + Copy button + **🎤 Practice** button (muscle-memory drill). Managers can add custom scripts stored in Firestore. Each card shows practice history badge ("🎤 3× · 82%").
+- **Scripts** — two sub-views (toggle at top):
+  - **Script Cards** (default) — the official 47-card Apex script deck (`SCRIPT_CARDS` + `SCRIPT_CARD_SERIES` consts), extracted verbatim from the script card PDFs (Aug 2026). 7 series: Intake & Scheduling (5), Confirmation Calls (2), The Appointment (7 steps), Objections (method + 16), Follow-Up (method + 6), Job Types (5), Customer Psychology (4). Series accordion → expandable cards showing say-lines (highlighted quotes) vs coaching notes (italic). Buttons: **🎤 Practice** (muscle-memory, reference = say-lines only), **📋 Copy** (say-lines grouped by section header), and on the 16 numbered objection cards **🎭 Role-Play** (jumps into AI role-play scored against that card's method).
+  - **Module Scripts** — the original 26 scripts auto-extracted from module slide content, grouped by phase, plus manager custom scripts. Tap to expand for full text + Goal + Copy + 🎤 Practice.
+  - Both views searchable; practice history badge ("🎤 3× · 82%") shown per script.
 - **Objection Logger** — 3 sub-views:
   - **Log** — rep types what the customer said + context → Claude returns category, technique name, Apex-aligned response, follow-up question, "avoid" warning. Awards +5 points per log.
   - **Mine** — personal playbook (up to 100 entries), each tagged SHARED or PRIVATE
@@ -267,12 +270,14 @@ Bottom nav has 5 tabs.
 ### Assignment document (`assignments/{autoId}`)
 ```js
 {
-  repId, type ('module' | 'quiz' | 'drill' | 'roleplay' | 'assessment'),
+  repId, type ('module' | 'quiz' | 'drill' | 'roleplay' | 'script' | 'assessment'),
   targetId, targetLabel, targetCount, currentCount,
   dueDate, status ('pending' | 'completed'),
   assigned (ISO), assignedBy (uid)
 }
 ```
+
+`type:'script'` = script-card practice sessions; `targetId` is a `SCRIPT_CARD_SERIES` key or `'__any__'`, counted via `trackAssignmentProgress('script', seriesKey)` on each scored practice.
 
 ### Team Objections document (`teamObjections/{autoId}`)
 ```js
@@ -373,8 +378,10 @@ service firebase.storage {
 All endpoints: POST-only, CORS-open, require `ANTHROPIC_API_KEY` in Vercel env, use `claude-sonnet-5` with `thinking: {type: 'disabled'}` (predictable latency + the full token budget goes to the JSON response). `claude-sonnet-4-20250514` was retired mid-2026, which broke all three endpoints (500s) until this swap.
 
 ### `/api/roleplay` — Role-play scoring
-**In:** `{scenario, repResponse, category, discProfile?, motivatorsProfile?, eqProfile?}`
+**In:** `{scenario, repResponse, category, discProfile?, motivatorsProfile?, eqProfile?, scriptReference?}`
 **Out:** `{overall_score (1-100), scores {empathy, diagnosis, evidence, technique, close (1-5)}, feedback, better_response, tip}`
+
+`scriptReference` (optional) carries the full method text of a script card (`cardMethodText()`); when present the AI scores TECHNIQUE against that card's approach and draws `better_response` from it. Used by the "Objection Scripts" role-play category.
 
 ### `/api/objection` — Apex-aligned objection coaching
 **In:** `{objection, context?, discProfile?, motivatorsProfile?}`

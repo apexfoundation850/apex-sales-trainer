@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { scenario, repResponse, category, discProfile, motivatorsProfile, eqProfile } = req.body;
+  const { scenario, repResponse, category, discProfile, motivatorsProfile, eqProfile, scriptReference } = req.body;
 
   if (!scenario || !repResponse) {
     return res.status(400).json({ error: 'Missing scenario or repResponse' });
@@ -108,11 +108,20 @@ Respond in this exact JSON format:
     profileContext = '\n\nFULL BEHAVIORAL PROFILE:' + profileContext + '\n\nAdapt your coaching feedback, tone, and language to this profile.';
   }
 
+  // Optional: the official Apex script-card method for this exact objection.
+  // When present, score the rep against it and draw better_response from it.
+  const scriptContext = scriptReference ? `
+
+OFFICIAL APEX SCRIPT CARD FOR THIS OBJECTION (the trained method the rep should follow):
+${scriptReference}
+
+Evaluate the rep's response against THIS method specifically. The TECHNIQUE score should reflect how closely they followed the card's approach (acknowledging, isolating, diagnosing per the card). The better_response must follow the card's method and reuse its key phrases where natural. In the tip, reference the card step they most need to work on.` : '';
+
   const userMessage = `SCENARIO: ${scenario}
 
 CATEGORY: ${category || 'General'}
 
-REP'S RESPONSE: "${repResponse}"${profileContext}
+REP'S RESPONSE: "${repResponse}"${scriptContext}${profileContext}
 
 Evaluate this response and provide coaching feedback.`;
 
